@@ -78,8 +78,8 @@ visual-test/            Local pages for extension UI checks
 docs/                   Architecture and testing notes
 ```
 
-Most source and docs folders now include a local `README.md` that explains the role
-of that folder before you dive into the code.
+The repo now uses named flow docs in [docs](/Users/zech/Downloads/The-Big-One/Metis/docs)
+instead of nested generic `README.md` files.
 
 ## Setup
 
@@ -138,7 +138,8 @@ Recommended loop:
 4. Refresh one of the local test pages
 5. Check the idle button, mini panel, full panel, overlap, and mobile width behavior
 
-See [docs/visual-testing.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visual-testing.md).
+See [docs/visual-testing.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visual-testing.md)
+and [docs/visual-test-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visual-test-flow.md).
 
 ## Manifest Notes
 
@@ -189,7 +190,8 @@ Phase 2 notes live in:
 
 - [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md)
 - [docs/phase-2-review.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-review.md)
-- [docs/README.md](/Users/zech/Downloads/The-Big-One/Metis/docs/README.md)
+- [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
+- [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
 
 ## Next Step
 
@@ -198,3 +200,9 @@ The next implementation milestone is Phase 3:
 - turn the cleaned metrics into 3 to 5 real issues
 - score those issues with clear deductions
 - keep the copy explainable and avoid fake precision
+
+Phase 3 planning now lives in:
+
+- [docs/phase-3-logic-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-logic-flow.md)
+- [docs/phase-3-ui-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-ui-flow.md)
+- [docs/ui-panel-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/ui-panel-flow.md)
