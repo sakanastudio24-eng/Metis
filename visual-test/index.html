@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Metis Visual Test</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #08111d;
+        --panel: rgba(18, 28, 43, 0.88);
+        --border: rgba(255, 255, 255, 0.09);
+        --text: #f7f7f5;
+        --muted: rgba(247, 247, 245, 0.66);
+        --accent: #f97316;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, "Segoe UI", system-ui, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(249, 115, 22, 0.18), transparent 26%),
+          linear-gradient(180deg, #08111d 0%, #0d1825 100%);
+        color: var(--text);
+      }
+
+      main {
+        width: min(960px, calc(100vw - 48px));
+        margin: 0 auto;
+        padding: 56px 0 80px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+        backdrop-filter: blur(16px);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 6vw, 4.75rem);
+        line-height: 0.95;
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      ul {
+        padding-left: 18px;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-top: 24px;
+      }
+
+      .link-card {
+        display: block;
+        text-decoration: none;
+      }
+
+      .eyebrow {
+        color: var(--accent);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <div class="eyebrow">Metis Visual Test</div>
+        <h1>Local pages for extension UI checks.</h1>
+        <p>
+          Use these pages to verify button placement, panel overlap, color contrast, motion, and
+          responsive behavior after reloading the unpacked extension.
+        </p>
+        <div class="grid">
+          <a class="card link-card" href="/sites/marketing/">
+            <div class="eyebrow">Page 1</div>
+            <h2>Marketing</h2>
+            <p>Hero section, layered background, CTA blocks, and long-form content.</p>
+          </a>
+          <a class="card link-card" href="/sites/dashboard/">
+            <div class="eyebrow">Page 2</div>
+            <h2>Dashboard</h2>
+            <p>Sticky header, dense cards, data table, and constrained app-like layout.</p>
+          </a>
+          <a class="card link-card" href="/sites/media-heavy/">
+            <div class="eyebrow">Page 3</div>
+            <h2>Media Heavy</h2>
+            <p>Large imagery, mixed sections, and a long scroll surface for overlay stress tests.</p>
+          </a>
+        </div>
+        <ul>
+          <li>Run <code>pnpm visual:test</code> to serve these pages locally.</li>
+          <li>Run <code>pnpm visual:test:extension</code> to rebuild the extension before reload.</li>
+          <li>Load <code>dist/</code> in <code>chrome://extensions</code> and refresh the page after reload.</li>
+        </ul>
+      </div>
+    </main>
+  </body>
+</html>

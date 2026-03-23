@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Metis Visual Test: Dashboard</title>
+    <style>
+      :root {
+        --bg: #09111c;
+        --panel: #121e2d;
+        --panel-soft: #182638;
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #eff2f6;
+        --muted: rgba(239, 242, 246, 0.62);
+        --orange: #f97316;
+        --green: #33d69f;
+        --yellow: #f6c453;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", system-ui, sans-serif;
+        color: var(--text);
+        background: linear-gradient(180deg, #09111c 0%, #0e1724 100%);
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 256px 1fr;
+        min-height: 100vh;
+      }
+
+      aside {
+        padding: 24px 18px;
+        border-right: 1px solid var(--line);
+        background: rgba(18, 30, 45, 0.72);
+        backdrop-filter: blur(20px);
+      }
+
+      .nav-item {
+        padding: 12px 14px;
+        border-radius: 14px;
+        color: var(--muted);
+      }
+
+      .nav-item.active {
+        background: rgba(249, 115, 22, 0.14);
+        color: white;
+      }
+
+      main {
+        padding: 0 22px 96px;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        background: linear-gradient(180deg, rgba(9, 17, 28, 0.98), rgba(9, 17, 28, 0.76));
+        backdrop-filter: blur(16px);
+      }
+
+      .pill {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 16px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: linear-gradient(180deg, var(--panel) 0%, var(--panel-soft) 100%);
+        padding: 20px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+      }
+
+      .span-4 { grid-column: span 4; }
+      .span-6 { grid-column: span 6; }
+      .span-8 { grid-column: span 8; }
+      .span-12 { grid-column: span 12; }
+
+      .chart {
+        height: 220px;
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.04), transparent),
+          repeating-linear-gradient(
+            90deg,
+            rgba(255,255,255,0.03) 0,
+            rgba(255,255,255,0.03) 1px,
+            transparent 1px,
+            transparent 48px
+          );
+        position: relative;
+        overflow: hidden;
+      }
+
+      .chart::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 24px 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, var(--orange) 35%, var(--green) 100%);
+        transform: skewY(-6deg);
+        box-shadow: 0 0 22px rgba(249, 115, 22, 0.5);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 12px 8px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+
+      .status {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      @media (max-width: 1024px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        aside {
+          display: none;
+        }
+
+        .span-4,
+        .span-6,
+        .span-8,
+        .span-12 {
+          grid-column: span 12;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <h2>Pulse Ops</h2>
+        <div class="nav-item active">Overview</div>
+        <div class="nav-item">Infrastructure</div>
+        <div class="nav-item">Billing</div>
+        <div class="nav-item">Releases</div>
+        <div class="nav-item">Alerts</div>
+      </aside>
+      <main>
+        <div class="topbar">
+          <div>
+            <div class="muted">Workspace</div>
+            <h1 style="margin: 4px 0 0;">Infrastructure Overview</h1>
+          </div>
+          <div class="pill">Updated 2 minutes ago</div>
+        </div>
+
+        <section class="grid">
+          <div class="card span-4"><div class="muted">Compute</div><h2>72%</h2><p class="muted">Useful for top-right panel overlap checks.</p></div>
+          <div class="card span-4"><div class="muted">Bandwidth</div><h2>184 GB</h2><p class="muted">Good for dense KPI surfaces.</p></div>
+          <div class="card span-4"><div class="muted">Functions</div><h2>1.8M</h2><p class="muted">Stress-tests compact panel legibility.</p></div>
+
+          <div class="card span-8">
+            <h2 style="margin-top: 0;">Traffic Shape</h2>
+            <div class="chart"></div>
+          </div>
+
+          <div class="card span-4">
+            <h2 style="margin-top: 0;">Alert Mix</h2>
+            <p class="status"><span class="dot" style="background: var(--green);"></span> Healthy services</p>
+            <p class="status"><span class="dot" style="background: var(--yellow);"></span> Rising cost signals</p>
+            <p class="status"><span class="dot" style="background: var(--orange);"></span> High-noise endpoints</p>
+          </div>
+
+          <div class="card span-12">
+            <h2 style="margin-top: 0;">Recent Services</h2>
+            <table>
+              <thead>
+                <tr><th>Service</th><th>Owner</th><th>Requests</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>web-app</td><td>frontend</td><td>1.2M</td><td>Stable</td></tr>
+                <tr><td>billing-api</td><td>platform</td><td>482k</td><td>Investigating retries</td></tr>
+                <tr><td>cdn-proxy</td><td>infra</td><td>18.4M</td><td>Stable</td></tr>
+                <tr><td>search-worker</td><td>growth</td><td>98k</td><td>Bursty load</td></tr>
+                <tr><td>image-pipeline</td><td>media</td><td>224k</td><td>Large payloads</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
