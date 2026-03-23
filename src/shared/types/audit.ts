@@ -1,6 +1,12 @@
 // Define the shared contracts that every phase uses to move scan data toward issues,
 // scoring, and final user-facing insight copy.
 export type Severity = "low" | "medium" | "high";
+export type IssueCategory =
+  | "requestCount"
+  | "duplicateRequests"
+  | "pageWeight"
+  | "largeImages"
+  | "thirdPartySprawl";
 export type ResourceCategory =
   | "image"
   | "script"
@@ -82,11 +88,17 @@ export interface DetectedIssue {
   title: string;
   detail: string;
   severity: Severity;
+  category: IssueCategory;
+  metric?: Record<string, number>;
+  threshold?: Record<string, number>;
 }
 
 export interface ScoreDeduction {
   reason: string;
   points: number;
+  category: IssueCategory;
+  severity: Severity;
+  multiplier: number;
 }
 
 export interface ScoreBreakdown {
