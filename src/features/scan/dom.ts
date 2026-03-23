@@ -1,3 +1,4 @@
+// Collect the shallow DOM counts that stay useful as supporting scan context.
 import type { DomSummary } from "../../shared/types/audit";
 
 export function inspectDomSurface(): DomSummary {

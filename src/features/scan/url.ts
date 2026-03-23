@@ -1,3 +1,4 @@
+// Normalize the current page URL into a consistent page context contract.
 import type { PageContext } from "../../shared/types/audit";
 
 export function parsePageContext(href: string): PageContext {

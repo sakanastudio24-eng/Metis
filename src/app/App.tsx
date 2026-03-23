@@ -1,3 +1,4 @@
+// Coordinate the Phase 2 scan loop and hand the latest snapshots to the injected UI.
 import { useEffect } from "react";
 import { PhaseOneShell } from "./components/PhaseOneShell";
 import { useMetisState } from "./useMetisState";

@@ -27,22 +27,25 @@
 
 ### Scanning layer
 
-Reserved for Phase 2. It will combine:
+Implemented in Phase 2. It combines:
 
 - `performance.getEntriesByType("resource")`
 - DOM inspection
 - URL and domain parsing
+- resource filtering and URL normalization
+- request classification and duplicate tracking
+- top-offender aggregation for user-facing trust
 
 ### Analysis pipeline
 
-Reserved for later phases and kept separate on purpose:
+Separated on purpose so each phase can evolve cleanly:
 
 - `src/features/scan`
 - `src/features/detection`
 - `src/features/scoring`
 - `src/features/insights`
 
-This separation prevents the early UI work from getting mixed into the cost-risk logic.
+This separation prevents scan cleanup, issue logic, and scoring heuristics from getting mixed together.
 
 ## Planned Source Layout
 
@@ -74,9 +77,10 @@ Page -> Scan snapshot -> Detection signals -> Score breakdown -> User-facing ins
 2. UI injection and static shell
 3. Fake data for interaction feel
 4. Real page scanning
-5. Detection rules
-6. Score system
-7. Insight language
-8. Refine estimate inputs
-9. Polish
-10. Final testing
+5. Scan-signal cleanup and trust pass
+6. Detection rules
+7. Score system
+8. Insight language
+9. Refine estimate inputs
+10. Polish
+11. Final testing

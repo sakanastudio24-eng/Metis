@@ -1,3 +1,4 @@
+// Phase 3 will score the detected issues once the rule set exists.
 import type { DetectedIssue, RawScanSnapshot, ScoreBreakdown } from "../../shared/types/audit";
 
 export function scoreSnapshot(

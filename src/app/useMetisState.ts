@@ -1,3 +1,4 @@
+// Store the panel mode and the current scan snapshots locally inside the content script UI.
 import { useState } from "react";
 import type { RawScanSnapshot } from "../shared/types/audit";
 

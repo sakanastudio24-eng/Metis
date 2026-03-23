@@ -1,3 +1,4 @@
+// Render the injected Metis panel for both the compact and expanded Phase 2 views.
 import {
   CircleCheckBig,
   ChevronLeft,

@@ -1,3 +1,4 @@
+// Phase 4 will translate the score and issues into plain-language cost guidance.
 import type { CostInsight, DetectedIssue, RawScanSnapshot, ScoreBreakdown } from "../../shared/types/audit";
 
 export function buildInsight(

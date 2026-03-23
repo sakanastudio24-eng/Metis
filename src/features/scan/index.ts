@@ -1,3 +1,4 @@
+// Compose the Phase 2 scan snapshot from page context, DOM counts, and resource metrics.
 import type { RawScanSnapshot } from "../../shared/types/audit";
 import { inspectDomSurface } from "./dom";
 import { buildResourceMetrics, collectResourceSummaries } from "./performance";

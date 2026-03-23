@@ -1,3 +1,5 @@
+// Persist the first seen snapshot per origin and the visited-page snapshots that power
+// the multipage comparison view in the panel.
 import type { RawScanSnapshot } from "../types/audit";
 
 function getBaselineStorageKey(origin: string) {

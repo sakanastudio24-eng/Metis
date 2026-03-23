@@ -1,3 +1,5 @@
+// Inject the Metis React app into a Shadow DOM so the extension UI stays isolated
+// from page styles and can be mounted consistently on normal webpages.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "../app/App";

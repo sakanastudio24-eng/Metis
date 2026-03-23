@@ -1,3 +1,5 @@
+// Define the shared contracts that every phase uses to move scan data toward issues,
+// scoring, and final user-facing insight copy.
 export type Severity = "low" | "medium" | "high";
 export type ResourceCategory =
   | "image"

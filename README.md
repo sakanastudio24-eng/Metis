@@ -18,7 +18,7 @@ V1 is intentionally constrained:
 
 ## Current Status
 
-The repo is currently at Phase 2.
+Phase 2 is complete and the repo is ready to start Phase 3.
 
 What is working now:
 
@@ -28,13 +28,16 @@ What is working now:
 - floating Metis trigger
 - live mini panel and full panel with normalized scan totals
 - filtered resource pipeline with duplicate, third-party, and top-offender signals
+- per-origin baseline comparison
+- multipage accumulation across visited pages
+- page-change rescans and temporary polling during Phase 2
 - local visual test pages for layout checks
 
 What is not built yet:
 
-- issue detection
-- score calculation from real data
-- cost insight from real data
+- issue detection from the normalized metrics
+- score labels and deductions
+- user-facing cost insight language
 
 ## Stack
 
@@ -53,7 +56,7 @@ The current implementation uses:
 - a content script to inject the UI
 - a Shadow DOM mount to isolate extension styles from host page styles
 - local React state for the panel flow
-- reserved feature modules for later scan, detection, scoring, and insight work
+- a completed Phase 2 scan pipeline before detection or scoring
 
 ## Repo Structure
 
@@ -63,10 +66,10 @@ src/
   background/           Manifest V3 service worker
   content/              Content script bootstrap and DOM mount
   features/
-    scan/               Reserved for real scanning
-    detection/          Reserved for issue detection
-    scoring/            Reserved for scoring
-    insights/           Reserved for cost insight output
+    scan/               Implemented Phase 2 scan pipeline
+    detection/          Phase 3 issue detection
+    scoring/            Phase 3 scoring
+    insights/           Phase 4 cost insight output
   shared/
     types/              Shared contracts
   styles/               Tailwind entry and design tokens
@@ -74,6 +77,9 @@ src/
 visual-test/            Local pages for extension UI checks
 docs/                   Architecture and testing notes
 ```
+
+Most source and docs folders now include a local `README.md` that explains the role
+of that folder before you dive into the code.
 
 ## Setup
 
@@ -164,6 +170,7 @@ Phase 2
 - Performance API resource collection
 - DOM inspection
 - URL and domain parsing
+- filtering, normalization, and stable signal aggregation
 
 Phase 3
 
@@ -178,13 +185,16 @@ Phase 4
 
 See [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architecture.md).
 
-Phase 2 implementation prep lives in [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md).
+Phase 2 notes live in:
+
+- [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md)
+- [docs/phase-2-review.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-review.md)
+- [docs/README.md](/Users/zech/Downloads/The-Big-One/Metis/docs/README.md)
 
 ## Next Step
 
-The next implementation milestone is Phase 2:
+The next implementation milestone is Phase 3:
 
-- collect `performance.getEntriesByType("resource")`
-- summarize page resources
-- inspect basic DOM counts
-- build the first real scan snapshot contract
+- turn the cleaned metrics into 3 to 5 real issues
+- score those issues with clear deductions
+- keep the copy explainable and avoid fake precision

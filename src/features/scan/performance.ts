@@ -1,3 +1,5 @@
+// Turn noisy Performance API resource entries into the cleaner Phase 2 signal set
+// that later detection and scoring can build on.
 import type {
   PageContext,
   ResourceAggregate,
