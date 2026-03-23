@@ -104,6 +104,10 @@ function titleCase(value: string) {
   return value.replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
+function hasUsableMetrics(snapshot: RawScanSnapshot | null): snapshot is RawScanSnapshot {
+  return Boolean(snapshot && typeof snapshot.metrics?.requestCount === "number");
+}
+
 function getScoreTone(score: ScoreBreakdown) {
   if (score.label === "high risk") {
     return {
@@ -333,7 +337,7 @@ function SnapshotSummary({
     { label: "Pages Visited", value: scanScope === "multi" ? pagesVisited.toString() : "1" }
   ];
 
-  const baselineStats = baselineSnapshot
+  const baselineStats = hasUsableMetrics(baselineSnapshot)
     ? [
         {
           label: "Requests",
@@ -364,7 +368,7 @@ function SnapshotSummary({
       ]
     : [];
 
-  const baselinePath = baselineSnapshot?.page.pathname || "/";
+  const baselinePath = hasUsableMetrics(baselineSnapshot) ? baselineSnapshot.page.pathname || "/" : "/";
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
@@ -491,7 +495,7 @@ function SnapshotSummary({
             />
           </div>
 
-          {baselineSnapshot && (
+          {hasUsableMetrics(baselineSnapshot) && (
             <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 p-4">
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
                 Original vs Current

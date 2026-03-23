@@ -36,6 +36,58 @@ function resolveStorageValue<T>(fallback: T, resolve: (value: T) => void, value:
   resolve(value);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isValidSnapshot(snapshot: unknown): snapshot is RawScanSnapshot {
+  if (!isRecord(snapshot)) {
+    return false;
+  }
+
+  const page = snapshot.page;
+  const dom = snapshot.dom;
+  const metrics = snapshot.metrics;
+
+  if (
+    typeof snapshot.scannedAt !== "string" ||
+    !isRecord(page) ||
+    !isRecord(dom) ||
+    !isRecord(metrics) ||
+    !Array.isArray(snapshot.resources)
+  ) {
+    return false;
+  }
+
+  return (
+    typeof page.href === "string" &&
+    typeof page.origin === "string" &&
+    typeof page.hostname === "string" &&
+    typeof page.pathname === "string" &&
+    typeof dom.scriptCount === "number" &&
+    typeof dom.imageCount === "number" &&
+    typeof dom.iframeCount === "number" &&
+    typeof metrics.rawRequestCount === "number" &&
+    typeof metrics.requestCount === "number" &&
+    typeof metrics.uniqueRequestCount === "number" &&
+    typeof metrics.duplicateRequestCount === "number" &&
+    typeof metrics.duplicateEndpointCount === "number" &&
+    typeof metrics.scriptRequestCount === "number" &&
+    typeof metrics.imageRequestCount === "number" &&
+    typeof metrics.apiRequestCount === "number" &&
+    typeof metrics.thirdPartyRequestCount === "number" &&
+    typeof metrics.thirdPartyDomainCount === "number" &&
+    typeof metrics.totalEncodedBodySize === "number" &&
+    typeof metrics.meaningfulImageCount === "number" &&
+    typeof metrics.meaningfulImageBytes === "number" &&
+    typeof metrics.largeAssetCount === "number" &&
+    typeof metrics.droppedZeroTransferCount === "number" &&
+    typeof metrics.droppedTinyCount === "number" &&
+    Array.isArray(metrics.topOffenders) &&
+    Array.isArray(metrics.topMeaningfulImages)
+  );
+}
+
 export async function getSiteBaseline(
   origin: string
 ): Promise<RawScanSnapshot | null> {
@@ -50,10 +102,11 @@ export async function getSiteBaseline(
   return new Promise((resolve) => {
     try {
       storage.get([key], (result) => {
+        const baseline = isValidSnapshot(result[key]) ? result[key] : null;
         resolveStorageValue(
           null,
           resolve,
-          (result[key] as RawScanSnapshot | undefined) ?? null
+          baseline
         );
       });
     } catch {
@@ -110,7 +163,8 @@ export async function getVisitedSiteSnapshots(
     try {
       storage.get([key], (result) => {
         const value = result[key] as Record<string, RawScanSnapshot> | undefined;
-        resolveStorageValue([], resolve, value ? Object.values(value) : []);
+        const snapshots = value ? Object.values(value).filter(isValidSnapshot) : [];
+        resolveStorageValue([], resolve, snapshots);
       });
     } catch {
       resolve([]);
@@ -133,7 +187,10 @@ export async function upsertVisitedSiteSnapshot(
   return new Promise((resolve) => {
     try {
       storage.get([key], (result) => {
-        const existing = (result[key] as Record<string, RawScanSnapshot> | undefined) ?? {};
+        const storedSnapshots = (result[key] as Record<string, RawScanSnapshot> | undefined) ?? {};
+        const existing = Object.fromEntries(
+          Object.entries(storedSnapshots).filter((entry) => isValidSnapshot(entry[1]))
+        );
         const next = {
           ...existing,
           [pageKey]: snapshot

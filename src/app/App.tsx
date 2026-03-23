@@ -1,4 +1,5 @@
-// Coordinate the Phase 2 scan loop and hand the latest snapshots to the injected UI.
+// Coordinate the scan loop and isolate the injected UI from host-page click handling.
+import type { MouseEvent, PointerEvent } from "react";
 import { useEffect } from "react";
 import { PhaseOneShell } from "./components/PhaseOneShell";
 import { useMetisState } from "./useMetisState";
@@ -16,6 +17,12 @@ function isExtensionContextInvalidated(error: unknown) {
     error instanceof Error &&
     error.message.toLowerCase().includes("extension context invalidated")
   );
+}
+
+function stopEventPropagation(
+  event: MouseEvent<HTMLDivElement> | PointerEvent<HTMLDivElement>
+) {
+  event.stopPropagation();
 }
 
 export default function App() {
@@ -113,7 +120,12 @@ export default function App() {
   }, [setBaselineSnapshot, setRawSnapshot, setVisitedSnapshots]);
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onClickCapture={stopEventPropagation}
+      onMouseDownCapture={stopEventPropagation}
+      onPointerDownCapture={stopEventPropagation}
+    >
       <PhaseOneShell
         panelMode={panelMode}
         setPanelMode={setPanelMode}
