@@ -122,9 +122,9 @@ export default function App() {
   return (
     <div
       className="relative"
-      onClickCapture={stopEventPropagation}
-      onMouseDownCapture={stopEventPropagation}
-      onPointerDownCapture={stopEventPropagation}
+      onClick={stopEventPropagation}
+      onMouseDown={stopEventPropagation}
+      onPointerDown={stopEventPropagation}
     >
       <PhaseOneShell
         panelMode={panelMode}
