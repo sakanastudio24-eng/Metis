@@ -18,7 +18,7 @@ V1 is intentionally constrained:
 
 ## Current Status
 
-Phase 2 is complete and the repo is ready to start Phase 3.
+Phase 3 is active and the repo now scores live page scans.
 
 What is working now:
 
@@ -26,18 +26,20 @@ What is working now:
 - React + TypeScript + Tailwind extension scaffold
 - content script injection on normal webpages
 - floating Metis trigger
-- live mini panel and full panel with normalized scan totals
+- live mini panel and full panel with score-first Phase 3 UI
 - filtered resource pipeline with duplicate, third-party, and top-offender signals
 - per-origin baseline comparison
 - multipage accumulation across visited pages
 - page-change rescans and temporary polling during Phase 2
+- issue detection from normalized metrics
+- score labels and deduction breakdowns
 - local visual test pages for layout checks
 
 What is not built yet:
 
-- issue detection from the normalized metrics
-- score labels and deductions
 - user-facing cost insight language
+- estimate refinement
+- store-ready polish and review
 
 ## Stack
 
@@ -56,7 +58,7 @@ The current implementation uses:
 - a content script to inject the UI
 - a Shadow DOM mount to isolate extension styles from host page styles
 - local React state for the panel flow
-- a completed Phase 2 scan pipeline before detection or scoring
+- a completed scan pipeline feeding Phase 3 detection and scoring
 
 ## Repo Structure
 
@@ -177,6 +179,7 @@ Phase 3
 
 - issue detection
 - score system
+- score-first panel UI
 
 Phase 4
 
@@ -195,11 +198,11 @@ Phase 2 notes live in:
 
 ## Next Step
 
-The next implementation milestone is Phase 3:
+The next implementation milestone is Phase 4:
 
-- turn the cleaned metrics into 3 to 5 real issues
-- score those issues with clear deductions
-- keep the copy explainable and avoid fake precision
+- turn the score and issues into user-facing cost insight language
+- add estimate refinement without fake precision
+- tighten ship-readiness, permissions review, and store-facing polish
 
 Phase 3 planning now lives in:
 

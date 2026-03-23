@@ -1,7 +1,8 @@
-// Render the injected Metis panel for both the compact and expanded Phase 2 views.
+// Render the injected Metis panel around Phase 3 scoring, issue detection,
+// and the supporting diagnostics that help a page owner trust the result.
 import {
-  CircleCheckBig,
   ChevronLeft,
+  CircleCheckBig,
   Expand,
   Minimize2,
   Radar,
@@ -10,12 +11,15 @@ import {
   TriangleAlert,
   X
 } from "lucide-react";
-import { buildResourceMetrics } from "../../features/scan";
+import { detectIssues } from "../../features/detection";
+import { buildMultipageSnapshot } from "../../features/scan";
+import { scoreSnapshot } from "../../features/scoring";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
+  DetectedIssue,
   RawScanSnapshot,
   ResourceAggregate,
-  ResourceMetricsSummary
+  ScoreBreakdown
 } from "../../shared/types/audit";
 
 const phaseStatus = [
@@ -28,14 +32,14 @@ const phaseStatus = [
   {
     phase: "Phase 2",
     title: "Live page scan",
-    status: "Active",
-    tone: "active"
+    status: "Complete",
+    tone: "done"
   },
   {
     phase: "Phase 3",
     title: "Detection and scoring",
-    status: "Queued",
-    tone: "queued"
+    status: "Active",
+    tone: "active"
   },
   {
     phase: "Phase 4",
@@ -44,6 +48,24 @@ const phaseStatus = [
     tone: "queued"
   }
 ];
+
+const severityTone = {
+  high: {
+    badge: "bg-[#3a1d18] text-[#ffb48a]",
+    border: "border-[#f97316]/25",
+    accent: "text-[#f97316]"
+  },
+  medium: {
+    badge: "bg-[#352f14] text-[#facc15]",
+    border: "border-[#facc15]/20",
+    accent: "text-[#facc15]"
+  },
+  low: {
+    badge: "bg-[#173226] text-[#86efac]",
+    border: "border-[#22c55e]/20",
+    accent: "text-[#22c55e]"
+  }
+} as const;
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -78,23 +100,94 @@ function formatByteDelta(value: number) {
   return value > 0 ? `+${absoluteValue}` : `-${absoluteValue}`;
 }
 
-function buildMultipageMetrics(visitedSnapshots: RawScanSnapshot[]): ResourceMetricsSummary {
-  const allResources = visitedSnapshots.flatMap((snapshot) => snapshot.resources);
+function titleCase(value: string) {
+  return value.replace(/\b\w/g, (character) => character.toUpperCase());
+}
 
-  return buildResourceMetrics(allResources, {
-    rawRequestCount: visitedSnapshots.reduce(
-      (total, snapshot) => total + snapshot.metrics.rawRequestCount,
-      0
-    ),
-    droppedZeroTransferCount: visitedSnapshots.reduce(
-      (total, snapshot) => total + snapshot.metrics.droppedZeroTransferCount,
-      0
-    ),
-    droppedTinyCount: visitedSnapshots.reduce(
-      (total, snapshot) => total + snapshot.metrics.droppedTinyCount,
-      0
-    )
-  });
+function getScoreTone(score: ScoreBreakdown) {
+  if (score.label === "high risk") {
+    return {
+      border: "border-[#f97316]/25",
+      ring: "bg-[#2f1a13]",
+      icon: "text-[#f97316]",
+      text: "text-[#ffb48a]"
+    };
+  }
+
+  if (score.label === "watch") {
+    return {
+      border: "border-[#facc15]/20",
+      ring: "bg-[#2d2812]",
+      icon: "text-[#facc15]",
+      text: "text-[#fde68a]"
+    };
+  }
+
+  if (score.label === "warming up") {
+    return {
+      border: "border-white/10",
+      ring: "bg-[#10253a]",
+      icon: "text-white/60",
+      text: "text-white/80"
+    };
+  }
+
+  return {
+    border: "border-[#22c55e]/20",
+    ring: "bg-[#143026]",
+    icon: "text-[#22c55e]",
+    text: "text-[#bbf7d0]"
+  };
+}
+
+function buildSummaryLine(
+  score: ScoreBreakdown,
+  issues: DetectedIssue[],
+  scanScope: ScanScope
+) {
+  const scopeLabel = scanScope === "multi" ? "across the visited pages" : "on this page";
+
+  if (score.label === "warming up") {
+    return "Metis is still collecting enough network detail to score this page.";
+  }
+
+  if (issues.length === 0) {
+    return `No major cost-risk patterns surfaced ${scopeLabel}, so the current request profile looks controlled.`;
+  }
+
+  if (score.label === "high risk") {
+    return `${issues[0].title} ${scopeLabel}, and the current load pattern likely deserves active cleanup.`;
+  }
+
+  if (score.label === "watch") {
+    return `${issues[0].title} ${scopeLabel}, so the experience is worth tightening before it grows heavier.`;
+  }
+
+  return `Most signals look healthy ${scopeLabel}, but ${issues[0].title.toLowerCase()}.`;
+}
+
+function IssueCard({ issue, compact = false }: { issue: DetectedIssue; compact?: boolean }) {
+  const tone = severityTone[issue.severity];
+
+  return (
+    <div
+      className={`rounded-2xl border ${tone.border} bg-[#10253a] px-4 py-4 ${
+        compact ? "" : "min-h-[132px]"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-white">{issue.title}</div>
+          <div className="mt-2 text-sm leading-6 text-white/58">{issue.detail}</div>
+        </div>
+        <div
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone.badge}`}
+        >
+          {issue.severity}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function OffenderList({
@@ -142,6 +235,59 @@ function OffenderList({
   );
 }
 
+function ScoreOverview({
+  score,
+  issues,
+  scanScope,
+  compact = false
+}: {
+  score: ScoreBreakdown;
+  issues: DetectedIssue[];
+  scanScope: ScanScope;
+  compact?: boolean;
+}) {
+  const tone = getScoreTone(score);
+  const summary = buildSummaryLine(score, issues, scanScope);
+
+  return (
+    <div className={`rounded-3xl border ${tone.border} bg-white/[0.04] p-5`}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
+            {compact ? "Phase 3 Score" : "Phase 3 Cost-Risk Score"}
+          </div>
+          <div className="mt-2 flex items-end gap-3">
+            <div className="text-[3rem] font-semibold leading-none text-white">{score.score}</div>
+            <div className={`pb-1 text-sm font-semibold uppercase tracking-[0.16em] ${tone.text}`}>
+              {titleCase(score.label)}
+            </div>
+          </div>
+        </div>
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${tone.ring}`}
+        >
+          {score.label === "high risk" ? (
+            <TriangleAlert size={18} className={tone.icon} />
+          ) : score.label === "watch" ? (
+            <Radar size={18} className={tone.icon} />
+          ) : (
+            <CircleCheckBig size={18} className={tone.icon} />
+          )}
+        </div>
+      </div>
+      <p className="mt-4 text-sm leading-6 text-white/62">{summary}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <div className="rounded-full bg-[#10253a] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/58">
+          {scanScope === "multi" ? "Multipage scope" : "Single page scope"}
+        </div>
+        <div className="rounded-full bg-[#10253a] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/58">
+          {issues.length} issue{issues.length === 1 ? "" : "s"} surfaced
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SnapshotSummary({
   scanScope,
   setScanScope,
@@ -160,33 +306,31 @@ function SnapshotSummary({
   if (!rawSnapshot) {
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-        <SectionLabel>Phase 2 Scan</SectionLabel>
-        <div className="text-base text-white/60">Collecting page data…</div>
+        <SectionLabel>Phase 3 Scoring</SectionLabel>
+        <div className="text-base text-white/60">Collecting enough signal to score the page…</div>
       </div>
     );
   }
 
-  const isMultipage = scanScope === "multi";
+  const activeSnapshot =
+    scanScope === "multi" ? buildMultipageSnapshot(rawSnapshot, visitedSnapshots) : rawSnapshot;
+  const activeMetrics = activeSnapshot.metrics;
+  const issues = detectIssues(activeSnapshot);
+  const score = scoreSnapshot(activeSnapshot, issues);
+  const visibleIssues = compact ? issues.slice(0, 2) : issues;
   const pagesVisited = Math.max(visitedSnapshots.length, 1);
-  const multipageMetrics = buildMultipageMetrics(visitedSnapshots);
-  const activeMetrics = isMultipage ? multipageMetrics : rawSnapshot.metrics;
-
-  const totals = {
-    requests: activeMetrics.requestCount,
-    pagesVisited: isMultipage ? pagesVisited : 1
-  };
 
   const stats = [
+    { label: "Requests", value: activeMetrics.requestCount },
     { label: "Unique URLs", value: activeMetrics.uniqueRequestCount },
     { label: "Duplicate Hits", value: activeMetrics.duplicateRequestCount },
-    { label: "API Calls", value: activeMetrics.apiRequestCount },
     { label: "3P Domains", value: activeMetrics.thirdPartyDomainCount }
   ];
 
   const qualityStats = [
     { label: "Known Weight", value: formatBytes(activeMetrics.totalEncodedBodySize) },
-    { label: "Scripts", value: activeMetrics.scriptRequestCount.toString() },
-    { label: "Images >50KB", value: activeMetrics.meaningfulImageCount.toString() }
+    { label: "Images >50KB", value: activeMetrics.meaningfulImageCount.toString() },
+    { label: "Pages Visited", value: scanScope === "multi" ? pagesVisited.toString() : "1" }
   ];
 
   const baselineStats = baselineSnapshot
@@ -194,46 +338,45 @@ function SnapshotSummary({
         {
           label: "Requests",
           value: baselineSnapshot.metrics.requestCount.toString(),
-          delta: rawSnapshot.metrics.requestCount - baselineSnapshot.metrics.requestCount,
+          delta: activeMetrics.requestCount - baselineSnapshot.metrics.requestCount,
           kind: "number" as const
         },
         {
           label: "Unique URLs",
           value: baselineSnapshot.metrics.uniqueRequestCount.toString(),
-          delta:
-            rawSnapshot.metrics.uniqueRequestCount - baselineSnapshot.metrics.uniqueRequestCount,
+          delta: activeMetrics.uniqueRequestCount - baselineSnapshot.metrics.uniqueRequestCount,
           kind: "number" as const
         },
         {
           label: "Known Weight",
           value: formatBytes(baselineSnapshot.metrics.totalEncodedBodySize),
           delta:
-            rawSnapshot.metrics.totalEncodedBodySize -
-            baselineSnapshot.metrics.totalEncodedBodySize,
+            activeMetrics.totalEncodedBodySize - baselineSnapshot.metrics.totalEncodedBodySize,
           kind: "bytes" as const
         },
         {
           label: "3P Domains",
           value: baselineSnapshot.metrics.thirdPartyDomainCount.toString(),
           delta:
-            rawSnapshot.metrics.thirdPartyDomainCount -
-            baselineSnapshot.metrics.thirdPartyDomainCount,
+            activeMetrics.thirdPartyDomainCount - baselineSnapshot.metrics.thirdPartyDomainCount,
           kind: "number" as const
         }
       ]
     : [];
 
   const baselinePath = baselineSnapshot?.page.pathname || "/";
+
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-      <SectionLabel>Phase 2 Scan</SectionLabel>
+      <SectionLabel>Phase 3 Scoring</SectionLabel>
       <div className="flex items-center gap-2 text-white">
         <Radar size={16} className="text-[#f97316]" />
         <div className="text-base font-semibold">{rawSnapshot.page.hostname}</div>
       </div>
       <div className="mt-2 text-sm text-white/48">
-        {rawSnapshot.page.pathname || "/"} · {new Date(rawSnapshot.scannedAt).toLocaleTimeString()}
+        {rawSnapshot.page.pathname || "/"} · {new Date(activeSnapshot.scannedAt).toLocaleTimeString()}
       </div>
+
       <div className="mt-4 flex gap-2">
         <button
           type="button"
@@ -258,95 +401,132 @@ function SnapshotSummary({
           Multipage
         </button>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <div className="rounded-2xl bg-[#10253a] px-4 py-3.5">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-white/38">
-            Total Requests
-          </div>
-          <div className="mt-1.5 text-3xl font-semibold leading-none text-white">
-            {totals.requests}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-[#10253a] px-4 py-3.5">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-white/38">
-            Pages Visited
-          </div>
-          <div className="mt-1.5 text-3xl font-semibold leading-none text-white">
-            {totals.pagesVisited}
-          </div>
-        </div>
-      </div>
-      <div className="mt-3 text-sm text-white/48">
-        Normalized from {activeMetrics.rawRequestCount} raw entries. Filtered out{" "}
-        {activeMetrics.droppedZeroTransferCount + activeMetrics.droppedTinyCount} noisy requests.
-      </div>
-      <div className={`mt-4 grid gap-2 ${compact ? "grid-cols-2" : "grid-cols-4"}`}>
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-2xl bg-[#10253a] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/38">
-              {stat.label}
-            </div>
-            <div className="mt-1.5 text-2xl font-semibold leading-none text-white">{stat.value}</div>
-          </div>
-        ))}
-      </div>
-      <div className={`mt-4 grid gap-2 ${compact ? "grid-cols-1" : "grid-cols-3"}`}>
-        {qualityStats.map((stat) => (
-          <div key={stat.label} className="rounded-2xl bg-[#10253a] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/38">
-              {stat.label}
-            </div>
-            <div className="mt-1.5 text-2xl font-semibold leading-none text-white">{stat.value}</div>
-          </div>
-        ))}
-      </div>
-      <div className={`mt-5 grid gap-3 ${compact ? "grid-cols-1" : "grid-cols-2"}`}>
-        <OffenderList
-          title="Top Offenders"
-          items={activeMetrics.topOffenders}
-          emptyLabel="No large offenders surfaced from the cleaned request set yet."
-        />
-        <OffenderList
-          title="Large Images"
-          items={activeMetrics.topMeaningfulImages}
-          emptyLabel="No meaningful image weight was detected above the 50 KB threshold."
-        />
+
+      <div className="mt-5">
+        <ScoreOverview score={score} issues={issues} scanScope={scanScope} compact={compact} />
       </div>
 
-      {baselineSnapshot && (
-        <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-            Original vs Current
+      <div className="mt-5">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+          Surfaced Issues
+        </div>
+        {visibleIssues.length === 0 ? (
+          <div className="mt-3 rounded-2xl border border-[#22c55e]/20 bg-[#10253a] px-4 py-4 text-sm leading-6 text-white/62">
+            No major cost-risk patterns surfaced from the current normalized request set.
           </div>
-          <div className="mt-2 text-sm text-white/52">
-            Original baseline: {baselinePath}
-          </div>
-          <div className={`mt-4 grid gap-2 ${compact ? "grid-cols-2" : "grid-cols-4"}`}>
-            {baselineStats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
-                <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                  {stat.label}
-                </div>
-                <div className="mt-1 text-base font-semibold text-white/82">
-                  {stat.value} baseline
-                </div>
-                <div
-                  className={`mt-1 text-sm font-semibold ${
-                    stat.delta > 0
-                      ? "text-[#f97316]"
-                      : stat.delta < 0
-                        ? "text-[#22c55e]"
-                        : "text-white/50"
-                  }`}
-                >
-                  {stat.kind === "bytes"
-                    ? formatByteDelta(stat.delta)
-                    : formatNumberDelta(stat.delta)}
-                </div>
-              </div>
+        ) : (
+          <div className={`mt-3 grid gap-3 ${compact ? "grid-cols-1" : "grid-cols-1"}`}>
+            {visibleIssues.map((issue) => (
+              <IssueCard key={issue.id} issue={issue} compact={compact} />
             ))}
           </div>
-        </div>
+        )}
+      </div>
+
+      {!compact && (
+        <>
+          <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+              Score Breakdown
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {qualityStats.map((stat) => (
+                <div key={stat.label} className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
+                    {stat.label}
+                  </div>
+                  <div className="mt-1.5 text-xl font-semibold leading-none text-white">
+                    {stat.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-sm text-white/48">
+              Normalized from {activeMetrics.rawRequestCount} raw entries. Filtered out{" "}
+              {activeMetrics.droppedZeroTransferCount + activeMetrics.droppedTinyCount} noisy requests.
+            </div>
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              {stats.map((stat) => (
+                <div key={stat.label} className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
+                    {stat.label}
+                  </div>
+                  <div className="mt-1.5 text-2xl font-semibold leading-none text-white">
+                    {stat.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 space-y-2">
+              {score.deductions.length === 0 ? (
+                <div className="rounded-2xl bg-[#0d2234] px-4 py-3.5 text-sm text-white/58">
+                  No deductions were applied from the current issue set.
+                </div>
+              ) : (
+                score.deductions.map((deduction) => (
+                  <div
+                    key={deduction.reason}
+                    className="flex items-center justify-between rounded-2xl bg-[#0d2234] px-4 py-3.5"
+                  >
+                    <div className="text-sm text-white/74">{deduction.reason}</div>
+                    <div className="text-sm font-semibold text-[#f97316]">
+                      -{deduction.points}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 grid-cols-2">
+            <OffenderList
+              title="Top Offenders"
+              items={activeMetrics.topOffenders}
+              emptyLabel="No large offenders surfaced from the cleaned request set yet."
+            />
+            <OffenderList
+              title="Large Images"
+              items={activeMetrics.topMeaningfulImages}
+              emptyLabel="No meaningful image weight was detected above the 50 KB threshold."
+            />
+          </div>
+
+          {baselineSnapshot && (
+            <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+                Original vs Current
+              </div>
+              <div className="mt-2 text-sm text-white/52">
+                Original baseline: {baselinePath}
+              </div>
+              <div className="mt-4 grid grid-cols-4 gap-2">
+                {baselineStats.map((stat) => (
+                  <div key={stat.label} className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
+                      {stat.label}
+                    </div>
+                    <div className="mt-1 text-base font-semibold text-white/82">
+                      {stat.value} baseline
+                    </div>
+                    <div
+                      className={`mt-1 text-sm font-semibold ${
+                        stat.delta > 0
+                          ? "text-[#f97316]"
+                          : stat.delta < 0
+                            ? "text-[#22c55e]"
+                            : "text-white/50"
+                      }`}
+                    >
+                      {stat.kind === "bytes"
+                        ? formatByteDelta(stat.delta)
+                        : formatNumberDelta(stat.delta)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -376,7 +556,7 @@ function MiniPanel({
           </div>
           <div>
             <div className="text-base font-semibold">Metis</div>
-            <div className="text-sm text-white/48">Phase 2 live snapshot</div>
+            <div className="text-sm text-white/48">Phase 3 live scoring</div>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -404,16 +584,15 @@ function MiniPanel({
           <div className="mb-3 flex items-center gap-2 text-[#f97316]">
             <ScanSearch size={16} />
             <span className="text-sm font-semibold uppercase tracking-[0.16em]">
-              Phase 2
+              Phase 3
             </span>
           </div>
-          <div className="text-[2rem] font-semibold leading-none">Live Scan Active</div>
+          <div className="text-[2rem] font-semibold leading-none">Scoring Live Cost Risk</div>
           <p className="mt-3 text-base leading-7 text-white/62">
-            Metis is now reading the real page surface: URL context, resource timing, and
-            basic DOM counts.
+            Metis now turns cleaned request data into issues and a score instead of only showing raw scan output.
           </p>
           <p className="mt-3 text-sm leading-6 text-white/48">
-            Auto-refresh is active for now and rescans every 5 seconds.
+            Refresh the extension in chrome://extensions and refresh the page whenever the content script changes.
           </p>
         </div>
 
@@ -496,7 +675,7 @@ function FullPanel({
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <div>
             <div className="text-base font-semibold">Metis Full Panel</div>
-            <div className="text-sm text-white/48">Phase 2 live page scan</div>
+            <div className="text-sm text-white/48">Phase 3 cost-risk scoring</div>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -521,27 +700,29 @@ function FullPanel({
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
             <SectionLabel>Current State</SectionLabel>
-            <div className="text-[2.6rem] font-semibold leading-none">Phase 2 Active</div>
+            <div className="text-[2.6rem] font-semibold leading-none">Phase 3 Active</div>
             <p className="mt-4 text-base leading-7 text-white/64">
-              The extension is no longer just a shell. It now captures a real one-shot page
-              snapshot from the content script using the browser Performance APIs and DOM
-              inspection.
+              The extension now converts normalized request data into a score, a short issue stack, and supporting diagnostics that explain why the page looks healthy or risky.
             </p>
             <p className="mt-3 text-sm leading-6 text-white/48">
-              Temporary polling is enabled and refreshes the scan every 5 seconds.
+              This still runs fully in the content script with Manifest V3 and uses chrome.storage.local only for baseline and visited-page state.
             </p>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-              <SectionLabel>Mount</SectionLabel>
-              <div className="text-xl font-semibold">Content Script</div>
-              <p className="mt-2 text-base text-white/58">Injected on normal webpages</p>
+              <SectionLabel>Surface</SectionLabel>
+              <div className="text-xl font-semibold">Content Script UI</div>
+              <p className="mt-2 text-base text-white/58">
+                Injected into normal webpages inside a Shadow DOM.
+              </p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-              <SectionLabel>Build</SectionLabel>
-              <div className="text-xl font-semibold">Manifest V3</div>
-              <p className="mt-2 text-base text-white/58">Chrome loads from `dist/`</p>
+              <SectionLabel>Permissions</SectionLabel>
+              <div className="text-xl font-semibold">Storage + Host Access</div>
+              <p className="mt-2 text-base text-white/58">
+                No new Phase 3 permissions were added beyond the current scan flow.
+              </p>
             </div>
           </div>
 
@@ -620,7 +801,7 @@ export function PhaseOneShell({
             </div>
             <div className="hidden pr-1 text-left group-hover:block">
               <div className="text-sm font-semibold">Metis</div>
-              <div className="text-xs text-white/45">Open live scan panel</div>
+              <div className="text-xs text-white/45">Open cost-risk panel</div>
             </div>
           </button>
         </div>
