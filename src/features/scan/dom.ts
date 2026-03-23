@@ -1,5 +1,9 @@
 import type { DomSummary } from "../../shared/types/audit";
 
 export function inspectDomSurface(): DomSummary {
-  throw new Error("inspectDomSurface is reserved for Phase 2.");
+  return {
+    scriptCount: document.querySelectorAll("script").length,
+    imageCount: document.querySelectorAll("img").length,
+    iframeCount: document.querySelectorAll("iframe").length
+  };
 }

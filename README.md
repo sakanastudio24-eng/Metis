@@ -18,7 +18,7 @@ V1 is intentionally constrained:
 
 ## Current Status
 
-The repo is currently at Phase 1.
+The repo is currently at Phase 2.
 
 What is working now:
 
@@ -26,12 +26,12 @@ What is working now:
 - React + TypeScript + Tailwind extension scaffold
 - content script injection on normal webpages
 - floating Metis trigger
-- static mini panel and full panel for UI validation
+- live mini panel and full panel with normalized scan totals
+- filtered resource pipeline with duplicate, third-party, and top-offender signals
 - local visual test pages for layout checks
 
 What is not built yet:
 
-- real page scanning
 - issue detection
 - score calculation from real data
 - cost insight from real data
@@ -139,7 +139,7 @@ See [docs/visual-testing.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visual
 Current manifest values:
 
 - name: `Metis`
-- version: `0.0.0.1`
+- version: `0.0.0.9`
 - description: `Surface cost-risk signals directly on the page.`
 
 The extension currently requests:
@@ -177,6 +177,8 @@ Phase 4
 - polish and ship prep
 
 See [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architecture.md).
+
+Phase 2 implementation prep lives in [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md).
 
 ## Next Step
 
