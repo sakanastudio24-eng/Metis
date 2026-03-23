@@ -1,4 +1,5 @@
-// Compose the Phase 2 scan snapshot from page context, DOM counts, and resource metrics.
+// Compose the scan snapshot from page context, DOM counts, and resource metrics.
+// Phase 3 also uses this module to reshape multiple visited pages into one scored view.
 import type { RawScanSnapshot } from "../../shared/types/audit";
 import { inspectDomSurface } from "./dom";
 import { buildResourceMetrics, collectResourceSummaries } from "./performance";
@@ -14,6 +15,39 @@ export function collectRawScanSnapshot(): RawScanSnapshot {
     resources,
     dom: inspectDomSurface(),
     metrics
+  };
+}
+
+export function buildMultipageSnapshot(
+  currentSnapshot: RawScanSnapshot,
+  visitedSnapshots: RawScanSnapshot[]
+): RawScanSnapshot {
+  const scopedSnapshots = visitedSnapshots.length > 0 ? visitedSnapshots : [currentSnapshot];
+  const resources = scopedSnapshots.flatMap((snapshot) => snapshot.resources);
+
+  return {
+    scannedAt: currentSnapshot.scannedAt,
+    page: currentSnapshot.page,
+    resources,
+    dom: {
+      scriptCount: scopedSnapshots.reduce((total, snapshot) => total + snapshot.dom.scriptCount, 0),
+      imageCount: scopedSnapshots.reduce((total, snapshot) => total + snapshot.dom.imageCount, 0),
+      iframeCount: scopedSnapshots.reduce((total, snapshot) => total + snapshot.dom.iframeCount, 0)
+    },
+    metrics: buildResourceMetrics(resources, {
+      rawRequestCount: scopedSnapshots.reduce(
+        (total, snapshot) => total + snapshot.metrics.rawRequestCount,
+        0
+      ),
+      droppedZeroTransferCount: scopedSnapshots.reduce(
+        (total, snapshot) => total + snapshot.metrics.droppedZeroTransferCount,
+        0
+      ),
+      droppedTinyCount: scopedSnapshots.reduce(
+        (total, snapshot) => total + snapshot.metrics.droppedTinyCount,
+        0
+      )
+    })
   };
 }
 
