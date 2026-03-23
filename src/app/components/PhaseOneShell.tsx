@@ -100,6 +100,10 @@ function formatByteDelta(value: number) {
   return value > 0 ? `+${absoluteValue}` : `-${absoluteValue}`;
 }
 
+function formatDisplayNumber(value: number) {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+}
+
 function titleCase(value: string) {
   return value.replace(/\b\w/g, (character) => character.toUpperCase());
 }
@@ -261,7 +265,9 @@ function ScoreOverview({
             {compact ? "Phase 3 Score" : "Phase 3 Cost-Risk Score"}
           </div>
           <div className="mt-2 flex items-end gap-3">
-            <div className="text-[3rem] font-semibold leading-none text-white">{score.score}</div>
+            <div className="text-[3rem] font-semibold leading-none text-white">
+              {formatDisplayNumber(score.score)}
+            </div>
             <div className={`pb-1 text-sm font-semibold uppercase tracking-[0.16em] ${tone.text}`}>
               {titleCase(score.label)}
             </div>
@@ -474,7 +480,7 @@ function SnapshotSummary({
                   >
                     <div className="text-sm text-white/74">{deduction.reason}</div>
                     <div className="text-sm font-semibold text-[#f97316]">
-                      -{deduction.points}
+                      -{formatDisplayNumber(deduction.points)}
                     </div>
                   </div>
                 ))
