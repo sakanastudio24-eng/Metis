@@ -26,7 +26,19 @@ body {
 
 #metis-react-root {
   font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #ffffff;
+  color-scheme: light;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#metis-react-root,
+#metis-react-root * {
+  box-sizing: border-box;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 /*
@@ -35,8 +47,8 @@ body {
   Google, YouTube, and other sites render the same text scale.
 */
 #metis-react-root .text-xs {
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 11px;
+  line-height: 14px;
 }
 
 #metis-react-root .text-\[11px\] {
@@ -45,34 +57,34 @@ body {
 }
 
 #metis-react-root .text-sm {
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 17px;
 }
 
 #metis-react-root .text-base {
-  font-size: 15px;
-  line-height: 22px;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 #metis-react-root .text-xl {
-  font-size: 20px;
-  line-height: 28px;
+  font-size: 18px;
+  line-height: 24px;
 }
 
 #metis-react-root .text-2xl {
-  font-size: 24px;
-  line-height: 30px;
+  font-size: 22px;
+  line-height: 28px;
 }
 
 #metis-react-root .text-3xl,
 #metis-react-root .text-\[2rem\] {
-  font-size: 30px;
-  line-height: 34px;
+  font-size: 28px;
+  line-height: 32px;
 }
 
 #metis-react-root .text-\[2\.6rem\] {
-  font-size: 40px;
-  line-height: 44px;
+  font-size: 36px;
+  line-height: 40px;
 }
 
 input[type="range"]::-webkit-slider-thumb {
