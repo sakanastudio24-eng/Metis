@@ -10,6 +10,11 @@ import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } f
 import { scoreSnapshot } from "../src/features/scoring";
 import { buildMetisDesignViewModel } from "../src/app/components/figures/liveAdapter";
 import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figures/loadingState";
+import {
+  buildPageScanSnapshot,
+  comparePageScans,
+  getPageScanKey
+} from "../src/shared/lib/pageScanHistory";
 import type {
   PageContext,
   RawScanSnapshot,
@@ -508,4 +513,56 @@ test("loading helpers only replay on new routes and soften same-route refreshes"
     ),
     false
   );
+});
+
+test("page scan snapshots normalize to a stable page key", () => {
+  const snapshot = createSnapshot([
+    createResource("https://example.com/api/feed?slot=1", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 80_000
+    })
+  ]);
+
+  const compact = buildPageScanSnapshot(snapshot);
+
+  assert.equal(getPageScanKey("https://example.com/?page=1"), "https://example.com/");
+  assert.equal(compact.pageKey, "https://example.com/");
+  assert.equal(compact.requestCount, snapshot.metrics.requestCount);
+  assert.equal(compact.totalEncodedBodySize, snapshot.metrics.totalEncodedBodySize);
+});
+
+test("page scan comparison computes deltas and summary lines", () => {
+  const previous = {
+    url: "https://example.com/",
+    pageKey: "https://example.com/",
+    timestamp: Date.parse("2026-03-24T12:00:00.000Z"),
+    requestCount: 10,
+    duplicateRequestCount: 2,
+    duplicateEndpointCount: 1,
+    thirdPartyDomainCount: 2,
+    totalEncodedBodySize: 500_000,
+    meaningfulImageCount: 1,
+    meaningfulImageBytes: 120_000
+  };
+
+  const next = {
+    ...previous,
+    timestamp: Date.parse("2026-03-24T12:01:00.000Z"),
+    requestCount: 24,
+    duplicateRequestCount: 5,
+    duplicateEndpointCount: 2,
+    thirdPartyDomainCount: 4,
+    totalEncodedBodySize: 820_000,
+    meaningfulImageCount: 3,
+    meaningfulImageBytes: 420_000
+  };
+
+  const comparison = comparePageScans(previous, next);
+
+  assert.equal(comparison.requestCountDelta, 14);
+  assert.equal(comparison.duplicateRequestCountDelta, 3);
+  assert.equal(comparison.totalEncodedBodySizeDelta, 320_000);
+  assert.match(comparison.summary[0] ?? "", /14 more requests/i);
+  assert.match(comparison.summary[1] ?? "", /320 KB/i);
 });
