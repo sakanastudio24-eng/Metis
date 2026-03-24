@@ -308,6 +308,7 @@ export function PhaseOneShell({
   const [refreshTick, setRefreshTick] = useState(0);
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
+  const [plusReturnMode, setPlusReturnMode] = useState<PanelMode | null>(null);
   const lastSnapshotKeyRef = useRef<string | null>(null);
 
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
@@ -416,9 +417,35 @@ export function PhaseOneShell({
     setPanelMode("mini");
   };
 
+  const handleOpenPlusModal = (sourceMode: PanelMode) => {
+    if (sourceMode === "full") {
+      setPlusReturnMode("full");
+      setPanelMode("idle");
+    } else {
+      setPlusReturnMode(null);
+    }
+
+    setIsPlusModalOpen(true);
+  };
+
+  const handleClosePlusModal = () => {
+    setIsPlusModalOpen(false);
+
+    if (plusReturnMode) {
+      setPanelMode(plusReturnMode);
+      setPlusReturnMode(null);
+    }
+  };
+
   const handleUpgradeConfirm = () => {
     setIsPlusUser(true);
     setIsPlusModalOpen(false);
+
+    if (plusReturnMode) {
+      setPanelMode(plusReturnMode);
+      setPlusReturnMode(null);
+    }
+
     toast.success("Metis+ unlocked", {
       description: "The prototype Plus experience is now enabled in this session."
     });
@@ -456,7 +483,7 @@ export function PhaseOneShell({
             <MiniPanelHeader
               onClose={() => setPanelMode("idle")}
               onOpenReport={() => setPanelMode("full")}
-              onUpgrade={() => setIsPlusModalOpen(true)}
+              onUpgrade={() => handleOpenPlusModal("mini")}
               isPlusUser={isPlusUser}
             />
 
@@ -573,11 +600,11 @@ export function PhaseOneShell({
                         onCopyReport={() => {
                           void handleCopyReport();
                         }}
-                        onUpgrade={() => setIsPlusModalOpen(true)}
+                        onUpgrade={() => handleOpenPlusModal("full")}
                         isPlusUser={isPlusUser}
                         headerAccessory={
                           <ProfileButton
-                            onUpgrade={() => setIsPlusModalOpen(true)}
+                            onUpgrade={() => handleOpenPlusModal("full")}
                             isPlusUser={isPlusUser}
                             onDark
                           />
@@ -597,7 +624,7 @@ export function PhaseOneShell({
       <AnimatePresence>
         {isPlusModalOpen && (
           <PlusUpgradeModal
-            onClose={() => setIsPlusModalOpen(false)}
+            onClose={handleClosePlusModal}
             onConfirm={handleUpgradeConfirm}
           />
         )}
