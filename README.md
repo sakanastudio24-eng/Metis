@@ -154,7 +154,7 @@ and [docs/visual-test-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visu
 Current manifest values:
 
 - name: `Metis`
-- version: `0.0.0.17`
+- version: `0.0.0.18`
 - description: `Surface cost-risk signals directly on the page.`
 
 The extension currently requests:
