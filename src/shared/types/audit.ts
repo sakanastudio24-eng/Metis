@@ -19,6 +19,7 @@ export type HostingProvider =
   | "other";
 export type HostingPlan = "free" | "pro" | "team" | "enterprise" | "notSure";
 export type MonthlyVisitsBand = "under1k" | "1kTo10k" | "10kTo100k" | "100kPlus" | "notSure";
+export type SiteSizeBand = "under10" | "10To50" | "50To200" | "200Plus" | "notSure";
 export type AppType =
   | "marketing"
   | "portfolio"
@@ -34,6 +35,17 @@ export type AiUsage = "yesOften" | "sometimes" | "no" | "notSure";
 export type MediaImportance = "core" | "somewhat" | "no";
 export type HighTrafficRoute = "yes" | "somewhat" | "no" | "notSure";
 export type OptimizationCoverage = "yes" | "no" | "notSure";
+export type StackFramework = "react" | "nextjs" | "vue" | "svelte" | "other";
+export type StackCdnProvider =
+  | "cloudflare"
+  | "cloudfront"
+  | "fastly"
+  | "vercelEdge"
+  | "none"
+  | "other";
+export type StackAiProvider = "openai" | "anthropic" | "google" | "none" | "other";
+export type StackAnalytics = "ga4" | "plausible" | "segment" | "mixpanel" | "none" | "other";
+export type StackPayment = "stripe" | "shopify" | "paddle" | "none" | "other";
 export type ResourceCategory =
   | "image"
   | "script"
@@ -146,6 +158,7 @@ export interface PlusRefinementAnswers {
   hostingProvider?: HostingProvider;
   hostingPlan?: HostingPlan;
   monthlyVisits?: MonthlyVisitsBand;
+  siteSize?: SiteSizeBand;
   appType?: AppType;
   pageDynamics?: PageDynamics;
   paidApiUsage?: PaidApiUsage;
@@ -153,6 +166,11 @@ export interface PlusRefinementAnswers {
   mediaImportance?: MediaImportance;
   highTrafficRoute?: HighTrafficRoute;
   optimizationCoverage?: OptimizationCoverage;
+  stackFramework?: StackFramework;
+  stackCdnProvider?: StackCdnProvider;
+  stackAiProvider?: StackAiProvider;
+  stackAnalytics?: StackAnalytics;
+  stackPayment?: StackPayment;
 }
 
 export interface PlusOptimizationReport {

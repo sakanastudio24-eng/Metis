@@ -12,7 +12,13 @@ import type {
   MonthlyVisitsBand,
   OptimizationCoverage,
   PageDynamics,
-  PaidApiUsage
+  PaidApiUsage,
+  SiteSizeBand,
+  StackAiProvider,
+  StackAnalytics,
+  StackCdnProvider,
+  StackFramework,
+  StackPayment
 } from "../../shared/types/audit";
 
 type QuestionGroup = "Stack" | "Traffic" | "Cost sensitivity";
@@ -50,6 +56,7 @@ export type InsightArea =
 export interface PlusQuestionOption {
   value: string;
   label: string;
+  brandColor?: string;
 }
 
 export interface PlusQuestionDefinition {
@@ -160,6 +167,27 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
       { value: "1kTo10k", label: "1k–10k" },
       { value: "10kTo100k", label: "10k–100k" },
       { value: "100kPlus", label: "100k+" },
+      { value: "notSure", label: "Not sure" }
+    ]
+  },
+  {
+    key: "siteSize",
+    label: "Site Size (optional)",
+    helper: "Rough page count helps frame how much surface area this report should represent.",
+    improves: [
+      "baselineExpectations",
+      "projectedImpactRelevance",
+      "recommendationRelevance"
+    ],
+    whyItMatters:
+      "A 6-page site and a 500-page app can show similar issues while needing very different cleanup strategies.",
+    group: "Traffic",
+    required: false,
+    options: [
+      { value: "under10", label: "Under 10 pages" },
+      { value: "10To50", label: "10–50 pages" },
+      { value: "50To200", label: "50–200 pages" },
+      { value: "200Plus", label: "200+ pages" },
       { value: "notSure", label: "Not sure" }
     ]
   },
@@ -306,6 +334,13 @@ export const PLUS_LABELS = {
     "100kPlus": "100k+ monthly visits",
     notSure: "unknown traffic"
   } satisfies Record<MonthlyVisitsBand, string>,
+  siteSize: {
+    under10: "under 10 pages",
+    "10To50": "10 to 50 pages",
+    "50To200": "50 to 200 pages",
+    "200Plus": "200+ pages",
+    notSure: "unknown site size"
+  } satisfies Record<SiteSizeBand, string>,
   appType: {
     marketing: "marketing site",
     portfolio: "portfolio",
@@ -348,7 +383,44 @@ export const PLUS_LABELS = {
     yes: "optimization tooling already in place",
     no: "no optimization tooling in place",
     notSure: "unknown optimization coverage"
-  } satisfies Record<OptimizationCoverage, string>
+  } satisfies Record<OptimizationCoverage, string>,
+  stackFramework: {
+    react: "React 18",
+    nextjs: "Next.js 14",
+    vue: "Vue",
+    svelte: "Svelte",
+    other: "Other framework"
+  } satisfies Record<StackFramework, string>,
+  stackCdnProvider: {
+    cloudflare: "Cloudflare CDN",
+    cloudfront: "CloudFront",
+    fastly: "Fastly",
+    vercelEdge: "Vercel Edge",
+    none: "No CDN detected",
+    other: "Other CDN"
+  } satisfies Record<StackCdnProvider, string>,
+  stackAiProvider: {
+    openai: "OpenAI GPT-4",
+    anthropic: "Anthropic Claude",
+    google: "Google Gemini",
+    none: "No AI provider",
+    other: "Other AI provider"
+  } satisfies Record<StackAiProvider, string>,
+  stackAnalytics: {
+    ga4: "Google Analytics 4",
+    plausible: "Plausible",
+    segment: "Segment",
+    mixpanel: "Mixpanel",
+    none: "No analytics",
+    other: "Other analytics"
+  } satisfies Record<StackAnalytics, string>,
+  stackPayment: {
+    stripe: "Stripe v3",
+    shopify: "Shopify",
+    paddle: "Paddle",
+    none: "No payment provider",
+    other: "Other payment provider"
+  } satisfies Record<StackPayment, string>
 };
 
 export const PLUS_IMPACT_LABELS: Record<InsightArea, string> = {
@@ -382,3 +454,133 @@ export const PLUS_IMPACT_LABELS: Record<InsightArea, string> = {
   falsePositiveCleanup: "false positive cleanup",
   imageAndBandwidthGuidance: "image and bandwidth guidance"
 };
+
+const STACK_BRAND_COLORS = {
+  react: "#61dafb",
+  nextjs: "#9ca3af",
+  vue: "#41b883",
+  svelte: "#ff6d3b",
+  cloudflare: "#f6821f",
+  cloudfront: "#f59e0b",
+  fastly: "#ff3355",
+  vercelEdge: "#6366f1",
+  openai: "#10a37f",
+  anthropic: "#d97706",
+  google: "#60a5fa",
+  ga4: "#f9a825",
+  plausible: "#a78bfa",
+  segment: "#6ee7ff",
+  mixpanel: "#8b5cf6",
+  stripe: "#6772e5",
+  shopify: "#7ab55c",
+  paddle: "#6d5efc"
+} as const;
+
+export type MissingStackGroup =
+  | "framework"
+  | "hostingCdn"
+  | "aiProvider"
+  | "analytics"
+  | "payment";
+
+export function buildStackFallbackQuestionDefinitions(
+  missingGroups: MissingStackGroup[]
+): PlusQuestionDefinition[] {
+  return missingGroups.map((group) => {
+    switch (group) {
+      case "framework":
+        return {
+          key: "stackFramework",
+          label: "Framework",
+          helper: "Metis could not confidently detect the UI framework on this route.",
+          improves: ["baselineExpectations", "recommendationRelevance"],
+          whyItMatters:
+            "Framework context changes which fixes are realistic and which patterns are normal on the page.",
+          group: "Stack",
+          required: false,
+          options: [
+            { value: "react", label: "React 18", brandColor: STACK_BRAND_COLORS.react },
+            { value: "nextjs", label: "Next.js 14", brandColor: STACK_BRAND_COLORS.nextjs },
+            { value: "vue", label: "Vue", brandColor: STACK_BRAND_COLORS.vue },
+            { value: "svelte", label: "Svelte", brandColor: STACK_BRAND_COLORS.svelte },
+            { value: "other", label: "Other framework" }
+          ]
+        };
+      case "hostingCdn":
+        return {
+          key: "stackCdnProvider",
+          label: "Hosting / CDN",
+          helper: "Metis could not confidently detect the host or CDN from the current route.",
+          improves: ["providerSpecificNextSteps", "bandwidthCost", "recommendationAccuracy"],
+          whyItMatters:
+            "The host and CDN layer changes what repeated requests, caching, and heavy assets actually cost.",
+          group: "Stack",
+          required: false,
+          options: [
+            { value: "cloudflare", label: "Cloudflare CDN", brandColor: STACK_BRAND_COLORS.cloudflare },
+            { value: "cloudfront", label: "CloudFront", brandColor: STACK_BRAND_COLORS.cloudfront },
+            { value: "fastly", label: "Fastly", brandColor: STACK_BRAND_COLORS.fastly },
+            { value: "vercelEdge", label: "Vercel Edge", brandColor: STACK_BRAND_COLORS.vercelEdge },
+            { value: "none", label: "No CDN" },
+            { value: "other", label: "Other CDN" }
+          ]
+        };
+      case "aiProvider":
+        return {
+          key: "stackAiProvider",
+          label: "AI Provider",
+          helper: "Metis saw AI-like behavior but could not map it to a provider.",
+          improves: ["aiCostSensitivity", "costDriverPrioritization", "premiumActionQuality"],
+          whyItMatters:
+            "Different AI vendors change per-request cost and what optimization steps matter most.",
+          group: "Stack",
+          required: false,
+          options: [
+            { value: "openai", label: "OpenAI GPT-4", brandColor: STACK_BRAND_COLORS.openai },
+            { value: "anthropic", label: "Anthropic Claude", brandColor: STACK_BRAND_COLORS.anthropic },
+            { value: "google", label: "Google Gemini", brandColor: STACK_BRAND_COLORS.google },
+            { value: "none", label: "No AI provider" },
+            { value: "other", label: "Other AI provider" }
+          ]
+        };
+      case "analytics":
+        return {
+          key: "stackAnalytics",
+          label: "Analytics",
+          helper: "Metis could not identify the analytics tool from the current route.",
+          improves: ["falsePositiveCleanup", "recommendationAccuracy", "actionOrdering"],
+          whyItMatters:
+            "Analytics vendors can add third-party weight and duplicate tag behavior that should be explained correctly.",
+          group: "Stack",
+          required: false,
+          options: [
+            { value: "ga4", label: "Google Analytics 4", brandColor: STACK_BRAND_COLORS.ga4 },
+            { value: "plausible", label: "Plausible", brandColor: STACK_BRAND_COLORS.plausible },
+            { value: "segment", label: "Segment", brandColor: STACK_BRAND_COLORS.segment },
+            { value: "mixpanel", label: "Mixpanel", brandColor: STACK_BRAND_COLORS.mixpanel },
+            { value: "none", label: "No analytics" },
+            { value: "other", label: "Other analytics" }
+          ]
+        };
+      case "payment":
+      default:
+        return {
+          key: "stackPayment",
+          label: "Payment",
+          helper: "Metis could not identify a payment provider from this route.",
+          improves: ["recommendationRelevance", "projectedImpactRelevance", "actionOrdering"],
+          whyItMatters:
+            "Payment providers often bring extra scripts and route-specific costs that should be attributed correctly.",
+          group: "Stack",
+          required: false,
+          options: [
+            { value: "stripe", label: "Stripe v3", brandColor: STACK_BRAND_COLORS.stripe },
+            { value: "shopify", label: "Shopify", brandColor: STACK_BRAND_COLORS.shopify },
+            { value: "paddle", label: "Paddle", brandColor: STACK_BRAND_COLORS.paddle },
+            { value: "none", label: "No payment provider" },
+            { value: "other", label: "Other payment provider" }
+          ]
+        };
+    }
+  });
+}

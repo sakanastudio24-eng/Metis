@@ -1,8 +1,13 @@
 /**
  * liveAdapter.ts
- * Maps the current Phase 4 scan, score, and refinement output into the
- * prototype-shaped view model used by the zip-authoritative UI shell.
+ * Maps the Phase 4 scan, score, and refinement state into the prototype-shaped
+ * view model used by the zip-authoritative shell.
  */
+import {
+  buildStackFallbackQuestionDefinitions,
+  PLUS_LABELS
+} from "../../../features/refinement/config";
+import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type {
   DetectedIssue,
   IssueCategory,
@@ -11,7 +16,6 @@ import type {
   RawScanSnapshot,
   ScoreBreakdown
 } from "../../../shared/types/audit";
-import { PLUS_LABELS } from "../../../features/refinement/config";
 import type { ScanScope } from "../../useMetisState";
 
 export interface DesignIssue {
@@ -30,11 +34,17 @@ export interface DesignSummaryPill {
 export interface DesignStackChip {
   label: string;
   tone: "neutral" | "provider" | "ai" | "warning" | "tech";
+  brandColor?: string;
+}
+
+export interface DesignStackGroupItem {
+  label: string;
+  brandColor?: string;
 }
 
 export interface DesignStackGroup {
   label: string;
-  items: string[];
+  items: DesignStackGroupItem[];
 }
 
 export interface DesignCostRow {
@@ -53,12 +63,32 @@ export interface DesignQuestionState {
   priorityLabel: string | null;
 }
 
+export interface DesignScaleSimulationRow {
+  trafficLabel: string;
+  scenario: string;
+  amount: string;
+}
+
+export interface DesignFixRecommendationCard {
+  title: string;
+  severityLabel: "critical" | "moderate" | "low";
+  saveLabel?: string;
+  priorityLabel?: string;
+  rootCause?: string;
+  fix?: string;
+  scaleImpact?: string;
+  color: string;
+}
+
 export interface MetisDesignViewModel {
+  routeKey: string;
+  snapshotKey: string;
   hostname: string;
   pathname: string;
   scannedAt: string;
   scopeLabel: string;
   pagesSampledLabel: string;
+  metaTokens: string[];
   score: number;
   riskLabel: string;
   riskColor: string;
@@ -75,7 +105,24 @@ export interface MetisDesignViewModel {
   stackGroups: DesignStackGroup[];
   costRows: DesignCostRow[];
   questionState: DesignQuestionState;
+  scaleSimulationRows: DesignScaleSimulationRow[];
+  aiCostPerRequestEstimate: string | null;
+  fixRecommendationCards: DesignFixRecommendationCard[];
+  stackQuestionDefinitions: PlusQuestionDefinition[];
+  stackDetectionState: {
+    missingGroups: string[];
+  };
 }
+
+const STACK_BRAND_COLORS = {
+  react: "#61dafb",
+  nextjs: "#9ca3af",
+  vercel: "#6366f1",
+  cloudflare: "#f6821f",
+  openai: "#10a37f",
+  ga4: "#f9a825",
+  stripe: "#6772e5"
+} as const;
 
 function formatCurrency(value: number) {
   if (value < 0.1) {
@@ -91,7 +138,7 @@ function formatCurrency(value: number) {
 
 function formatMonthly(value: number) {
   if (value >= 10_000) {
-    return `$${(value / 1_000).toFixed(0)}k`;
+    return `$${(value / 1_000).toFixed(1)}k`;
   }
 
   if (value >= 1_000) {
@@ -164,10 +211,7 @@ function aiWeight(answers: PlusRefinementAnswers) {
   }
 }
 
-function deriveMonthlyWaste(
-  snapshot: RawScanSnapshot,
-  answers: PlusRefinementAnswers
-) {
+function deriveMonthlyWaste(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
   const { metrics } = snapshot;
   const baseWaste =
     metrics.totalEncodedBodySize / 1_000_000 * 1.1 +
@@ -229,11 +273,7 @@ function buildSummaryPills(issues: DesignIssue[]) {
   ].filter((value): value is DesignSummaryPill => value !== null);
 }
 
-function buildCostRows(
-  score: ScoreBreakdown,
-  snapshot: RawScanSnapshot,
-  answers: PlusRefinementAnswers
-) {
+function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
   const monthlyWaste = deriveMonthlyWaste(snapshot, answers);
   const contribution = {
     bandwidth: 0,
@@ -247,10 +287,7 @@ function buildCostRows(
       return;
     }
 
-    if (
-      deduction.category === "requestCount" ||
-      deduction.category === "duplicateRequests"
-    ) {
+    if (deduction.category === "requestCount" || deduction.category === "duplicateRequests") {
       contribution.requests += deduction.points;
       return;
     }
@@ -260,9 +297,7 @@ function buildCostRows(
 
   contribution.ai += aiWeight(answers) > 0 ? aiWeight(answers) / 2 : 0;
 
-  const totalContribution =
-    contribution.bandwidth + contribution.requests + contribution.ai || 1;
-
+  const totalContribution = contribution.bandwidth + contribution.requests + contribution.ai || 1;
   const bandwidthValue = monthlyWaste * (contribution.bandwidth / totalContribution || 0.35);
   const requestsValue = monthlyWaste * (contribution.requests / totalContribution || 0.4);
   const aiValue = monthlyWaste * (contribution.ai / totalContribution || 0.25);
@@ -289,35 +324,128 @@ function buildCostRows(
   ];
 }
 
-function buildStackChips(
-  snapshot: RawScanSnapshot,
-  answers: PlusRefinementAnswers,
-  score: ScoreBreakdown,
-  scope: ScanScope,
-  pageCount: number
-) {
-  const chips: DesignStackChip[] = [];
+function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
+  const resources = snapshot.resources;
+  const resourceNames = resources.map((resource) => resource.name.toLowerCase());
+  const hostnames = resources.map((resource) => resource.hostname.toLowerCase());
 
-  if (answers.appType) {
-    chips.push({
-      label: PLUS_LABELS.appType[answers.appType],
-      tone: "tech"
+  const frameworkItems: DesignStackGroupItem[] = [];
+  const hostingItems: DesignStackGroupItem[] = [];
+  const aiItems: DesignStackGroupItem[] = [];
+  const analyticsItems: DesignStackGroupItem[] = [];
+  const paymentItems: DesignStackGroupItem[] = [];
+
+  if (resourceNames.some((name) => name.includes("/_next/")) || answers.stackFramework === "nextjs") {
+    frameworkItems.push({ label: "Next.js 14", brandColor: STACK_BRAND_COLORS.nextjs });
+  }
+
+  if (
+    resourceNames.some((name) => name.includes("react")) ||
+    answers.stackFramework === "react" ||
+    frameworkItems.some((item) => item.label === "Next.js 14")
+  ) {
+    frameworkItems.unshift({ label: "React 18", brandColor: STACK_BRAND_COLORS.react });
+  }
+
+  if (answers.stackFramework && frameworkItems.length === 0) {
+    frameworkItems.push({
+      label: PLUS_LABELS.stackFramework[answers.stackFramework],
+      brandColor:
+        answers.stackFramework === "react"
+          ? STACK_BRAND_COLORS.react
+          : answers.stackFramework === "nextjs"
+            ? STACK_BRAND_COLORS.nextjs
+            : undefined
     });
   }
 
   if (answers.hostingProvider) {
-    chips.push({
+    hostingItems.push({
       label: PLUS_LABELS.hostingProvider[answers.hostingProvider],
-      tone: "provider"
+      brandColor:
+        answers.hostingProvider === "vercel" ? STACK_BRAND_COLORS.vercel : undefined
     });
   }
 
-  if (answers.aiUsage && answers.aiUsage !== "no") {
-    chips.push({
-      label: "AI usage detected",
-      tone: "ai"
-    });
+  if (
+    hostnames.some((host) => host.includes("cloudflare")) ||
+    answers.stackCdnProvider === "cloudflare"
+  ) {
+    hostingItems.push({ label: "Cloudflare CDN", brandColor: STACK_BRAND_COLORS.cloudflare });
+  } else if (answers.stackCdnProvider) {
+    hostingItems.push({ label: PLUS_LABELS.stackCdnProvider[answers.stackCdnProvider] });
   }
+
+  if (hostnames.some((host) => host.includes("openai")) || answers.stackAiProvider === "openai") {
+    aiItems.push({ label: "OpenAI GPT-4", brandColor: STACK_BRAND_COLORS.openai });
+  } else if (answers.stackAiProvider) {
+    aiItems.push({ label: PLUS_LABELS.stackAiProvider[answers.stackAiProvider] });
+  }
+
+  if (
+    hostnames.some((host) => host.includes("google-analytics") || host.includes("googletagmanager")) ||
+    answers.stackAnalytics === "ga4"
+  ) {
+    analyticsItems.push({ label: "Google Analytics 4", brandColor: STACK_BRAND_COLORS.ga4 });
+  } else if (answers.stackAnalytics) {
+    analyticsItems.push({ label: PLUS_LABELS.stackAnalytics[answers.stackAnalytics] });
+  }
+
+  if (hostnames.some((host) => host.includes("stripe")) || answers.stackPayment === "stripe") {
+    paymentItems.push({ label: "Stripe v3", brandColor: STACK_BRAND_COLORS.stripe });
+  } else if (answers.stackPayment) {
+    paymentItems.push({ label: PLUS_LABELS.stackPayment[answers.stackPayment] });
+  }
+
+  const missingGroups = [
+    frameworkItems.length === 0 ? "framework" : null,
+    hostingItems.length === 0 ? "hostingCdn" : null,
+    aiItems.length === 0 && (answers.aiUsage && answers.aiUsage !== "no")
+      ? "aiProvider"
+      : null,
+    analyticsItems.length === 0 ? "analytics" : null,
+    paymentItems.length === 0 ? "payment" : null
+  ].filter((value): value is "framework" | "hostingCdn" | "aiProvider" | "analytics" | "payment" => value !== null);
+
+  const chips: DesignStackChip[] = [
+    ...frameworkItems.slice(0, 2).map((item) => ({
+      label: item.label,
+      tone: "tech" as const,
+      brandColor: item.brandColor
+    })),
+    ...hostingItems.slice(0, 2).map((item) => ({
+      label: item.label,
+      tone: "provider" as const,
+      brandColor: item.brandColor
+    })),
+    ...aiItems.slice(0, 1).map((item) => ({
+      label: item.label,
+      tone: "ai" as const,
+      brandColor: item.brandColor
+    }))
+  ];
+
+  return {
+    chips,
+    groups: [
+      { label: "Framework", items: frameworkItems },
+      { label: "Hosting / CDN", items: hostingItems },
+      { label: "AI Providers", items: aiItems },
+      { label: "Analytics", items: analyticsItems },
+      { label: "Payment", items: paymentItems }
+    ].filter((group) => group.items.length > 0),
+    missingGroups
+  };
+}
+
+function buildStackChips(
+  snapshot: RawScanSnapshot,
+  score: ScoreBreakdown,
+  scope: ScanScope,
+  pageCount: number,
+  detected: ReturnType<typeof detectStack>
+) {
+  const chips = [...detected.chips];
 
   if (snapshot.metrics.thirdPartyDomainCount >= 4) {
     chips.push({
@@ -341,52 +469,7 @@ function buildStackChips(
   return chips.slice(0, 6);
 }
 
-function buildStackGroups(
-  snapshot: RawScanSnapshot,
-  answers: PlusRefinementAnswers,
-  scope: ScanScope,
-  pageCount: number
-) {
-  const groups: DesignStackGroup[] = [
-    {
-      label: "Surface",
-      items: [scope === "multi" ? `Multipage sample (${pageCount})` : "Single-page sample"]
-    },
-    {
-      label: "Signals",
-      items: [
-        `${snapshot.metrics.requestCount} retained requests`,
-        `${snapshot.metrics.thirdPartyDomainCount} third-party domains`
-      ]
-    },
-    {
-      label: "Payload",
-      items: [
-        formatBytes(snapshot.metrics.totalEncodedBodySize),
-        `${snapshot.metrics.meaningfulImageCount} meaningful images`
-      ]
-    }
-  ];
-
-  if (answers.hostingProvider || answers.appType) {
-    groups.unshift({
-      label: "Known Context",
-      items: [
-        answers.hostingProvider
-          ? PLUS_LABELS.hostingProvider[answers.hostingProvider]
-          : "Unknown host",
-        answers.appType ? PLUS_LABELS.appType[answers.appType] : "Unknown app type"
-      ]
-    });
-  }
-
-  return groups;
-}
-
-function buildQuestionState(
-  report: PlusOptimizationReport | null,
-  requiredCount: number
-): DesignQuestionState {
+function buildQuestionState(report: PlusOptimizationReport | null, requiredCount: number): DesignQuestionState {
   if (!report) {
     return {
       answeredCount: 0,
@@ -408,6 +491,95 @@ function buildQuestionState(
     nextStep: report.nextStep,
     priorityLabel: report.priorityLabel
   };
+}
+
+function buildScaleSimulationRows(monthlyWaste: number): DesignScaleSimulationRow[] {
+  const cases = [
+    { users: 1_000, label: "1k users", scenario: "now", factor: 1 },
+    { users: 5_000, label: "5k users", scenario: "5× growth", factor: 5 },
+    { users: 10_000, label: "10k users", scenario: "10× growth", factor: 10 },
+    { users: 50_000, label: "50k users", scenario: "50× growth", factor: 50 },
+    { users: 100_000, label: "100k users", scenario: "Viral / scale", factor: 100 }
+  ];
+
+  return cases.map((entry) => ({
+    trafficLabel: entry.label,
+    scenario: entry.scenario,
+    amount: `${formatMonthly(monthlyWaste * entry.factor)}${entry.factor < 10 ? "/mo" : "/mo"}`
+  }));
+}
+
+const FIX_LIBRARY: Partial<
+  Record<IssueCategory, Omit<DesignFixRecommendationCard, "title" | "severityLabel" | "color">>
+> = {
+  duplicateRequests: {
+    saveLabel: "Save ~$8/mo",
+    priorityLabel: "Fix First",
+    rootCause:
+      "No request deduplication layer means multiple components trigger the same fetch independently on mount.",
+    fix:
+      "Add a shared SWR or React Query cache key so concurrent callers share a single in-flight request. Alternatively, hoist the fetch into a context provider.",
+    scaleImpact: "At 10× traffic → ~$80/month wasted on redundant compute alone."
+  },
+  requestCount: {
+    saveLabel: "Save ~$5/mo",
+    rootCause:
+      "The route is doing more work than its current UI state appears to require, which usually points to duplicate fetches, over-eager polling, or missing memoization.",
+    fix:
+      "Reduce duplicate fetch triggers, trim polling intervals, and move expensive loaders higher in the tree so they do not rerun on every interaction.",
+    scaleImpact: "At 10× traffic this request pattern compounds quickly into visible compute waste."
+  },
+  largeImages: {
+    saveLabel: "Save ~$4/mo",
+    rootCause:
+      "Large media is landing without enough compression, lazy loading, or responsive delivery for the rendered footprint.",
+    fix:
+      "Convert oversized assets to modern formats, lazy-load below-the-fold images, and use responsive image delivery instead of raw full-size payloads.",
+    scaleImpact: "At 10× traffic → bandwidth waste multiplies fast on image-heavy routes."
+  },
+  pageWeight: {
+    saveLabel: "Save ~$6/mo",
+    rootCause:
+      "The page is shipping more bytes than necessary across scripts, styles, and media for its current state.",
+    fix:
+      "Split heavy bundles, compress large assets, and cache stable resources more aggressively so repeat visits avoid full re-downloads.",
+    scaleImpact: "At 10× traffic → avoidable transfer costs become much harder to ignore."
+  },
+  thirdPartySprawl: {
+    saveLabel: "Save ~$3/mo",
+    rootCause:
+      "The route depends on too many external vendors for analytics, embeds, or helper scripts, which adds cost and latency overhead.",
+    fix:
+      "Remove low-value third-party tags, delay non-critical vendors, and collapse overlapping tools where possible.",
+    scaleImpact: "At 10× traffic → external vendor overhead becomes a larger share of the route cost profile."
+  }
+};
+
+function buildFixRecommendationCards(issues: DetectedIssue[]): DesignFixRecommendationCard[] {
+  return issues
+    .map((issue, index) => {
+      const severityLabel: DesignFixRecommendationCard["severityLabel"] =
+        issue.severity === "high" ? "critical" : issue.severity === "medium" ? "moderate" : "low";
+      const color =
+        severityLabel === "critical"
+          ? "#ef4444"
+          : severityLabel === "moderate"
+            ? "#f97316"
+            : "#eab308";
+      const library = FIX_LIBRARY[issue.category] ?? {};
+
+      return {
+        title: issue.title,
+        severityLabel,
+        color,
+        priorityLabel: index === 0 ? library.priorityLabel ?? "Fix First" : library.priorityLabel,
+        saveLabel: library.saveLabel,
+        rootCause: library.rootCause,
+        fix: library.fix,
+        scaleImpact: library.scaleImpact
+      };
+    })
+    .slice(0, 5);
 }
 
 export function buildMetisDesignViewModel({
@@ -437,22 +609,28 @@ export function buildMetisDesignViewModel({
   const sessionCostValue = monthlyWaste / Math.max(250, visitCount / 4);
   const monthlyProjection = sessionCostValue * 10_000;
   const issuesForDisplay = issues.map(issueToDesignIssue);
+  const detectedStack = detectStack(snapshot, answers);
+  const metaTokens =
+    scope === "multi"
+      ? ["Live", `Sampled ${pageCount} pages`, snapshot.page.hostname]
+      : ["Live", "Sampled 1 page", snapshot.page.hostname];
 
   return {
+    routeKey: snapshot.page.href,
+    snapshotKey: `${snapshot.page.href}::${snapshot.scannedAt}`,
     hostname: snapshot.page.hostname,
     pathname: snapshot.page.pathname,
     scannedAt: new Date(snapshot.scannedAt).toLocaleString(),
     scopeLabel: scope === "multi" ? "Multipage" : "Single Page",
-    pagesSampledLabel:
-      scope === "multi"
-        ? `Live · Sampled ${pageCount} pages · ${snapshot.page.hostname}`
-        : `Live · Sampled 1 page · ${snapshot.page.hostname}`,
+    pagesSampledLabel: metaTokens.join(" · "),
+    metaTokens,
     score: Math.round(score.score),
     riskLabel: riskTone.label,
     riskColor: riskTone.color,
     riskBg: riskTone.bg,
     estimateRange: `~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
-    quickInsight: plusReport?.summary ?? insight?.summary ?? "Metis is still building a clean read of this page.",
+    quickInsight:
+      plusReport?.summary ?? insight?.summary ?? "Metis is still building a clean read of this page.",
     supportingDetail:
       plusReport?.detail ??
       insight?.supportingDetail ??
@@ -462,9 +640,17 @@ export function buildMetisDesignViewModel({
     summaryPills: buildSummaryPills(issuesForDisplay),
     issues: issuesForDisplay,
     topIssues: issuesForDisplay.slice(0, 5),
-    stackChips: buildStackChips(snapshot, answers, score, scope, pageCount),
-    stackGroups: buildStackGroups(snapshot, answers, scope, pageCount),
+    stackChips: buildStackChips(snapshot, score, scope, pageCount, detectedStack),
+    stackGroups: detectedStack.groups,
     costRows: buildCostRows(score, snapshot, answers),
-    questionState: buildQuestionState(plusReport, requiredQuestionCount)
+    questionState: buildQuestionState(plusReport, requiredQuestionCount),
+    scaleSimulationRows: buildScaleSimulationRows(monthlyWaste),
+    aiCostPerRequestEstimate:
+      answers.aiUsage && answers.aiUsage !== "no" ? "~$0.0001" : null,
+    fixRecommendationCards: buildFixRecommendationCards(issues),
+    stackQuestionDefinitions: buildStackFallbackQuestionDefinitions(detectedStack.missingGroups),
+    stackDetectionState: {
+      missingGroups: detectedStack.missingGroups
+    }
   };
 }

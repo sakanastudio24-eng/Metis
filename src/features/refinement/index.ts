@@ -98,6 +98,10 @@ function buildContextPrefix(answers: PlusRefinementAnswers) {
     parts.push(`for this ${PLUS_LABELS.appType[answers.appType]}`);
   }
 
+  if (answers.siteSize) {
+    parts.push(`across ${PLUS_LABELS.siteSize[answers.siteSize]}`);
+  }
+
   return parts.length > 0 ? `${parts.join(" ")}:` : "";
 }
 

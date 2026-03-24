@@ -40,6 +40,21 @@ function chipStyle(tone: DesignStackChip["tone"]) {
   }
 }
 
+function brandedChipStyle(
+  chip: Pick<DesignStackChip, "tone" | "brandColor">
+) {
+  if (!chip.brandColor) {
+    return chipStyle(chip.tone);
+  }
+
+  const color = chip.brandColor;
+  return {
+    background: `${color}1f`,
+    border: `1px solid ${color}40`,
+    color
+  };
+}
+
 interface DetectedStackBadgesProps {
   chips: DesignStackChip[];
   groups?: DesignStackGroup[];
@@ -77,7 +92,7 @@ export function DetectedStackBadges({
             key={`${chip.label}-${chip.tone}`}
             className="rounded-full px-4 py-2"
             style={{
-              ...chipStyle(chip.tone),
+              ...brandedChipStyle(chip),
               fontFamily: "Inter, sans-serif",
               fontSize: compact ? 11 : 12,
               fontWeight: 500
@@ -121,12 +136,13 @@ export function DetectedStackBadges({
               <div className="flex flex-wrap gap-2">
                 {group.items.map((item) => (
                     <motion.div
-                      key={item}
+                      key={item.label}
                       className="rounded-full px-4 py-2"
                       style={{
-                      background: "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.7)",
-                      fontFamily: "Inter, sans-serif",
+                        background: item.brandColor ? `${item.brandColor}1a` : "rgba(255,255,255,0.06)",
+                        border: item.brandColor ? `1px solid ${item.brandColor}35` : "1px solid rgba(255,255,255,0.08)",
+                        color: item.brandColor ?? "rgba(255,255,255,0.7)",
+                        fontFamily: "Inter, sans-serif",
                         fontSize: 12,
                         fontWeight: 500
                       }}
@@ -134,7 +150,7 @@ export function DetectedStackBadges({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
                     >
-                      {item}
+                      {item.label}
                     </motion.div>
                   ))}
                 </div>
