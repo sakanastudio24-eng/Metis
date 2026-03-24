@@ -1,4 +1,6 @@
-// Coordinate the scan loop and isolate the injected UI from host-page click handling.
+// App.tsx owns the live content-script runtime.
+// It refreshes scan data, guards against invalid extension contexts,
+// and passes the latest snapshots into the injected Metis panel.
 import type { MouseEvent, PointerEvent } from "react";
 import { useEffect } from "react";
 import { PhaseOneShell } from "./components/PhaseOneShell";

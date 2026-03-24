@@ -1,5 +1,5 @@
-// Keep Phase 3 detection thresholds in one public place so score tuning
-// does not require editing the detection logic itself.
+// detection/config.ts keeps Phase 3 issue thresholds public and centralized.
+// This file is meant to be tuned without rewriting the detection engine.
 export const DETECTION_THRESHOLDS = {
   requestCount: {
     low: 50,

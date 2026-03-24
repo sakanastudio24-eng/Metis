@@ -1,4 +1,5 @@
-// Convert a normalized snapshot into a short list of user-facing cost-risk issues.
+// detection/index.ts converts normalized metrics into a short list of explainable issues.
+// It reads the public threshold config and attaches metric/threshold metadata to each issue.
 import type { DetectedIssue, RawScanSnapshot } from "../../shared/types/audit";
 import { DETECTION_THRESHOLDS } from "./config";
 

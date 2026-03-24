@@ -1,5 +1,5 @@
-// Turn noisy Performance API resource entries into the cleaner Phase 2 signal set
-// that later detection and scoring can build on.
+// scan/performance.ts turns noisy Performance API entries into the cleaned resource signal set.
+// Detection and scoring depend on this normalization layer staying stable and trustworthy.
 import type {
   PageContext,
   ResourceAggregate,

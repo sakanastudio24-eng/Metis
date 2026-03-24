@@ -1,5 +1,5 @@
-// Keep Phase 3 score weights public and centralized so category tuning
-// stays transparent and independent from score calculation code.
+// scoring/config.ts keeps Phase 3 score weights public and centralized.
+// Category multipliers and label thresholds live here so tuning stays transparent.
 export const SCORE_CONFIG = {
   baseScore: 100,
   severityPenalty: {

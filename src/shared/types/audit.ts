@@ -1,5 +1,6 @@
-// Define the shared contracts that every phase uses to move scan data toward issues,
-// scoring, and final user-facing insight copy.
+// audit.ts defines the shared contracts that move data through scan, detection,
+// scoring, and the later insight stage. Keep these types stable because multiple
+// extension surfaces and docs depend on them.
 export type Severity = "low" | "medium" | "high";
 export type IssueCategory =
   | "requestCount"

@@ -1,4 +1,5 @@
-// Store the panel mode and the current scan snapshots locally inside the content script UI.
+// useMetisState.ts keeps the injected panel state local to the content script.
+// It holds panel mode, scope selection, and the latest scan snapshots used by Phase 3.
 import { useState } from "react";
 import type { RawScanSnapshot } from "../shared/types/audit";
 

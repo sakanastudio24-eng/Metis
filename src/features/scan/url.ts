@@ -1,4 +1,5 @@
-// Normalize the current page URL into a consistent page context contract.
+// scan/url.ts normalizes the current page URL into the shared page context contract.
+// The rest of the pipeline relies on this shape instead of reading window.location directly.
 import type { PageContext } from "../../shared/types/audit";
 
 export function parsePageContext(href: string): PageContext {

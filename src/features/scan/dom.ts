@@ -1,4 +1,5 @@
-// Collect the shallow DOM counts that stay useful as supporting scan context.
+// scan/dom.ts collects lightweight DOM counts that add context to the scan snapshot.
+// These counts support trust and future insights, but they do not drive scoring directly.
 import type { DomSummary } from "../../shared/types/audit";
 
 export function inspectDomSurface(): DomSummary {

@@ -1,5 +1,5 @@
-// Compose the scan snapshot from page context, DOM counts, and resource metrics.
-// Phase 3 also uses this module to reshape multiple visited pages into one scored view.
+// scan/index.ts assembles the canonical raw scan snapshot.
+// It also reshapes multiple visited pages into one aggregate snapshot for multipage scoring.
 import type { RawScanSnapshot } from "../../shared/types/audit";
 import { inspectDomSurface } from "./dom";
 import { buildResourceMetrics, collectResourceSummaries } from "./performance";

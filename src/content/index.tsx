@@ -1,5 +1,6 @@
-// Inject the Metis React app into a Shadow DOM so the extension UI stays isolated
-// from page styles and can be mounted consistently on normal webpages.
+// content/index.tsx mounts Metis into a Shadow DOM on the host page.
+// The host wrapper pins baseline sizing so the injected UI stays visually consistent
+// across different sites and CSS environments.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "../app/App";

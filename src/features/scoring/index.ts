@@ -1,4 +1,5 @@
-// Score a snapshot from its detected issues so the UI can present a simple cost-risk view.
+// scoring/index.ts turns detected issues into a weighted cost-risk score.
+// It applies public severity penalties, category multipliers, and label thresholds.
 import type { DetectedIssue, RawScanSnapshot, ScoreBreakdown } from "../../shared/types/audit";
 import { SCORE_CONFIG } from "./config";
 

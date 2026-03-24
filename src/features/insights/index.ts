@@ -1,4 +1,5 @@
-// Phase 4 will translate the score and issues into plain-language cost guidance.
+// insights/index.ts is reserved for Phase 4.
+// It will translate Phase 3 score output into plain-language cost guidance.
 import type { CostInsight, DetectedIssue, RawScanSnapshot, ScoreBreakdown } from "../../shared/types/audit";
 
 export function buildInsight(

@@ -1,5 +1,5 @@
-// Persist the first seen snapshot per origin and the visited-page snapshots that power
-// the multipage comparison view in the panel.
+// siteBaseline.ts persists origin baselines and visited-page snapshots in chrome.storage.local.
+// It also validates stored records so stale snapshot shapes do not crash newer panel code.
 import type { RawScanSnapshot } from "../types/audit";
 
 function getBaselineStorageKey(origin: string) {
