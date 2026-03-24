@@ -51,6 +51,7 @@ const server = createServer((req, res) => {
 server.listen(port, host, () => {
   console.log(`Visual test server running at http://${host}:${port}`);
   console.log("Open one of these pages:");
+  console.log(`- http://${host}:${port}/sites/capability-lab/`);
   console.log(`- http://${host}:${port}/sites/marketing/`);
   console.log(`- http://${host}:${port}/sites/dashboard/`);
   console.log(`- http://${host}:${port}/sites/media-heavy/`);

@@ -8,6 +8,8 @@ import { buildInsight } from "../src/features/insights";
 import { buildPlusOptimizationReport } from "../src/features/refinement";
 import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } from "../src/features/scan";
 import { scoreSnapshot } from "../src/features/scoring";
+import { buildMetisDesignViewModel } from "../src/app/components/figures/liveAdapter";
+import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figures/loadingState";
 import type {
   PageContext,
   RawScanSnapshot,
@@ -308,4 +310,202 @@ test("plus refinement keeps partial output when only some core answers are prese
   assert.equal(report?.summary.startsWith("Partial Plus read:"), true);
   assert.ok((report?.missingCoreQuestions.length ?? 0) > 0);
   assert.match(report?.nextStep ?? "", /Cloudflare|cache rules|media delivery/i);
+});
+
+test("design view model splits metadata and builds scale simulation rows", () => {
+  const resources = [
+    createResource("https://example.com/_next/static/chunks/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 180_000
+    }),
+    createResource("https://cdn.example.net/hero.jpg", {
+      category: "image",
+      initiatorType: "img",
+      encodedBodySize: 400_000,
+      isThirdParty: true,
+      isMeaningfulImage: true
+    }),
+    createResource("https://api.example.com/feed?slot=1", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 80_000,
+      isThirdParty: true
+    }),
+    createResource("https://api.example.com/feed?slot=2", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 80_000,
+      isThirdParty: true
+    })
+  ];
+  const snapshot = createSnapshot(resources);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+  const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {
+    hostingProvider: "vercel",
+    monthlyVisits: "1kTo10k",
+    appType: "saasDashboard",
+    aiUsage: "yesOften"
+  });
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    score,
+    insight,
+    scope: "multi",
+    pageCount: 5,
+    answers: {
+      hostingProvider: "vercel",
+      monthlyVisits: "1kTo10k",
+      appType: "saasDashboard",
+      aiUsage: "yesOften"
+    },
+    plusReport: report,
+    requiredQuestionCount: 3
+  });
+
+  assert.deepEqual(viewModel.metaTokens, ["Live", "Sampled 5 pages", "example.com"]);
+  assert.equal(viewModel.routeKey, "https://example.com/");
+  assert.match(viewModel.snapshotKey, /https:\/\/example.com\/::/);
+  assert.equal(viewModel.scaleSimulationRows.length, 5);
+  assert.equal(viewModel.scaleSimulationRows[2]?.trafficLabel, "10k users");
+  assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^\$/);
+  assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
+});
+
+test("design view model adds stack fallback questions for missing groups", () => {
+  const snapshot = createSnapshot([
+    createResource("https://example.com/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 120_000
+    })
+  ]);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers: {
+      aiUsage: "yesOften"
+    },
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  const fallbackKeys = viewModel.stackQuestionDefinitions.map((question) => question.key);
+  assert.ok(fallbackKeys.includes("stackFramework"));
+  assert.ok(fallbackKeys.includes("stackCdnProvider"));
+  assert.ok(fallbackKeys.includes("stackAiProvider"));
+  assert.ok(fallbackKeys.includes("stackAnalytics"));
+  assert.ok(fallbackKeys.includes("stackPayment"));
+});
+
+test("design view model keeps brand colors for detected stack and fix cards", () => {
+  const snapshot = createSnapshot([
+    createResource("https://example.com/_next/static/chunks/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 150_000
+    }),
+    createResource("https://react.example.com/react-dom.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 70_000,
+      isThirdParty: true
+    }),
+    createResource("https://js.stripe.com/v3/", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 40_000,
+      isThirdParty: true
+    }),
+    createResource("https://www.googletagmanager.com/gtag/js?id=G-TEST", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 30_000,
+      isThirdParty: true
+    }),
+    createResource("https://api.openai.com/v1/chat/completions", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 40_000,
+      isThirdParty: true
+    }),
+    createResource("https://vercel.live/edge-config", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 40_000,
+      isThirdParty: true
+    }),
+    createResource("https://example.com/api/feed?slot=1", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 90_000
+    }),
+    createResource("https://example.com/api/feed?slot=2", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 90_000
+    })
+  ]);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers: {
+      aiUsage: "yesOften",
+      hostingProvider: "vercel"
+    },
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  assert.ok(viewModel.stackChips.some((chip) => chip.label.includes("React") && chip.brandColor));
+  assert.ok(viewModel.stackGroups.some((group) => group.label === "Payment"));
+  assert.ok(viewModel.fixRecommendationCards.length > 0);
+  assert.ok(viewModel.fixRecommendationCards.every((card) => !("placeholder" in card)));
+});
+
+test("loading helpers only replay on new routes and soften same-route refreshes", () => {
+  assert.equal(shouldReplayLoading(null, "https://example.com/a"), true);
+  assert.equal(
+    shouldReplayLoading("https://example.com/a", "https://example.com/a"),
+    false
+  );
+  assert.equal(
+    shouldReplayLoading("https://example.com/a", "https://example.com/b"),
+    true
+  );
+
+  assert.equal(
+    isSoftRefresh(
+      "https://example.com/a::2026-03-24T12:00:00.000Z",
+      "https://example.com/a::2026-03-24T12:00:01.000Z"
+    ),
+    true
+  );
+  assert.equal(
+    isSoftRefresh(
+      "https://example.com/a::2026-03-24T12:00:00.000Z",
+      "https://example.com/b::2026-03-24T12:00:01.000Z"
+    ),
+    false
+  );
 });

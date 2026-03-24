@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { PanelLayout } from "../../src/app/components/figures/PanelLayout";
 import { FullReportLayout } from "../../src/app/components/figures/FullReportLayout";
 import { buildMetisDesignViewModel } from "../../src/app/components/figures/liveAdapter";
+import { buildStackFallbackQuestionDefinitions } from "../../src/features/refinement/config";
 import type { MetisSnapshot, PlusRefinementAnswers } from "../../src/shared/types/audit";
 
 const MOCK_SNAPSHOT: MetisSnapshot = {
@@ -114,7 +115,10 @@ const MOCK_PLUS_ANSWERS: PlusRefinementAnswers = {
   hostingProvider: "vercel",
   monthlyVisits: "1kTo10k",
   appType: "saasDashboard",
-  aiUsage: "yesOften"
+  aiUsage: "yesOften",
+  stackFramework: "react",
+  stackAnalytics: "ga4",
+  stackPayment: "stripe"
 };
 
 export default function FigmaDesignTest() {
@@ -131,6 +135,7 @@ export default function FigmaDesignTest() {
     plusReport: null,
     requiredQuestionCount: 3
   });
+  const fallbackQuestions = buildStackFallbackQuestionDefinitions(["hostingCdn", "aiProvider"]);
 
   return (
     <div className="min-h-screen bg-gray-950 px-6 py-8 text-gray-50">
@@ -146,9 +151,9 @@ export default function FigmaDesignTest() {
           <h2 className="text-xl font-semibold">Mini / Full Panel Body</h2>
           <div
             className="overflow-hidden rounded-[22px] border border-gray-800 bg-[#111d2b] p-5"
-            style={{ width: "410px" }}
+            style={{ width: "360px" }}
           >
-            <PanelLayout viewModel={viewModel} />
+            <PanelLayout viewModel={viewModel} compact refreshTick={1} />
           </div>
         </section>
 
@@ -164,17 +169,19 @@ export default function FigmaDesignTest() {
 
         {showReport && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
-            <div className="h-[92vh] w-full max-w-[672px]">
+            <div className="h-[92vh] w-full max-w-[1180px]">
               <FullReportLayout
                 viewModel={viewModel}
                 scanScope={scanScope}
                 onSetScanScope={setScanScope}
-                currentQuestion={null}
+                currentQuestion={fallbackQuestions[0] ?? null}
                 plusAnswers={MOCK_PLUS_ANSWERS}
-                isRefinementOpen={false}
+                isRefinementOpen
                 setIsRefinementOpen={() => undefined}
                 onAnswer={() => undefined}
                 onCopyReport={() => undefined}
+                isPlusUser
+                refreshTick={1}
                 onClose={() => setShowReport(false)}
               />
             </div>
