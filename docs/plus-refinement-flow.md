@@ -54,7 +54,7 @@ Keep the default Metis report instant, then let a user answer a few high-value q
 
 ### Cost Sensitivity
 
-- `paidApis`
+- `paidApiUsage`
 - `aiUsage`
 - `mediaImportance`
 - `optimizationCoverage`
@@ -106,7 +106,7 @@ Keep the default Metis report instant, then let a user answer a few high-value q
 - Why it matters:
   - highly dynamic routes can justify more activity, but redundant work is still a cost signal
 
-### `paidApis`
+### `paidApiUsage`
 
 - Improves:
   - API cost sensitivity
@@ -159,8 +159,11 @@ Each question definition should stay explicit about:
 - why it matters
 - whether it is core or optional
 - which group it belongs to
+- whether it depends on another answer before it should appear
 
 That keeps the Plus layer reviewable without reading the full refinement engine.
+
+The `improves` list is now typed in config and mapped back to readable labels for the dashboard. That keeps copy stable while still letting the config drive future logic.
 
 ## Current UI Rule
 
