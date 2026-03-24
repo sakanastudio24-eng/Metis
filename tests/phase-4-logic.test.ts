@@ -274,7 +274,7 @@ test("plus refinement raises priority with traffic, free plan, and paid APIs", (
     monthlyVisits: "100kPlus",
     appType: "marketing",
     highTrafficRoute: "yes",
-    paidApis: "yes"
+    paidApiUsage: "yes"
   });
 
   assert.ok(report);
