@@ -122,6 +122,30 @@ export interface RawScanSnapshot {
   metrics: ResourceMetricsSummary;
 }
 
+export interface PageScanSnapshot {
+  url: string;
+  pageKey: string;
+  timestamp: number;
+  requestCount: number;
+  duplicateRequestCount: number;
+  duplicateEndpointCount: number;
+  thirdPartyDomainCount: number;
+  totalEncodedBodySize: number;
+  meaningfulImageCount: number;
+  meaningfulImageBytes: number;
+}
+
+export interface PageScanComparison {
+  requestCountDelta: number;
+  duplicateRequestCountDelta: number;
+  duplicateEndpointCountDelta: number;
+  thirdPartyDomainCountDelta: number;
+  totalEncodedBodySizeDelta: number;
+  meaningfulImageCountDelta: number;
+  meaningfulImageBytesDelta: number;
+  summary: string[];
+}
+
 export interface DetectedIssue {
   id: string;
   title: string;

@@ -10,6 +10,10 @@ import { PhaseOneShell } from "./components/PhaseOneShell";
 import { useMetisState } from "./useMetisState";
 import { buildScanDebugSummary, collectRawScanSnapshot } from "../features/scan";
 import {
+  buildPageScanSnapshot,
+  savePageScanAndCompare
+} from "../shared/lib/pageScanHistory";
+import {
   getOrCreateSiteBaseline,
   upsertVisitedSiteSnapshot
 } from "../shared/lib/siteBaseline";
@@ -97,8 +101,10 @@ export default function App() {
 
       try {
         const snapshot = collectRawScanSnapshot();
+        const compactSnapshot = buildPageScanSnapshot(snapshot);
         const baseline = await getOrCreateSiteBaseline(snapshot);
         const visited = await upsertVisitedSiteSnapshot(snapshot);
+        const pageScanHistory = await savePageScanAndCompare(compactSnapshot);
 
         setRawSnapshot(snapshot);
         setBaselineSnapshot(baseline);
@@ -108,6 +114,11 @@ export default function App() {
         console.info("[Metis] raw scan snapshot", snapshot);
         console.info("[Metis] site baseline snapshot", baseline);
         console.info("[Metis] visited site snapshots", visited);
+        console.info("[Metis] page scan snapshot", compactSnapshot);
+
+        if (pageScanHistory.comparison) {
+          console.info("[Metis] page scan comparison", pageScanHistory.comparison);
+        }
       } catch (error) {
         if (isExtensionContextInvalidated(error)) {
           console.info("[Metis] extension context invalidated, stopping scan loop");
