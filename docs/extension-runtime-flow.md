@@ -6,9 +6,18 @@ This is the current runtime split for Metis.
 
 1. `manifest.json` registers the MV3 surfaces.
 2. `src/content/index.tsx` injects a fixed Shadow DOM host and mounts React.
-3. `src/app/App.tsx` starts the scan loop and passes snapshots into the panel.
+3. `src/app/App.tsx` runs an immediate scan, schedules a one-shot post-load rescan when the page is still settling, then keeps the steady scan loop and navigation checks alive.
 4. `src/shared/lib/siteBaseline.ts` persists baseline and multipage snapshots.
 5. `src/background/index.ts` stays minimal until a later phase needs background coordination.
+
+## Scan Lifecycle Rule
+
+The content script should:
+
+- populate the UI fast with an immediate scan
+- run a guaranteed second pass after `window.load` when the page is not complete yet
+- keep periodic rescans and navigation checks after that
+- log a small console-only scan summary for debugging without adding permanent debug UI
 
 ## Current Rule
 

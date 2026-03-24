@@ -65,15 +65,21 @@ out of the engine code so tuning stays mechanical and reviewable.
 
 ## Phase 4 Direction
 
-Phase 4 should remain deterministic and local-first.
+Phase 4 remains deterministic and local-first.
 
-The intended flow is:
+The current implemented flow is:
 
 ```text
 Normalized snapshot -> detected issues -> weighted score -> plain-language insight
 ```
 
-That means `src/features/insights` should consume Phase 3 outputs rather than re-reading raw browser data.
+That means `src/features/insights` consumes Phase 3 outputs rather than re-reading raw browser data.
+
+The runtime now also guarantees:
+
+- an immediate scan for fast UI population
+- a one-shot post-load rescan for pages that are still settling
+- console-only debug summaries per scan pass
 
 ## Planned Source Layout
 
@@ -96,7 +102,7 @@ src/
 ## Expected Data Flow
 
 ```text
-Page -> Scan snapshot -> Detection signals -> Score breakdown -> User-facing insights
+Page -> Normalized scan snapshot -> Detection signals -> Score breakdown -> User-facing insight
 ```
 
 ## Section-by-Section Build Order

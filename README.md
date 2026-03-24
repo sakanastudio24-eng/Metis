@@ -18,7 +18,7 @@ V1 is intentionally constrained:
 
 ## Current Status
 
-Phase 3 is complete and the repo is prepared to start Phase 4 insight work.
+Phase 4 is active. The deterministic insight layer and scan-hardening pass are now implemented, with store-readiness polish still remaining.
 
 What is working now:
 
@@ -31,15 +31,17 @@ What is working now:
 - per-origin baseline comparison
 - multipage accumulation across visited pages
 - page-change rescans and temporary polling during Phase 2
+- guaranteed post-load rescan for pages that are still settling
 - issue detection from normalized metrics
 - score labels and deduction breakdowns
+- deterministic insight generation from score + issue output
 - local visual test pages for layout checks
 - public threshold, weighting, and scoring flow docs
 
-What is not built yet:
+What is not finished yet:
 
-- user-facing cost insight language
-- estimate refinement
+- final copy tuning across more sites
+- estimate refinement beyond qualitative labels
 - store-ready polish and review
 
 ## Stack
@@ -59,8 +61,8 @@ The current implementation uses:
 - a content script to inject the UI
 - a Shadow DOM mount to isolate extension styles from host page styles
 - local React state for the panel flow
-- a completed scan pipeline feeding Phase 3 detection and scoring
-- public flow docs for normalization, scoring, and runtime isolation
+- a completed scan pipeline feeding detection, scoring, and insight output
+- public flow docs for normalization, scoring, insights, and runtime isolation
 
 ## Repo Structure
 
@@ -150,7 +152,7 @@ and [docs/visual-test-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visu
 Current manifest values:
 
 - name: `Metis`
-- version: `0.0.0.15`
+- version: `0.0.0.17`
 - description: `Surface cost-risk signals directly on the page.`
 
 The extension currently requests:
@@ -186,6 +188,7 @@ Phase 3
 Phase 4
 
 - insight generation
+- scan hardening
 - estimate refinement
 - polish and ship prep
 
@@ -201,9 +204,9 @@ Phase 2 notes live in:
 
 ## Next Step
 
-The next implementation milestone is Phase 4:
+The next implementation milestone after the current Phase 4 foundation is:
 
-- turn the score and issues into user-facing cost insight language
+- tune the insight copy against more real sites
 - add estimate refinement without fake precision
 - tighten ship-readiness, permissions review, and store-facing polish
 
@@ -218,3 +221,4 @@ Phase 4 planning now lives in:
 
 - [docs/phase-4-research-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-research-flow.md)
 - [docs/phase-4-implementation-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-implementation-plan.md)
+- [docs/phase-4-insight-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-insight-flow.md)

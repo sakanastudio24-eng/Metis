@@ -1,6 +1,7 @@
 # Normalization Flow
 
-This document explains how Metis turns noisy browser resource data into a stable scoring input.
+This document explains how Metis turns noisy browser resource data into a stable input for
+detection, scoring, and the final Phase 4 insight layer.
 
 ## Why Normalization Exists
 
@@ -28,13 +29,15 @@ Metis normalizes this data before detection and scoring so the score stays expla
 1. Read browser resource entries from `performance.getEntriesByType("resource")`.
 2. Drop zero-transfer entries.
 3. Drop tiny resources below the minimum byte threshold.
-4. Parse each resource URL.
-5. Normalize URLs to `origin + pathname`.
-6. Classify each resource into a stable category.
-7. Mark whether the resource is third-party.
-8. Mark whether an image is meaningful enough to count toward page-weight issues.
-9. Aggregate the cleaned resources into metrics.
-10. Build the final `RawScanSnapshot`.
+4. Skip malformed or missing URLs before counting.
+5. Parse each resource URL.
+6. Normalize URLs to `origin + pathname`.
+7. Classify each resource into a stable category.
+8. Mark whether the resource is third-party.
+9. Mark whether an image is meaningful enough to count toward page-weight issues.
+10. Aggregate the cleaned resources into metrics.
+11. Build the final `RawScanSnapshot`.
+12. Feed the snapshot into detection, scoring, and deterministic insights.
 
 ## Current Normalized Metrics
 
@@ -56,6 +59,7 @@ Metis normalizes this data before detection and scoring so the score stays expla
 
 ## Current Rule
 
-Detection and scoring should read only normalized metrics and issue metadata.
+Detection, scoring, and insights should read only normalized metrics, issue metadata,
+and score output.
 
 They should not re-interpret raw Performance API entries on their own.

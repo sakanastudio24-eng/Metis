@@ -1,6 +1,6 @@
 # Phase 4 Implementation Plan
 
-This plan starts from the current Phase 3 codebase.
+This plan started from the Phase 3 codebase and now maps to the shipped Phase 4 foundation.
 
 ## Outcome
 
@@ -13,58 +13,22 @@ Implement a deterministic insight layer that converts score output into short, c
 - `src/shared/types/audit.ts`
 - `src/app/components/PhaseOneShell.tsx`
 
-## Step 1. Add Insight Config
+## Implemented Foundation
 
-Create `src/features/insights/config.ts` with:
+Shipped in the current Phase 4 pass:
 
 - estimate labels
 - summary tone rules
 - category-specific message templates
-- severity wording
+- deterministic next-step hints
+- a richer `CostInsight` type
+- a guaranteed post-load rescan path
+- console-only scan debug summaries
+- panel integration between issues and diagnostics
 
-Keep this public and configurable like detection/scoring.
+## Remaining Follow-Up
 
-## Step 2. Expand Insight Output Type
-
-Extend the current `CostInsight` type to support:
-
-- `summary`
-- `supportingDetail`
-- `estimateLabel`
-- `nextStep`
-- optional `primaryCategory`
-
-Keep it short and UI-ready.
-
-## Step 3. Build Deterministic Insight Logic
-
-Implement `buildInsight()` so it:
-
-1. picks the strongest issue
-2. reads score label and deductions
-3. builds a summary from category + severity
-4. adds one supporting line using metric metadata
-5. adds a lightweight estimate label without fake precision
-6. adds one next-step suggestion
-
-## Step 4. Wire Insight Into Panel UI
-
-Update `PhaseOneShell.tsx` so the full panel shows:
-
-- score
-- issues
-- insight summary block
-- diagnostics below
-
-The mini panel should show:
-
-- score
-- first issue
-- one short insight line
-
-## Step 5. Add Tuning Pass
-
-Review the output against:
+The next polish pass should still review the output against:
 
 - Google Search
 - YouTube
@@ -77,9 +41,7 @@ Tune for:
 - message length
 - repeated copy patterns
 
-## Step 6. Prepare Store-Readiness Follow-Up
-
-After insight generation is stable, the next polish work should cover:
+After insight generation is stable, the remaining store-readiness work should cover:
 
 - permissions review
 - description/listing alignment
