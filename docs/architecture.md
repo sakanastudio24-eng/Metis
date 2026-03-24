@@ -63,6 +63,18 @@ This keeps:
 
 out of the engine code so tuning stays mechanical and reviewable.
 
+## Phase 4 Direction
+
+Phase 4 should remain deterministic and local-first.
+
+The intended flow is:
+
+```text
+Normalized snapshot -> detected issues -> weighted score -> plain-language insight
+```
+
+That means `src/features/insights` should consume Phase 3 outputs rather than re-reading raw browser data.
+
 ## Planned Source Layout
 
 ```text

@@ -18,7 +18,7 @@ V1 is intentionally constrained:
 
 ## Current Status
 
-Phase 3 is active and the repo now scores live page scans.
+Phase 3 is complete and the repo is prepared to start Phase 4 insight work.
 
 What is working now:
 
@@ -34,6 +34,7 @@ What is working now:
 - issue detection from normalized metrics
 - score labels and deduction breakdowns
 - local visual test pages for layout checks
+- public threshold, weighting, and scoring flow docs
 
 What is not built yet:
 
@@ -59,6 +60,7 @@ The current implementation uses:
 - a Shadow DOM mount to isolate extension styles from host page styles
 - local React state for the panel flow
 - a completed scan pipeline feeding Phase 3 detection and scoring
+- public flow docs for normalization, scoring, and runtime isolation
 
 ## Repo Structure
 
@@ -148,7 +150,7 @@ and [docs/visual-test-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visu
 Current manifest values:
 
 - name: `Metis`
-- version: `0.0.0.9`
+- version: `0.0.0.15`
 - description: `Surface cost-risk signals directly on the page.`
 
 The extension currently requests:
@@ -194,6 +196,7 @@ Phase 2 notes live in:
 - [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md)
 - [docs/phase-2-review.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-review.md)
 - [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
+- [docs/normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
 - [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
 
 ## Next Step
@@ -210,3 +213,8 @@ Phase 3 planning now lives in:
 - [docs/phase-3-ui-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-ui-flow.md)
 - [docs/scoring-config-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scoring-config-flow.md)
 - [docs/ui-panel-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/ui-panel-flow.md)
+
+Phase 4 planning now lives in:
+
+- [docs/phase-4-research-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-research-flow.md)
+- [docs/phase-4-implementation-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-implementation-plan.md)
