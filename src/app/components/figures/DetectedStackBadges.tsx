@@ -156,6 +156,17 @@ export function DetectedStackBadges({
                 </div>
             </motion.div>
           ))}
+          <div
+            style={{
+              color: "rgba(255,255,255,0.34)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 11,
+              lineHeight: "17px",
+              paddingTop: 2
+            }}
+          >
+            Auto-detected from network and DOM signals.
+          </div>
         </div>
       )}
     </motion.div>

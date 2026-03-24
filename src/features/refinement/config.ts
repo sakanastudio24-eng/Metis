@@ -82,8 +82,32 @@ export const PLUS_CORE_KEYS: Array<keyof PlusRefinementAnswers> = [
 
 export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
   {
+    key: "appType",
+    label: "App Type",
+    helper: "This reduces false positives and changes what normal looks like.",
+    improves: [
+      "baselineExpectations",
+      "falsePositiveControl",
+      "recommendationRelevance"
+    ],
+    whyItMatters:
+      "A route that looks heavy on a portfolio may be acceptable on a dashboard or marketplace.",
+    group: "Stack",
+    required: true,
+    options: [
+      { value: "marketing", label: "Marketing site" },
+      { value: "portfolio", label: "Portfolio" },
+      { value: "ecommerce", label: "Ecommerce" },
+      { value: "saasDashboard", label: "SaaS dashboard" },
+      { value: "mediaHeavy", label: "Content-heavy" },
+      { value: "aiApp", label: "AI-heavy" },
+      { value: "marketplace", label: "Marketplace" },
+      { value: "internalTool", label: "Internal tool" }
+    ]
+  },
+  {
     key: "hostingProvider",
-    label: "Which hosting provider are you using?",
+    label: "Hosting Provider",
     helper: "This sharpens compute and bandwidth interpretation.",
     improves: [
       "computeRisk",
@@ -106,7 +130,7 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
   },
   {
     key: "hostingPlan",
-    label: "What plan are you on?",
+    label: "Plan Tier",
     helper: "This changes overage risk and urgency framing.",
     improves: [
       "overageRisk",
@@ -122,51 +146,6 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
       { value: "pro", label: "Pro" },
       { value: "team", label: "Team" },
       { value: "enterprise", label: "Enterprise" },
-      { value: "notSure", label: "Not sure" }
-    ]
-  },
-  {
-    key: "appType",
-    label: "What kind of app is this?",
-    helper: "This reduces false positives and changes what normal looks like.",
-    improves: [
-      "baselineExpectations",
-      "falsePositiveControl",
-      "recommendationRelevance"
-    ],
-    whyItMatters:
-      "A route that looks heavy on a portfolio may be acceptable on a dashboard or marketplace.",
-    group: "Stack",
-    required: true,
-    options: [
-      { value: "marketing", label: "Marketing site" },
-      { value: "portfolio", label: "Portfolio" },
-      { value: "ecommerce", label: "Ecommerce" },
-      { value: "saasDashboard", label: "SaaS dashboard" },
-      { value: "mediaHeavy", label: "Media-heavy site" },
-      { value: "aiApp", label: "AI app" },
-      { value: "marketplace", label: "Marketplace" },
-      { value: "internalTool", label: "Internal tool" }
-    ]
-  },
-  {
-    key: "monthlyVisits",
-    label: "About how many monthly visits do you get?",
-    helper: "This is the highest-value input for impact and savings framing.",
-    improves: [
-      "monthlyImpact",
-      "scaleProjection",
-      "savingsPrioritization"
-    ],
-    whyItMatters:
-      "Raw page weight means little without traffic. Volume determines whether a small issue is negligible or expensive.",
-    group: "Traffic",
-    required: true,
-    options: [
-      { value: "under1k", label: "Under 1k" },
-      { value: "1kTo10k", label: "1k–10k" },
-      { value: "10kTo100k", label: "10k–100k" },
-      { value: "100kPlus", label: "100k+" },
       { value: "notSure", label: "Not sure" }
     ]
   },
@@ -188,6 +167,27 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
       { value: "10To50", label: "10–50 pages" },
       { value: "50To200", label: "50–200 pages" },
       { value: "200Plus", label: "200+ pages" },
+      { value: "notSure", label: "Not sure" }
+    ]
+  },
+  {
+    key: "monthlyVisits",
+    label: "Monthly Traffic",
+    helper: "This is the highest-value input for impact and savings framing.",
+    improves: [
+      "monthlyImpact",
+      "scaleProjection",
+      "savingsPrioritization"
+    ],
+    whyItMatters:
+      "Raw page weight means little without traffic. Volume determines whether a small issue is negligible or expensive.",
+    group: "Traffic",
+    required: true,
+    options: [
+      { value: "under1k", label: "Under 1k" },
+      { value: "1kTo10k", label: "1k–10k" },
+      { value: "10kTo100k", label: "10k–100k" },
+      { value: "100kPlus", label: "100k+" },
       { value: "notSure", label: "Not sure" }
     ]
   },

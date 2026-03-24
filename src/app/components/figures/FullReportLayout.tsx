@@ -117,7 +117,7 @@ function ScaleSimulationSection({
           marginTop: 10
         }}
       >
-        If traffic grows, here&apos;s what this cost profile becomes.
+        If this route scales, this waste scales with it.
       </div>
 
       {aiCostPerRequestEstimate && (
@@ -149,7 +149,7 @@ function ScaleSimulationSection({
               marginTop: 6
             }}
           >
-            Based on detected AI-style usage
+            Based on detected AI-style usage.
           </div>
           <div
             className="metis-display"
@@ -219,7 +219,7 @@ function ScaleSimulationSection({
           marginTop: 10
         }}
       >
-        Projections based on the current cost profile and simple linear scaling.
+        Projected from the current route profile.
       </div>
     </motion.div>
   );
@@ -595,7 +595,7 @@ export function FullReportLayout({
                       marginTop: 8
                     }}
                   >
-                    Driven by bandwidth, request pressure, and vendor usage.
+                    Driven by bandwidth, requests, and API usage.
                   </div>
                 </div>
 
@@ -778,74 +778,16 @@ export function FullReportLayout({
             transition={{ duration: 0.32, delay: 0.08, ease: "easeOut" }}
           >
             <div className="space-y-6">
-              <CostBreakdown rows={viewModel.costRows} />
-              {isPlusUser && (
-                <ScaleSimulationSection
-                  aiCostPerRequestEstimate={viewModel.aiCostPerRequestEstimate}
-                  rows={viewModel.scaleSimulationRows}
-                />
-              )}
               <TopIssuesList
                 issues={viewModel.issues}
                 title="Problems · Sorted by Severity"
                 showSummaryPills={false}
               />
+              <CostBreakdown rows={viewModel.costRows} />
             </div>
 
             <div className="space-y-6">
               <DetectedStackBadges chips={viewModel.stackChips} groups={viewModel.stackGroups} />
-
-              <div
-                className="rounded-[24px] px-5 py-4"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)"
-                }}
-              >
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.28)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    marginBottom: 14
-                  }}
-                >
-                  Scan Scope
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onSetScanScope("single")}
-                    className="rounded-full px-5 py-3"
-                    style={{
-                      background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
-                      color: scanScope === "single" ? "#0c1623" : "white",
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: 13,
-                      fontWeight: 700
-                    }}
-                  >
-                    Single Page
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onSetScanScope("multi")}
-                    className="rounded-full px-5 py-3"
-                    style={{
-                      background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
-                      color: scanScope === "multi" ? "#0c1623" : "white",
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: 13,
-                      fontWeight: 700
-                    }}
-                  >
-                    Multipage
-                  </button>
-                </div>
-              </div>
             </div>
           </motion.div>
 
@@ -881,7 +823,20 @@ export function FullReportLayout({
                     marginTop: 12
                   }}
                 >
-                  Refine this report
+                  Improve Accuracy
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.42)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    marginTop: 10
+                  }}
+                >
+                  Updates score in real time
                 </div>
                 <div
                   style={{
@@ -964,6 +919,58 @@ export function FullReportLayout({
                     }}
                   >
                     {currentQuestion.whyItMatters}
+                  </div>
+
+                  <div
+                    className="mt-5 rounded-[18px] px-4 py-4"
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.06)"
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.3)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        marginBottom: 10
+                      }}
+                    >
+                      Scan Scope
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onSetScanScope("single")}
+                        className="rounded-full px-5 py-3"
+                        style={{
+                          background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
+                          color: scanScope === "single" ? "#0c1623" : "white",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 13,
+                          fontWeight: 700
+                        }}
+                      >
+                        Single Page
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onSetScanScope("multi")}
+                        className="rounded-full px-5 py-3"
+                        style={{
+                          background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
+                          color: scanScope === "multi" ? "#0c1623" : "white",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 13,
+                          fontWeight: 700
+                        }}
+                      >
+                        Multipage
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
@@ -1059,6 +1066,13 @@ export function FullReportLayout({
               )}
             </div>
           </motion.div>
+
+          {isPlusUser && (
+            <ScaleSimulationSection
+              aiCostPerRequestEstimate={viewModel.aiCostPerRequestEstimate}
+              rows={viewModel.scaleSimulationRows}
+            />
+          )}
 
           {isPlusUser && <FixRecommendationsSection cards={viewModel.fixRecommendationCards} />}
         </div>
