@@ -49,6 +49,31 @@ const phaseStatus = [
   }
 ];
 
+const triggerButtonStyle = {
+  minWidth: "48px",
+  padding: "16px 16px",
+  borderTopLeftRadius: "16px",
+  borderBottomLeftRadius: "16px"
+} as const;
+
+const triggerBadgeStyle = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "12px",
+  fontSize: "16px",
+  lineHeight: "16px"
+} as const;
+
+const triggerTitleStyle = {
+  fontSize: "13px",
+  lineHeight: "16px"
+} as const;
+
+const triggerSubtitleStyle = {
+  fontSize: "11px",
+  lineHeight: "14px"
+} as const;
+
 const severityTone = {
   high: {
     badge: "bg-[#3a1d18] text-[#ffb48a]",
@@ -805,13 +830,21 @@ export function PhaseOneShell({
             onClick={() => setPanelMode("mini")}
             className="group flex min-w-12 items-center gap-3 rounded-l-2xl border border-r-0 border-white/10 bg-[#0d1b2a] px-4 py-4 text-white shadow-2xl transition hover:-translate-x-1"
             title="Open Metis"
+            style={triggerButtonStyle}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f97316] text-base font-bold text-[#0d1b2a]">
+            <div
+              className="flex items-center justify-center bg-[#f97316] font-bold text-[#0d1b2a]"
+              style={triggerBadgeStyle}
+            >
               M
             </div>
             <div className="hidden pr-1 text-left group-hover:block">
-              <div className="text-sm font-semibold">Metis</div>
-              <div className="text-xs text-white/45">Open cost-risk panel</div>
+              <div className="font-semibold" style={triggerTitleStyle}>
+                Metis
+              </div>
+              <div className="text-white/45" style={triggerSubtitleStyle}>
+                Open cost-risk panel
+              </div>
             </div>
           </button>
         </div>
