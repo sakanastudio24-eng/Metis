@@ -240,6 +240,98 @@ function buildSummaryLine(
   return `Most signals look healthy ${scopeLabel}, but ${issues[0].title.toLowerCase()}.`;
 }
 
+function ScoreRing({
+  score,
+  size = 168
+}: {
+  score: number;
+  size?: number;
+}) {
+  const normalizedScore = Math.max(0, Math.min(100, score));
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = circumference - (normalizedScore / 100) * circumference;
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#ff7a1a"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={progress}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-[2.5rem] font-semibold leading-none text-white">
+            {formatDisplayNumber(score)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildSeverityCount(issues: DetectedIssue[], severity: DetectedIssue["severity"]) {
+  return issues.filter((issue) => issue.severity === severity).length;
+}
+
+function ScanFootprintCard({
+  metrics,
+  hostname,
+  pagesVisited,
+  compact = false
+}: {
+  metrics: RawScanSnapshot["metrics"];
+  hostname: string;
+  pagesVisited: number;
+  compact?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[24px] border border-white/8 bg-[#182433]">
+      <div className="flex items-center gap-2 border-b border-white/8 px-5 py-3 text-sm text-white/42">
+        <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
+        <span>
+          Live · Sampled {pagesVisited} page{pagesVisited === 1 ? "" : "s"} · {hostname}
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-4 px-5 py-5">
+        <div>
+          <div className={`text-white/68 ${compact ? "text-sm" : "text-[1.05rem]"} font-medium`}>
+            Current scan footprint
+          </div>
+          <div className="mt-1 text-sm text-white/30">
+            Based on cleaned requests and transferred weight
+          </div>
+        </div>
+        <div className={`${compact ? "text-2xl" : "text-[2.1rem]"} font-semibold text-white`}>
+          {formatBytes(metrics.totalEncodedBodySize)}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 bg-[#1b2340] px-5 py-3 text-sm text-[#aeb5ff]">
+        <span>⚡ {metrics.requestCount} requests</span>
+        <span>→ {metrics.thirdPartyDomainCount} 3P domains</span>
+      </div>
+    </div>
+  );
+}
+
 function IssueCard({ issue, compact = false }: { issue: DetectedIssue; compact?: boolean }) {
   const tone = severityTone[issue.severity];
 
@@ -910,6 +1002,8 @@ function MiniPanel({
   baselineSnapshot: RawScanSnapshot | null;
   visitedSnapshots: RawScanSnapshot[];
 }) {
+  const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
+
   return (
     <div className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[340px] flex-col border-l border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
       <div className="flex items-center justify-between border-b border-white/10 px-5 py-5">
@@ -943,60 +1037,88 @@ function MiniPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-          <div className="mb-3 flex items-center gap-2 text-[#f97316]">
-            <ScanSearch size={16} />
-            <span className="text-sm font-semibold uppercase tracking-[0.16em]">
-              Phase 4
-            </span>
-          </div>
-          <div className="text-[2rem] font-semibold leading-none">Insight Is Now Live</div>
-          <p className="mt-3 text-base leading-7 text-white/62">
-            Metis now turns cleaned request data into issues, a weighted score, and one deterministic insight instead of stopping at raw scan output.
-          </p>
-          <p className="mt-3 text-sm leading-6 text-white/48">
-            Refresh the extension in chrome://extensions and refresh the page whenever the content script changes.
-          </p>
-        </div>
-
-        <div className="mt-5">
-          <SnapshotSummary
-            scanScope={scanScope}
-            setScanScope={setScanScope}
-            rawSnapshot={rawSnapshot}
-            baselineSnapshot={baselineSnapshot}
-            visitedSnapshots={visitedSnapshots}
-            compact
-          />
-        </div>
-
-        <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-          <SectionLabel>Roadmap Status</SectionLabel>
-          <div className="space-y-2.5">
-            {phaseStatus.map((item) => (
-              <div
-                key={item.phase}
-                className="flex items-start justify-between gap-3 rounded-2xl border border-white/6 bg-[#10253a] px-4 py-3.5"
-              >
-                <div className="flex items-start gap-3">
-                  {item.tone === "done" ? (
-                    <CircleCheckBig size={16} className="mt-0.5 shrink-0 text-[#22c55e]" />
-                  ) : item.tone === "active" ? (
-                    <Sparkles size={16} className="mt-0.5 shrink-0 text-[#f97316]" />
-                  ) : (
-                    <TriangleAlert size={16} className="mt-0.5 shrink-0 text-[#facc15]" />
-                  )}
-                  <div>
-                    <div className="text-sm font-semibold text-white">
-                      {item.phase} · {item.title}
-                    </div>
-                    <div className="mt-1 text-sm text-white/58">{item.status}</div>
-                  </div>
+        {analysis ? (
+          <div className="space-y-5">
+            <div className="rounded-[34px] border border-white/10 bg-white/[0.04] px-6 py-7">
+              <div className="flex justify-center">
+                <ScoreRing score={analysis.score.score} size={160} />
+              </div>
+              <div className="mt-5 text-center">
+                <div className="text-[1rem] text-white/48">
+                  Cost Risk:{" "}
+                  <span className="font-semibold text-white">
+                    {formatDisplayNumber(analysis.score.score)}
+                  </span>
+                </div>
+                <div className="mt-4 inline-flex rounded-full bg-[#4d3223] px-5 py-2 text-[1rem] font-semibold text-[#ff7a1a]">
+                  {titleCase(analysis.score.label)}
                 </div>
               </div>
-            ))}
+              <div className="mt-6 rounded-[24px] border border-white/10 bg-white/[0.04] px-5 py-5 text-lg leading-8 text-white/72">
+                {analysis.insight.summary}
+              </div>
+              <div className="mt-6">
+                <ScanFootprintCard
+                  metrics={analysis.metrics}
+                  hostname={analysis.activeSnapshot.page.hostname}
+                  pagesVisited={analysis.pagesVisited}
+                  compact
+                />
+              </div>
+            </div>
+
+            <div className="rounded-[30px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/36">
+                Top Issues
+              </div>
+              <div className="mt-4 space-y-3">
+                {analysis.issues.slice(0, 3).map((issue) => (
+                  <div
+                    key={issue.id}
+                    className="flex items-center justify-between border-b border-white/8 pb-3 text-white"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-3 w-3 rounded-full ${
+                          issue.severity === "high"
+                            ? "bg-[#ff5a50]"
+                            : issue.severity === "medium"
+                              ? "bg-[#ff8c1a]"
+                              : "bg-[#facc15]"
+                        }`}
+                      />
+                      <div className="text-[1rem] font-medium">{issue.title}</div>
+                    </div>
+                    <div
+                      className={`rounded-full px-3 py-1 text-sm font-medium ${
+                        issue.severity === "high"
+                          ? "bg-[#4a2527] text-[#ff6f66]"
+                          : issue.severity === "medium"
+                            ? "bg-[#4d3223] text-[#ff8c1a]"
+                            : "bg-[#3e381d] text-[#facc15]"
+                      }`}
+                    >
+                      {issue.severity}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-[34px] border border-white/10 bg-white/[0.04] p-6">
+            <div className="mb-3 flex items-center gap-2 text-[#f97316]">
+              <ScanSearch size={16} />
+              <span className="text-sm font-semibold uppercase tracking-[0.16em]">
+                Phase 4
+              </span>
+            </div>
+            <div className="text-[2rem] font-semibold leading-none">Insight Is Now Live</div>
+            <p className="mt-3 text-base leading-7 text-white/62">
+              Metis is collecting enough signal to build the score-first mini dashboard.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="border-t border-white/10 px-5 py-5">
@@ -1101,82 +1223,72 @@ function FullPanel({
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
-            <div className="relative overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
-              <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#f97316]/12 blur-3xl" />
-              <div className="pointer-events-none absolute left-0 top-16 h-28 w-48 rounded-full bg-white/5 blur-3xl" />
-              <div className="relative">
-                <SectionLabel>Current State</SectionLabel>
-                <div className="grid gap-5 md:grid-cols-[1.15fr_0.85fr]">
-                  <div>
-                    <div className="text-[2.8rem] font-semibold leading-none">Phase 4 Active</div>
-                    <p className="mt-4 max-w-[460px] text-base leading-7 text-white/64">
-                      The dashboard now turns normalized request activity into score,
-                      surfaced issues, deterministic insight, and guided Plus refinement from the same local scan.
-                    </p>
-                    <p className="mt-3 text-sm leading-6 text-white/48">
-                      This runs fully in the content script, keeps data local, and reshapes the scan into one report surface instead of a raw metrics dump.
-                    </p>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <div className="rounded-full bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62">
-                        Content script UI
-                      </div>
-                      <div className="rounded-full bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62">
-                        Deterministic insights
-                      </div>
-                      <div className="rounded-full bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62">
-                        Guided Plus refinement
-                      </div>
-                    </div>
+            {analysis ? (
+              <div className="rounded-[28px] border border-white/8 bg-[#0f1824] px-7 py-8">
+                <div className="grid gap-8 md:grid-cols-[220px_1fr]">
+                  <div className="flex justify-center md:justify-start">
+                    <ScoreRing score={analysis.score.score} size={210} />
                   </div>
-                  <div className="grid gap-3">
-                    <div className="rounded-[22px] bg-black/20 px-4 py-4">
-                      <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                        Dashboard Mode
+                  <div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-[5rem] font-semibold leading-none text-white">
+                        {formatDisplayNumber(analysis.score.score)}
                       </div>
-                      <div className="mt-1.5 text-lg font-semibold text-white">Full Report</div>
-                      <div className="mt-1 text-sm leading-6 text-white/54">
-                        Score, insights, offenders, and guided questions live in one surface.
-                      </div>
-                    </div>
-                    <div className="rounded-[22px] bg-black/20 px-4 py-4">
-                      <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                        Data Source
-                      </div>
-                      <div className="mt-1.5 text-lg font-semibold text-white">Resource Timing</div>
-                      <div className="mt-1 text-sm leading-6 text-white/54">
-                        Cleaned through the staged raw, filtered, normalized, and grouped scan path.
+                      <div className="rounded-full bg-[#4d3223] px-5 py-2 text-[1.1rem] font-semibold text-[#ff7a1a]">
+                        {titleCase(analysis.score.label)}
                       </div>
                     </div>
-                    <div className="rounded-[22px] bg-black/20 px-4 py-4">
-                      <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                        Storage Scope
+                    <div className="mt-5 text-[2rem] font-semibold text-white">
+                      Cost Risk Score
+                    </div>
+                    <div className="mt-5 inline-block rounded-[26px] bg-white/[0.05] px-8 py-6">
+                      <div className="text-[2rem] font-semibold leading-tight text-white">
+                        {analysis.insight.estimateLabel}
                       </div>
-                      <div className="mt-1.5 text-lg font-semibold text-white">Local Only</div>
-                      <div className="mt-1 text-sm leading-6 text-white/54">
-                        Baseline and visited-page state stay in chrome.storage.local with no new Phase 4 permissions.
+                      <div className="mt-2 text-[1.1rem] text-white/46">
+                        Driven by requests, transfer size, and third-party pressure
                       </div>
+                    </div>
+                    <div className="mt-6 max-w-[760px]">
+                      <ScanFootprintCard
+                        metrics={analysis.metrics}
+                        hostname={analysis.activeSnapshot.page.hostname}
+                        pagesVisited={analysis.pagesVisited}
+                      />
+                    </div>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      {buildSeverityCount(analysis.issues, "high") > 0 && (
+                        <div className="rounded-full bg-[#4a2527] px-5 py-3 text-[1rem] font-semibold text-[#ff5a50]">
+                          {buildSeverityCount(analysis.issues, "high")} Critical
+                        </div>
+                      )}
+                      {buildSeverityCount(analysis.issues, "medium") > 0 && (
+                        <div className="rounded-full bg-[#4d3223] px-5 py-3 text-[1rem] font-semibold text-[#ff8c1a]">
+                          {buildSeverityCount(analysis.issues, "medium")} Moderate
+                        </div>
+                      )}
+                      {buildSeverityCount(analysis.issues, "low") > 0 && (
+                        <div className="rounded-full bg-[#3e381d] px-5 py-3 text-[1rem] font-semibold text-[#facc15]">
+                          {buildSeverityCount(analysis.issues, "low")} Low
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
-                <SectionLabel>Surface</SectionLabel>
-                <div className="text-xl font-semibold">Content Script UI</div>
-                <p className="mt-2 text-base text-white/58">
-                  Injected into normal webpages inside a Shadow DOM.
-                </p>
+            ) : (
+              <div className="relative overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
+                <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#f97316]/12 blur-3xl" />
+                <div className="pointer-events-none absolute left-0 top-16 h-28 w-48 rounded-full bg-white/5 blur-3xl" />
+                <div className="relative">
+                  <SectionLabel>Current State</SectionLabel>
+                  <div className="text-[2.8rem] font-semibold leading-none">Phase 4 Active</div>
+                  <p className="mt-4 max-w-[560px] text-base leading-7 text-white/64">
+                    Metis is collecting the scan signal needed to build the score-first report layout.
+                  </p>
+                </div>
               </div>
-              <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
-                <SectionLabel>Permissions</SectionLabel>
-                <div className="text-xl font-semibold">Storage + Host Access</div>
-                <p className="mt-2 text-base text-white/58">
-                  No new Phase 4 permissions were added beyond the current scan flow.
-                </p>
-              </div>
-            </div>
+            )}
 
             <div className="mt-5">
               <SnapshotSummary
