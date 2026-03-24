@@ -1,39 +1,36 @@
 # UI Panel Flow
 
-This is the current UI flow for the injected Metis panel.
+This is the current zip-authoritative UI flow for the injected Metis panel.
 
 ## States
 
-- `idle`: right-edge trigger only
-- `mini`: compact panel for quick scanning
-- `full`: expanded panel for detail and comparison
+- `idle`: narrow attached launcher on the right edge
+- `mini`: 288px quick-look panel
+- `full`: 410px floating panel
+- `report`: centered modal report opened from the panel
 
 ## Current Data Flow
 
 1. `App.tsx` receives a fresh `RawScanSnapshot`.
-2. `useMetisState.ts` stores the current snapshot, baseline snapshot, and visited-page snapshots.
+2. `useMetisState.ts` stores the current snapshot, baseline snapshot, visited-page snapshots, and Plus answers.
 3. `PhaseOneShell.tsx` selects either:
    - the single-page snapshot
-   - or a multipage snapshot reshaped from visited pages
+   - or a multipage snapshot reshaped from visited pages.
 4. `detection/index.ts` turns the active snapshot into issues.
 5. `scoring/index.ts` converts those issues into deductions and a score.
 6. `insights/index.ts` converts the score and issue stack into the Phase 4 insight.
-7. `PhaseOneShell.tsx` renders:
-   - score at the top
-   - surfaced issues next
-   - deterministic insight next
-   - Plus guided refinement below that in the full panel
-   - breakdown, offenders, and baseline comparison below
+7. `buildPlusOptimizationReport()` optionally sharpens that insight when refinement answers exist.
+8. `buildMetisDesignViewModel()` maps the live scan, score, insight, and refinement output into the prototype-shaped display model used by the panel and report components.
 
-## Current Panel Rule
+## Current Presentation Rule
 
-The panel should keep the scoring story clear:
+The shell now follows the zip-backed hierarchy instead of the older diagnostics-first layout:
 
-- score first
-- issues second
-- insight third
-- diagnostics after that
+- branded header first
+- score ring and risk badge next
+- quick insight and session cost card next
+- issues next
+- stack/context after that
+- guided refinement and deeper report content in the modal
 
-The full dashboard now also supports a guided one-question refinement flow instead of rendering the entire Plus questionnaire at once.
-
-The panel still supports both `Single Page` and `Multipage`.
+The shell still supports both `Single Page` and `Multipage`, but that switch now lives in the full report rather than leading the panel body.

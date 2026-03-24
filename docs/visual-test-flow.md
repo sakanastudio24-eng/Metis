@@ -15,7 +15,8 @@ pnpm build
 2. Reload the unpacked `dist/` extension in `chrome://extensions`
 3. Open a local fixture page
 4. Refresh the page
-5. Check trigger, mini panel, full panel, overlap, and scroll behavior
+5. Check launcher, mini panel, floating full panel, centered report modal, overlap, and scroll behavior
+6. Compare against the zip-backed fixture rather than the older `PhaseOneShell` layout
 
 ## Pages
 
@@ -23,3 +24,4 @@ pnpm build
 - `http://127.0.0.1:4173/sites/marketing/`
 - `http://127.0.0.1:4173/sites/dashboard/`
 - `http://127.0.0.1:4173/sites/media-heavy/`
+- `http://127.0.0.1:4173/sites/figma-design/`
