@@ -18,7 +18,7 @@ V1 is intentionally constrained:
 
 ## Current Status
 
-Phase 4 is active. The deterministic insight layer and scan-hardening pass are now implemented, with store-readiness polish still remaining.
+Phase 4 logic is complete. The deterministic insight layer, scan-hardening pass, and logic tests are now implemented, with UI polish and store-readiness cleanup still remaining.
 
 What is working now:
 
@@ -35,6 +35,7 @@ What is working now:
 - issue detection from normalized metrics
 - score labels and deduction breakdowns
 - deterministic insight generation from score + issue output
+- logic tests for normalization, scoring, and insights
 - local visual test pages for layout checks
 - public threshold, weighting, and scoring flow docs
 
@@ -124,6 +125,7 @@ What they do:
 - `pnpm dev` watches and rebuilds the extension into `dist/`
 - `pnpm build` creates a fresh production build in `dist/`
 - `pnpm typecheck` runs TypeScript checks
+- `pnpm test:logic` runs the deterministic Phase 4 logic suite
 - `pnpm visual:test:extension` rebuilds the extension for UI testing
 - `pnpm visual:test` serves the local visual fixture pages at `http://127.0.0.1:4173`
 
@@ -189,6 +191,7 @@ Phase 4
 
 - insight generation
 - scan hardening
+- logic tests
 - estimate refinement
 - polish and ship prep
 
@@ -204,9 +207,11 @@ Phase 2 notes live in:
 
 ## Next Step
 
-The next implementation milestone after the current Phase 4 foundation is:
+The next implementation milestone after the current Phase 4 logic pass is:
 
+- compare the automated logic suite against manual site tests
 - tune the insight copy against more real sites
+- fix the remaining layout drift across real host sites
 - add estimate refinement without fake precision
 - tighten ship-readiness, permissions review, and store-facing polish
 
