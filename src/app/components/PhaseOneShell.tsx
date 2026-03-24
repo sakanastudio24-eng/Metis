@@ -1,6 +1,7 @@
 // Render the injected Metis panel around scoring, deterministic Phase 4 insight
 // output, and the supporting diagnostics that help a page owner trust the result.
 import { useState } from "react";
+import type { ReactNode } from "react";
 import {
   ChevronLeft,
   CircleCheckBig,
@@ -110,8 +111,120 @@ const severityTone = {
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
+    <div className="metis-overline mb-3 text-white/38">
       {children}
+    </div>
+  );
+}
+
+function ShellHeader({
+  title,
+  subtitle,
+  trailing,
+  compact = false
+}: {
+  title: string;
+  subtitle: string;
+  trailing: ReactNode;
+  compact?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-white/10 px-6 py-5">
+      <div className="flex items-center gap-4">
+        <div
+          className={`metis-display flex items-center justify-center rounded-[18px] bg-[#ff7a1a] text-[#0d1b2a] ${
+            compact ? "h-[48px] w-[48px] text-[1.9rem]" : "h-[52px] w-[52px] text-[2rem]"
+          }`}
+        >
+          M
+        </div>
+        <div className="metis-body">
+          <div className={`${compact ? "text-[2rem]" : "text-[2.15rem]"} font-semibold text-white`}>
+            {title}
+          </div>
+          <div className={`${compact ? "text-[1rem]" : "text-[1.05rem]"} text-white/50`}>
+            {subtitle}
+          </div>
+        </div>
+      </div>
+      {trailing}
+    </div>
+  );
+}
+
+function SeverityPill({
+  label,
+  tone
+}: {
+  label: string;
+  tone: "critical" | "moderate" | "low" | "risk";
+}) {
+  const toneClass =
+    tone === "critical"
+      ? "bg-[#4a2527] text-[#ff5a50]"
+      : tone === "moderate"
+        ? "bg-[#4d3223] text-[#ff8c1a]"
+        : tone === "low"
+          ? "bg-[#3e381d] text-[#facc15]"
+          : "bg-[#4d3223] text-[#ff7a1a]";
+
+  return (
+    <div className={`metis-pill ${toneClass} px-5 py-2 text-[1rem] font-semibold`}>
+      {label}
+    </div>
+  );
+}
+
+function IssueRow({
+  issue
+}: {
+  issue: DetectedIssue;
+}) {
+  const dotClass =
+    issue.severity === "high"
+      ? "bg-[#ff5a50]"
+      : issue.severity === "medium"
+        ? "bg-[#ff8c1a]"
+        : "bg-[#facc15]";
+  const pillClass =
+    issue.severity === "high"
+      ? "bg-[#4a2527] text-[#ff5a50]"
+      : issue.severity === "medium"
+        ? "bg-[#4d3223] text-[#ff8c1a]"
+        : "bg-[#3e381d] text-[#facc15]";
+
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-4">
+      <div className="flex min-w-0 items-center gap-4">
+        <div className={`h-3.5 w-3.5 rounded-full ${dotClass}`} />
+        <div className="truncate text-[1.05rem] font-medium text-white">{issue.title}</div>
+      </div>
+      <div className={`metis-pill px-4 py-1.5 text-[0.95rem] font-medium ${pillClass}`}>
+        {issue.severity}
+      </div>
+    </div>
+  );
+}
+
+function SignalPill({
+  label,
+  tone = "neutral"
+}: {
+  label: string;
+  tone?: "neutral" | "green" | "violet" | "orange";
+}) {
+  const toneClass =
+    tone === "green"
+      ? "border-[#146c58] bg-[#103a34] text-[#18c59a]"
+      : tone === "violet"
+        ? "border-[#3f45b4] bg-[#20275a] text-[#aeb5ff]"
+        : tone === "orange"
+          ? "border-[#6f411b] bg-[#3b2617] text-[#ff9c48]"
+          : "border-white/10 bg-white/8 text-white/68";
+
+  return (
+    <div className={`metis-pill border px-4 py-2 text-[0.95rem] font-medium ${toneClass}`}>
+      {label}
     </div>
   );
 }
@@ -279,7 +392,7 @@ function ScoreRing({
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-[2.5rem] font-semibold leading-none text-white">
+          <div className="metis-display text-[2.8rem] leading-none text-white">
             {formatDisplayNumber(score)}
           </div>
         </div>
@@ -290,6 +403,31 @@ function ScoreRing({
 
 function buildSeverityCount(issues: DetectedIssue[], severity: DetectedIssue["severity"]) {
   return issues.filter((issue) => issue.severity === severity).length;
+}
+
+function buildContextSignals(snapshot: RawScanSnapshot, issues: DetectedIssue[]) {
+  const signals: Array<{ label: string; tone: "neutral" | "green" | "violet" | "orange" }> = [];
+
+  if (snapshot.metrics.apiRequestCount > 0) {
+    signals.push({ label: `${snapshot.metrics.apiRequestCount} API calls detected`, tone: "green" });
+  }
+
+  if (snapshot.metrics.thirdPartyDomainCount > 0) {
+    signals.push({
+      label: `${snapshot.metrics.thirdPartyDomainCount} third-party domains`,
+      tone: "violet"
+    });
+  }
+
+  if (issues.some((issue) => issue.category === "largeImages")) {
+    signals.push({ label: "Image load pressure", tone: "orange" });
+  }
+
+  if (issues.some((issue) => issue.category === "duplicateRequests")) {
+    signals.push({ label: "Duplicate request risk", tone: "neutral" });
+  }
+
+  return signals.slice(0, 4);
 }
 
 function ScanFootprintCard({
@@ -320,7 +458,9 @@ function ScanFootprintCard({
             Based on cleaned requests and transferred weight
           </div>
         </div>
-        <div className={`${compact ? "text-2xl" : "text-[2.1rem]"} font-semibold text-white`}>
+        <div
+          className={`metis-display ${compact ? "text-2xl" : "text-[2.25rem]"} leading-none text-white`}
+        >
           {formatBytes(metrics.totalEncodedBodySize)}
         </div>
       </div>
@@ -818,13 +958,13 @@ function SnapshotSummary({
   const baselinePath = hasUsableMetrics(baselineSnapshot) ? baselineSnapshot.page.pathname || "/" : "/";
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+    <div className="metis-card p-6">
       <SectionLabel>Phase 4 Insight</SectionLabel>
-      <div className="flex items-center gap-2 text-white">
+      <div className="flex items-center gap-3 text-white">
         <Radar size={16} className="text-[#f97316]" />
-        <div className="text-base font-semibold">{activeSnapshot.page.hostname}</div>
+        <div className="text-[1.5rem] font-semibold">{activeSnapshot.page.hostname}</div>
       </div>
-      <div className="mt-2 text-sm text-white/48">
+      <div className="mt-2 text-[1rem] text-white/48">
         {activeSnapshot.page.pathname || "/"} · {new Date(activeSnapshot.scannedAt).toLocaleTimeString()}
       </div>
 
@@ -866,10 +1006,14 @@ function SnapshotSummary({
             No major cost-risk patterns surfaced from the current normalized request set.
           </div>
         ) : (
-          <div className={`mt-3 grid gap-3 ${compact ? "grid-cols-1" : "grid-cols-1"}`}>
-            {visibleIssues.map((issue) => (
-              <IssueCard key={issue.id} issue={issue} compact={compact} />
-            ))}
+          <div className="mt-4 space-y-3">
+            {visibleIssues.map((issue) => {
+              if (compact) {
+                return <IssueRow key={issue.id} issue={issue} />;
+              }
+
+              return <IssueCard key={issue.id} issue={issue} compact={compact} />;
+            })}
           </div>
         )}
       </div>
@@ -1003,38 +1147,48 @@ function MiniPanel({
   visitedSnapshots: RawScanSnapshot[];
 }) {
   const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
+  const contextSignals = analysis
+    ? buildContextSignals(analysis.activeSnapshot, analysis.issues)
+    : [];
+  const compactSubtitle = analysis
+    ? `${analysis.activeSnapshot.page.hostname} · ${new Date(
+        analysis.activeSnapshot.scannedAt
+      ).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+      })}`
+    : "Phase 4 live insight";
 
   return (
     <div className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[340px] flex-col border-l border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f97316] text-base font-bold text-[#0d1b2a]">
-            M
+      <ShellHeader
+        title="Metis"
+        subtitle={compactSubtitle}
+        compact
+        trailing={
+          <div className="flex items-center gap-2">
+            <div className="metis-pill flex h-[46px] w-[46px] items-center justify-center border border-white/12 bg-white/10 text-[1.15rem] font-semibold text-white">
+              JD
+            </div>
+            <button
+              type="button"
+              onClick={() => setPanelMode("full")}
+              className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
+              title="Open full panel"
+            >
+              <Expand size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPanelMode("idle")}
+              className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
+              title="Close"
+            >
+              <X size={16} />
+            </button>
           </div>
-          <div>
-            <div className="text-base font-semibold">Metis</div>
-            <div className="text-sm text-white/48">Phase 4 live insight</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setPanelMode("full")}
-            className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-            title="Open full panel"
-          >
-            <Expand size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setPanelMode("idle")}
-            className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-            title="Close"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
         {analysis ? (
@@ -1050,8 +1204,8 @@ function MiniPanel({
                     {formatDisplayNumber(analysis.score.score)}
                   </span>
                 </div>
-                <div className="mt-4 inline-flex rounded-full bg-[#4d3223] px-5 py-2 text-[1rem] font-semibold text-[#ff7a1a]">
-                  {titleCase(analysis.score.label)}
+                <div className="mt-4 inline-flex">
+                  <SeverityPill label={titleCase(analysis.score.label)} tone="risk" />
                 </div>
               </div>
               <div className="mt-6 rounded-[24px] border border-white/10 bg-white/[0.04] px-5 py-5 text-lg leading-8 text-white/72">
@@ -1068,42 +1222,26 @@ function MiniPanel({
             </div>
 
             <div className="rounded-[30px] border border-white/10 bg-white/[0.03] p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/36">
+              <div className="metis-overline text-white/36">
                 Top Issues
               </div>
               <div className="mt-4 space-y-3">
                 {analysis.issues.slice(0, 3).map((issue) => (
-                  <div
-                    key={issue.id}
-                    className="flex items-center justify-between border-b border-white/8 pb-3 text-white"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`h-3 w-3 rounded-full ${
-                          issue.severity === "high"
-                            ? "bg-[#ff5a50]"
-                            : issue.severity === "medium"
-                              ? "bg-[#ff8c1a]"
-                              : "bg-[#facc15]"
-                        }`}
-                      />
-                      <div className="text-[1rem] font-medium">{issue.title}</div>
-                    </div>
-                    <div
-                      className={`rounded-full px-3 py-1 text-sm font-medium ${
-                        issue.severity === "high"
-                          ? "bg-[#4a2527] text-[#ff6f66]"
-                          : issue.severity === "medium"
-                            ? "bg-[#4d3223] text-[#ff8c1a]"
-                            : "bg-[#3e381d] text-[#facc15]"
-                      }`}
-                    >
-                      {issue.severity}
-                    </div>
-                  </div>
+                  <IssueRow key={issue.id} issue={issue} />
                 ))}
               </div>
             </div>
+
+            {contextSignals.length > 0 && (
+              <div className="rounded-[30px] border border-white/10 bg-white/[0.03] p-5">
+                <div className="metis-overline text-white/36">Detected Context</div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {contextSignals.map((signal) => (
+                    <SignalPill key={signal.label} label={signal.label} tone={signal.tone} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="rounded-[34px] border border-white/10 bg-white/[0.04] p-6">
@@ -1177,49 +1315,44 @@ function FullPanel({
       />
       <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
         <div className="pointer-events-auto flex max-h-[92vh] w-full max-w-[1040px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
-          <div className="relative overflow-hidden border-b border-white/10 px-6 py-5">
+          <div className="relative overflow-hidden">
             <div className="pointer-events-none absolute left-1/2 top-0 h-16 w-56 -translate-x-1/2 rounded-full bg-[#f97316]/18 blur-2xl" />
-            <div className="relative flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f97316] text-base font-bold text-[#0d1b2a]">
-                  M
-                </div>
-                <div>
-                  <div className="text-base font-semibold">Metis Full Report</div>
-                  <div className="text-sm text-white/42">
-                    {activeSnapshot
-                      ? `${activeSnapshot.page.hostname} · ${snapshotTimestamp}`
-                      : "Phase 4 insight and polish"}
+            <ShellHeader
+              title="Metis Full Report"
+              subtitle={
+                activeSnapshot
+                  ? `${activeSnapshot.page.hostname} · ${snapshotTimestamp}`
+                  : "Phase 4 insight and polish"
+              }
+              trailing={
+                <div className="flex items-center gap-2">
+                  <div className="metis-pill border border-[#6f411b] bg-[#2a211c] px-4 py-2 text-[0.95rem] font-semibold uppercase tracking-[0.18em] text-[#ff9c48]">
+                    Phase 4
                   </div>
+                  {analysis && (
+                    <div className="metis-pill border border-white/10 bg-white/5 px-4 py-2 text-[0.95rem] font-semibold uppercase tracking-[0.18em] text-white/60">
+                      {titleCase(analysis.score.label)}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPanelMode("mini")}
+                    className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
+                    title="Minimize"
+                  >
+                    <Minimize2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPanelMode("idle")}
+                    className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
+                    title="Close"
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="rounded-full border border-[#f97316]/25 bg-[#f97316]/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ffb48a]">
-                  Phase 4
-                </div>
-                {analysis && (
-                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/60">
-                    {titleCase(analysis.score.label)}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setPanelMode("mini")}
-                  className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-                  title="Minimize"
-                >
-                  <Minimize2 size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPanelMode("idle")}
-                  className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-                  title="Close"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
+              }
+            />
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -1338,6 +1471,23 @@ function FullPanel({
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t border-white/10 px-6 py-5">
+            <div className="text-[1rem] text-white/30">ward.studio/metis</div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="metis-pill border border-white/10 bg-white/5 px-6 py-4 text-[1rem] font-semibold text-white/72 transition hover:bg-white/8 hover:text-white"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                className="metis-pill border border-white/10 bg-white/8 px-6 py-4 text-[1rem] font-semibold text-white/72 transition hover:bg-white/12 hover:text-white"
+              >
+                Export PDF (Plus)
+              </button>
             </div>
           </div>
         </div>

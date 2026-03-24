@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Jua&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,6 +10,11 @@
   --metis-color-orange: #f97316;
   --metis-color-white: #ffffff;
   --metis-shadow-panel: 0 18px 48px rgba(13, 27, 42, 0.18);
+  --metis-font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --metis-font-display: "Jua", "Trebuchet MS", "Arial Rounded MT Bold", sans-serif;
+  --metis-radius-panel: 28px;
+  --metis-radius-card: 24px;
+  --metis-radius-chip: 999px;
 }
 
 *,
@@ -17,7 +24,7 @@
 }
 
 html {
-  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--metis-font-body);
 }
 
 body {
@@ -25,7 +32,7 @@ body {
 }
 
 #metis-react-root {
-  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--metis-font-body);
   font-size: 16px;
   line-height: 1.5;
   color: #ffffff;
@@ -38,7 +45,42 @@ body {
 #metis-react-root,
 #metis-react-root * {
   box-sizing: border-box;
-  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--metis-font-body);
+}
+
+#metis-react-root .metis-display,
+#metis-react-root .metis-display * {
+  font-family: var(--metis-font-display);
+  font-weight: 400;
+}
+
+#metis-react-root .metis-body,
+#metis-react-root .metis-body * {
+  font-family: var(--metis-font-body);
+}
+
+#metis-react-root .metis-overline {
+  font-family: var(--metis-font-body);
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+#metis-react-root .metis-card {
+  border-radius: var(--metis-radius-card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+#metis-react-root .metis-soft-card {
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+#metis-react-root .metis-pill {
+  border-radius: var(--metis-radius-chip);
 }
 
 /*
