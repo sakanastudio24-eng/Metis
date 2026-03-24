@@ -67,6 +67,13 @@ function createSnapshot(
     scannedAt: overrides.scannedAt ?? "2026-03-24T12:00:00.000Z",
     page: overrides.page ?? defaultPage,
     resources,
+    stackSignals:
+      overrides.stackSignals ??
+      resources.map((resource) => ({
+        name: resource.name,
+        hostname: resource.hostname,
+        pathname: resource.pathname
+      })),
     dom: overrides.dom ?? {
       scriptCount: resources.filter((resource) => resource.category === "script").length,
       imageCount: resources.filter((resource) => resource.category === "image").length,
@@ -413,6 +420,51 @@ test("design view model adds stack fallback questions for missing groups", () =>
   assert.ok(fallbackKeys.includes("stackAiProvider"));
   assert.ok(fallbackKeys.includes("stackAnalytics"));
   assert.ok(fallbackKeys.includes("stackPayment"));
+});
+
+test("design view model detects known stack from raw stack signals even when retained resources are sparse", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://example.com/_next/static/chunks/main.js",
+        hostname: "example.com",
+        pathname: "/_next/static/chunks/main.js"
+      },
+      {
+        name: "https://vercel.live/edge-config",
+        hostname: "vercel.live",
+        pathname: "/edge-config"
+      },
+      {
+        name: "https://www.googletagmanager.com/gtag/js?id=G-TEST",
+        hostname: "www.googletagmanager.com",
+        pathname: "/gtag/js"
+      }
+    ]
+  });
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers: {},
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  assert.ok(viewModel.stackGroups.some((group) => group.label === "Framework"));
+  assert.ok(
+    viewModel.stackGroups.some(
+      (group) => group.label === "Hosting / CDN" && group.items.some((item) => item.label === "Vercel")
+    )
+  );
+  assert.ok(viewModel.stackGroups.some((group) => group.label === "Analytics"));
 });
 
 test("design view model keeps brand colors for detected stack and fix cards", () => {
