@@ -208,4 +208,5 @@ Phase 3 planning now lives in:
 
 - [docs/phase-3-logic-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-logic-flow.md)
 - [docs/phase-3-ui-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-ui-flow.md)
+- [docs/scoring-config-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scoring-config-flow.md)
 - [docs/ui-panel-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/ui-panel-flow.md)

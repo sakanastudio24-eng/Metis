@@ -47,6 +47,22 @@ Separated on purpose so each phase can evolve cleanly:
 
 This separation prevents scan cleanup, issue logic, and scoring heuristics from getting mixed together.
 
+## Current Phase 3 Configuration
+
+Phase 3 is now driven by public config files:
+
+- `src/features/detection/config.ts`
+- `src/features/scoring/config.ts`
+
+This keeps:
+
+- thresholds
+- score penalties
+- category multipliers
+- label thresholds
+
+out of the engine code so tuning stays mechanical and reviewable.
+
 ## Planned Source Layout
 
 ```text
