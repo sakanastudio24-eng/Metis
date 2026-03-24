@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".tmp-tests",
+    "rootDir": ".",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "declaration": false,
+    "sourceMap": false,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/shared/types/**/*.ts",
+    "src/features/detection/**/*.ts",
+    "src/features/scoring/**/*.ts",
+    "src/features/insights/**/*.ts",
+    "src/features/scan/index.ts",
+    "src/features/scan/performance.ts",
+    "tests/**/*.ts"
+  ]
+}

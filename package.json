@@ -8,6 +8,7 @@
     "dev": "vite build --watch",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "test:logic": "rm -rf .tmp-tests && tsc -p tsconfig.tests.json && node -e \"require('node:fs').writeFileSync('.tmp-tests/package.json', JSON.stringify({ type: 'commonjs' }))\" && node --test .tmp-tests/tests/phase-4-logic.test.js",
     "clean": "rm -rf dist",
     "visual:test": "node scripts/serve-visual-test.mjs",
     "visual:test:extension": "pnpm build"
