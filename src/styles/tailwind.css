@@ -234,6 +234,10 @@ input[type="range"]::-moz-range-thumb {
   width: 3px;
 }
 
+.metis-scroll {
+  overscroll-behavior: contain;
+}
+
 .metis-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
