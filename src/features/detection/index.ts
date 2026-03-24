@@ -1,6 +1,7 @@
 // detection/index.ts converts normalized metrics into a short list of explainable issues.
 // It reads the public threshold config and attaches metric/threshold metadata to each issue.
-import type { DetectedIssue, RawScanSnapshot } from "../../shared/types/audit";
+import { detectMoneyStack } from "../stack";
+import type { DetectedIssue, PlusRefinementAnswers, RawScanSnapshot } from "../../shared/types/audit";
 import { DETECTION_THRESHOLDS } from "./config";
 
 const severityRank = {
@@ -55,9 +56,13 @@ function meetsLargeImageThreshold(
   );
 }
 
-export function detectIssues(snapshot: RawScanSnapshot): DetectedIssue[] {
+export function detectIssues(
+  snapshot: RawScanSnapshot,
+  answers: PlusRefinementAnswers = {}
+): DetectedIssue[] {
   const { metrics } = snapshot;
   const issues: DetectedIssue[] = [];
+  const moneyStack = detectMoneyStack(snapshot, answers);
 
   if (metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.high) {
     issues.push({
@@ -269,6 +274,136 @@ export function detectIssues(snapshot: RawScanSnapshot): DetectedIssue[] {
       },
       threshold: {
         thirdPartyDomainCount: DETECTION_THRESHOLDS.thirdPartySprawl.low
+      }
+    });
+  }
+
+  const analyticsVendors =
+    moneyStack.groups.find((group) => group.id === "analyticsAdsRum")?.vendors ?? [];
+  if (analyticsVendors.length >= DETECTION_THRESHOLDS.analyticsAdsRumSurface.high) {
+    issues.push({
+      id: "analytics-ads-rum-surface",
+      title: "A dense analytics and ad-tech surface is adding vendor overhead",
+      detail: `${analyticsVendors.map((vendor) => vendor.label).join(", ")} were detected on this route, which increases third-party execution and vendor cost pressure.`,
+      severity: "high",
+      category: "analyticsAdsRumSurface",
+      metric: {
+        analyticsVendorCount: analyticsVendors.length
+      },
+      threshold: {
+        analyticsVendorCount: DETECTION_THRESHOLDS.analyticsAdsRumSurface.high
+      }
+    });
+  } else if (analyticsVendors.length >= DETECTION_THRESHOLDS.analyticsAdsRumSurface.medium) {
+    issues.push({
+      id: "analytics-ads-rum-surface",
+      title: "Analytics and ad-tech vendors are starting to stack up",
+      detail: `${analyticsVendors.map((vendor) => vendor.label).join(", ")} are active here, which makes third-party cost harder to keep tidy.`,
+      severity: "medium",
+      category: "analyticsAdsRumSurface",
+      metric: {
+        analyticsVendorCount: analyticsVendors.length
+      },
+      threshold: {
+        analyticsVendorCount: DETECTION_THRESHOLDS.analyticsAdsRumSurface.medium
+      }
+    });
+  } else if (analyticsVendors.length >= DETECTION_THRESHOLDS.analyticsAdsRumSurface.low) {
+    issues.push({
+      id: "analytics-ads-rum-surface",
+      title: "A paid measurement or advertising layer is present on this route",
+      detail: `${analyticsVendors[0]?.label ?? "A measurement vendor"} is active here, which adds direct vendor and execution overhead even before traffic scales.`,
+      severity: "low",
+      category: "analyticsAdsRumSurface",
+      metric: {
+        analyticsVendorCount: analyticsVendors.length
+      },
+      threshold: {
+        analyticsVendorCount: DETECTION_THRESHOLDS.analyticsAdsRumSurface.low
+      }
+    });
+  }
+
+  const aiVendors = moneyStack.groups.find((group) => group.id === "aiProviders")?.vendors ?? [];
+  const aiUsageHint = answers.aiUsage === "yesOften" || answers.aiUsage === "sometimes";
+  if (aiVendors.length > 0 && (metrics.apiRequestCount > 0 || aiUsageHint)) {
+    const highAi =
+      metrics.apiRequestCount >= DETECTION_THRESHOLDS.aiSpendSurface.highApiRequestCount ||
+      metrics.requestCount >= DETECTION_THRESHOLDS.aiSpendSurface.highRequestCount ||
+      answers.aiUsage === "yesOften";
+    const mediumAi =
+      metrics.apiRequestCount >= DETECTION_THRESHOLDS.aiSpendSurface.mediumApiRequestCount ||
+      metrics.requestCount >= DETECTION_THRESHOLDS.aiSpendSurface.mediumRequestCount;
+
+    issues.push({
+      id: "ai-spend-surface",
+      title:
+        highAi
+          ? "AI-backed requests are a visible cost driver on this route"
+          : mediumAi
+            ? "AI-backed traffic is contributing to route cost"
+            : "An AI provider is present on this route",
+      detail:
+        highAi
+          ? `${aiVendors[0]?.label ?? "An AI provider"} is active and the current request profile is already large enough to make repeated model calls directly expensive.`
+          : mediumAi
+            ? `${aiVendors[0]?.label ?? "An AI provider"} is active here and the request profile suggests vendor cost can rise quickly as traffic grows.`
+            : `${aiVendors[0]?.label ?? "An AI provider"} was detected alongside route activity, so repeated AI work would add direct vendor cost.`,
+      severity: highAi ? "high" : mediumAi ? "medium" : "low",
+      category: "aiSpendSurface",
+      metric: {
+        aiVendorCount: aiVendors.length,
+        apiRequestCount: metrics.apiRequestCount,
+        requestCount: metrics.requestCount
+      },
+      threshold: {
+        apiRequestCount: highAi
+          ? DETECTION_THRESHOLDS.aiSpendSurface.highApiRequestCount
+          : mediumAi
+            ? DETECTION_THRESHOLDS.aiSpendSurface.mediumApiRequestCount
+            : 1
+      }
+    });
+  }
+
+  const hostingVendors = moneyStack.groups.find((group) => group.id === "hostingCdn")?.vendors ?? [];
+  if (hostingVendors.length > 0) {
+    const highHosting =
+      hostingVendors.length >= 2 &&
+      (metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highTransferBytes ||
+        metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highRequestCount);
+    const mediumHosting =
+      hostingVendors.length >= 2 ||
+      metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumTransferBytes ||
+      metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumRequestCount;
+
+    issues.push({
+      id: "hosting-cdn-spend-surface",
+      title:
+        highHosting
+          ? "The current hosting and CDN setup is amplifying route cost"
+          : mediumHosting
+            ? "Hosting and CDN choices are now part of the cost profile"
+            : "A billable hosting or CDN layer is active on this route",
+      detail:
+        highHosting
+          ? `${hostingVendors.map((vendor) => vendor.label).join(", ")} are serving this route alongside a heavier request or transfer profile, so infra billing likely contributes to waste.`
+          : mediumHosting
+            ? `${hostingVendors.map((vendor) => vendor.label).join(", ")} are part of the current route path, so repeated requests and heavier assets have a clearer infra cost impact.`
+            : `${hostingVendors[0]?.label ?? "A host or CDN"} was detected on this route, which makes transfer, cache misses, and repeated work more relevant financially.`,
+      severity: highHosting ? "high" : mediumHosting ? "medium" : "low",
+      category: "hostingCdnSpendSurface",
+      metric: {
+        hostingVendorCount: hostingVendors.length,
+        totalEncodedBodySize: metrics.totalEncodedBodySize,
+        requestCount: metrics.requestCount
+      },
+      threshold: {
+        totalEncodedBodySize: highHosting
+          ? DETECTION_THRESHOLDS.hostingCdnSpendSurface.highTransferBytes
+          : mediumHosting
+            ? DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumTransferBytes
+            : DETECTION_THRESHOLDS.hostingCdnSpendSurface.lowTransferBytes
       }
     });
   }

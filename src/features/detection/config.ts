@@ -25,5 +25,23 @@ export const DETECTION_THRESHOLDS = {
     low: 4,
     medium: 8,
     high: 14
+  },
+  analyticsAdsRumSurface: {
+    low: 1,
+    medium: 3,
+    high: 5
+  },
+  aiSpendSurface: {
+    mediumApiRequestCount: 5,
+    highApiRequestCount: 12,
+    mediumRequestCount: 40,
+    highRequestCount: 80
+  },
+  hostingCdnSpendSurface: {
+    lowTransferBytes: 250_000,
+    mediumTransferBytes: 750_000,
+    highTransferBytes: 1_500_000,
+    mediumRequestCount: 40,
+    highRequestCount: 80
   }
 } as const;

@@ -408,11 +408,15 @@ export const PLUS_LABELS = {
   } satisfies Record<StackAiProvider, string>,
   stackAnalytics: {
     ga4: "Google Analytics 4",
+    gtm: "Google Tag Manager",
+    amazonAdvertising: "Amazon Advertising",
+    cloudwatchRum: "CloudWatch RUM",
+    metaPixel: "Meta Pixel",
     plausible: "Plausible",
     segment: "Segment",
     mixpanel: "Mixpanel",
-    none: "No analytics",
-    other: "Other analytics"
+    none: "No analytics / ads / RUM",
+    other: "Other analytics / ads / RUM"
   } satisfies Record<StackAnalytics, string>,
   stackPayment: {
     stripe: "Stripe v3",
@@ -468,6 +472,10 @@ const STACK_BRAND_COLORS = {
   anthropic: "#d97706",
   google: "#60a5fa",
   ga4: "#f9a825",
+  gtm: "#f59e0b",
+  amazonAdvertising: "#ff9900",
+  cloudwatchRum: "#22c55e",
+  metaPixel: "#60a5fa",
   plausible: "#a78bfa",
   segment: "#6ee7ff",
   mixpanel: "#8b5cf6",
@@ -546,20 +554,24 @@ export function buildStackFallbackQuestionDefinitions(
       case "analytics":
         return {
           key: "stackAnalytics",
-          label: "Analytics",
-          helper: "Metis could not identify the analytics tool from the current route.",
+          label: "Analytics / Ads / RUM",
+          helper: "Metis could not confidently identify the measurement or advertising vendors on this route.",
           improves: ["falsePositiveCleanup", "recommendationAccuracy", "actionOrdering"],
           whyItMatters:
-            "Analytics vendors can add third-party weight and duplicate tag behavior that should be explained correctly.",
+            "Analytics, ad-tech, and RUM vendors add third-party spend and execution overhead that should be attributed correctly.",
           group: "Stack",
           required: false,
           options: [
             { value: "ga4", label: "Google Analytics 4", brandColor: STACK_BRAND_COLORS.ga4 },
+            { value: "gtm", label: "Google Tag Manager", brandColor: STACK_BRAND_COLORS.gtm },
+            { value: "amazonAdvertising", label: "Amazon Advertising", brandColor: STACK_BRAND_COLORS.amazonAdvertising },
+            { value: "cloudwatchRum", label: "CloudWatch RUM", brandColor: STACK_BRAND_COLORS.cloudwatchRum },
+            { value: "metaPixel", label: "Meta Pixel", brandColor: STACK_BRAND_COLORS.metaPixel },
             { value: "plausible", label: "Plausible", brandColor: STACK_BRAND_COLORS.plausible },
             { value: "segment", label: "Segment", brandColor: STACK_BRAND_COLORS.segment },
             { value: "mixpanel", label: "Mixpanel", brandColor: STACK_BRAND_COLORS.mixpanel },
-            { value: "none", label: "No analytics" },
-            { value: "other", label: "Other analytics" }
+            { value: "none", label: "No analytics / ads / RUM" },
+            { value: "other", label: "Other analytics / ads / RUM" }
           ]
         };
       case "payment":

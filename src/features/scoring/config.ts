@@ -12,7 +12,10 @@ export const SCORE_CONFIG = {
     duplicateRequests: 1.25,
     pageWeight: 1.1,
     largeImages: 1,
-    thirdPartySprawl: 0.9
+    thirdPartySprawl: 0.9,
+    aiSpendSurface: 0.75,
+    analyticsAdsRumSurface: 0.6,
+    hostingCdnSpendSurface: 0.55
   },
   labels: {
     healthyMin: 85,

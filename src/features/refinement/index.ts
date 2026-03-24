@@ -115,6 +115,10 @@ function buildCostSensitivityNote(
     notes.push("Repeated requests matter more here because they may be hitting paid endpoints.");
   }
 
+  if (answers.paidApiUsage === "yes" && primaryCategory === "aiSpendSurface") {
+    notes.push("Confirmed paid API usage makes repeated AI activity more expensive than normal request overhead.");
+  }
+
   if (answers.aiUsage === "yesOften") {
     notes.push("Frequent AI calls raise the ceiling on per-session cost faster than standard requests.");
   } else if (answers.aiUsage === "sometimes") {
@@ -137,6 +141,10 @@ function buildCostSensitivityNote(
     (primaryCategory === "requestCount" || primaryCategory === "duplicateRequests")
   ) {
     notes.push("For a simpler site type, this amount of network activity is a stronger cleanup signal than it would be on a dashboard.");
+  }
+
+  if (answers.highTrafficRoute === "yes" && primaryCategory === "analyticsAdsRumSurface") {
+    notes.push("Because this is a high-traffic route, every extra analytics or ad-tech tag compounds faster than it would on a low-traffic page.");
   }
 
   return notes.join(" ");

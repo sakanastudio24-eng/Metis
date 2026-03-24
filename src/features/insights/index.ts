@@ -86,6 +86,16 @@ function buildSupportingDetail(issue: DetectedIssue) {
       return `${issue.metric?.thirdPartyDomainCount ?? 0} third-party domains were observed against a threshold of ${
         issue.threshold?.thirdPartyDomainCount ?? 0
       }.`;
+    case "aiSpendSurface":
+      return `${issue.metric?.aiVendorCount ?? 0} AI provider was detected with ${
+        issue.metric?.apiRequestCount ?? 0
+      } API-style requests and ${issue.metric?.requestCount ?? 0} retained requests on this route.`;
+    case "analyticsAdsRumSurface":
+      return `${issue.metric?.analyticsVendorCount ?? 0} analytics, ad-tech, or RUM vendors were detected on this route.`;
+    case "hostingCdnSpendSurface":
+      return `${issue.metric?.hostingVendorCount ?? 0} hosting or CDN vendors were detected alongside ${formatBytes(
+        issue.metric?.totalEncodedBodySize ?? 0
+      )} of transfer weight and ${issue.metric?.requestCount ?? 0} retained requests.`;
     default:
       return issue.detail;
   }

@@ -4,9 +4,9 @@
  * view model used by the zip-authoritative shell.
  */
 import {
-  buildStackFallbackQuestionDefinitions,
-  PLUS_LABELS
+  buildStackFallbackQuestionDefinitions
 } from "../../../features/refinement/config";
+import { detectMoneyStack } from "../../../features/stack";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type {
   DetectedIssue,
@@ -113,16 +113,6 @@ export interface MetisDesignViewModel {
     missingGroups: string[];
   };
 }
-
-const STACK_BRAND_COLORS = {
-  react: "#61dafb",
-  nextjs: "#9ca3af",
-  vercel: "#6366f1",
-  cloudflare: "#f6821f",
-  openai: "#10a37f",
-  ga4: "#f9a825",
-  stripe: "#6772e5"
-} as const;
 
 function formatCurrency(value: number) {
   if (value < 0.1) {
@@ -287,8 +277,20 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
       return;
     }
 
-    if (deduction.category === "requestCount" || deduction.category === "duplicateRequests") {
+    if (
+      deduction.category === "requestCount" ||
+      deduction.category === "duplicateRequests" ||
+      deduction.category === "hostingCdnSpendSurface"
+    ) {
       contribution.requests += deduction.points;
+      return;
+    }
+
+    if (
+      deduction.category === "aiSpendSurface" ||
+      deduction.category === "analyticsAdsRumSurface"
+    ) {
+      contribution.ai += deduction.points;
       return;
     }
 
@@ -324,148 +326,44 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
   ];
 }
 
-function hasStackMatch(haystacks: string[], patterns: string[]) {
-  return patterns.some((pattern) => haystacks.some((value) => value.includes(pattern)));
-}
-
 function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
-  const resources = snapshot.resources;
-  const stackSignals = snapshot.stackSignals ?? [];
-  const signalNames = stackSignals.map((signal) => signal.name.toLowerCase());
-  const signalHostnames = stackSignals.map((signal) => signal.hostname.toLowerCase());
-  const signalPathnames = stackSignals.map((signal) => signal.pathname.toLowerCase());
-  const resourceNames = resources.map((resource) => resource.name.toLowerCase());
-  const hostnames = resources.map((resource) => resource.hostname.toLowerCase());
-  const names = [...resourceNames, ...signalNames];
-  const hosts = [...hostnames, ...signalHostnames];
-  const paths = [...resources.map((resource) => resource.pathname.toLowerCase()), ...signalPathnames];
-
-  const frameworkItems: DesignStackGroupItem[] = [];
-  const hostingItems: DesignStackGroupItem[] = [];
-  const aiItems: DesignStackGroupItem[] = [];
-  const analyticsItems: DesignStackGroupItem[] = [];
-  const paymentItems: DesignStackGroupItem[] = [];
-
-  const hasNext =
-    hasStackMatch(names, ["/_next/", "__next", "next.js", "nextjs"]) ||
-    hasStackMatch(paths, ["/_next/", "/next-static/"]) ||
-    answers.stackFramework === "nextjs";
-
-  if (hasNext) {
-    frameworkItems.push({ label: "Next.js 14", brandColor: STACK_BRAND_COLORS.nextjs });
-  }
-
-  if (
-    hasStackMatch(names, ["react", "react-dom", "react.production"]) ||
-    answers.stackFramework === "react" ||
-    hasNext
-  ) {
-    frameworkItems.unshift({ label: "React 18", brandColor: STACK_BRAND_COLORS.react });
-  }
-
-  if (answers.stackFramework && frameworkItems.length === 0) {
-    frameworkItems.push({
-      label: PLUS_LABELS.stackFramework[answers.stackFramework],
-      brandColor:
-        answers.stackFramework === "react"
-          ? STACK_BRAND_COLORS.react
-          : answers.stackFramework === "nextjs"
-            ? STACK_BRAND_COLORS.nextjs
-            : undefined
-    });
-  }
-
-  if (answers.hostingProvider) {
-    hostingItems.push({
-      label: PLUS_LABELS.hostingProvider[answers.hostingProvider],
-      brandColor:
-        answers.hostingProvider === "vercel" ? STACK_BRAND_COLORS.vercel : undefined
-    });
-  }
-
-  if (
-    hasStackMatch(hosts, ["cloudflare", "cloudflareinsights.com", "challenges.cloudflare.com"]) ||
-    answers.stackCdnProvider === "cloudflare"
-  ) {
-    hostingItems.push({ label: "Cloudflare CDN", brandColor: STACK_BRAND_COLORS.cloudflare });
-  } else if (
-    hasStackMatch(hosts, ["vercel", "vercel-insights.com", "vercel.live"]) ||
-    hasStackMatch(paths, ["/_vercel/"]) ||
-    answers.hostingProvider === "vercel" ||
-    answers.stackCdnProvider === "vercelEdge"
-  ) {
-    if (!hostingItems.some((item) => item.label === "Vercel")) {
-      hostingItems.unshift({ label: "Vercel", brandColor: STACK_BRAND_COLORS.vercel });
-    }
-  } else if (answers.stackCdnProvider) {
-    hostingItems.push({ label: PLUS_LABELS.stackCdnProvider[answers.stackCdnProvider] });
-  }
-
-  if (hasStackMatch(hosts, ["openai", "oaistatic.com"]) || answers.stackAiProvider === "openai") {
-    aiItems.push({ label: "OpenAI GPT-4", brandColor: STACK_BRAND_COLORS.openai });
-  } else if (answers.stackAiProvider) {
-    aiItems.push({ label: PLUS_LABELS.stackAiProvider[answers.stackAiProvider] });
-  }
-
-  if (
-    hasStackMatch(hosts, [
-      "google-analytics",
-      "googletagmanager",
-      "analytics.google.com",
-      "googleads.g.doubleclick.net"
-    ]) ||
-    answers.stackAnalytics === "ga4"
-  ) {
-    analyticsItems.push({ label: "Google Analytics 4", brandColor: STACK_BRAND_COLORS.ga4 });
-  } else if (answers.stackAnalytics) {
-    analyticsItems.push({ label: PLUS_LABELS.stackAnalytics[answers.stackAnalytics] });
-  }
-
-  if (hasStackMatch(hosts, ["stripe", "js.stripe.com"]) || answers.stackPayment === "stripe") {
-    paymentItems.push({ label: "Stripe v3", brandColor: STACK_BRAND_COLORS.stripe });
-  } else if (answers.stackPayment) {
-    paymentItems.push({ label: PLUS_LABELS.stackPayment[answers.stackPayment] });
-  }
-
-  const missingGroups = [
-    frameworkItems.length === 0 ? "framework" : null,
-    hostingItems.length === 0 ? "hostingCdn" : null,
-    aiItems.length === 0 && (answers.aiUsage && answers.aiUsage !== "no")
-      ? "aiProvider"
-      : null,
-    analyticsItems.length === 0 ? "analytics" : null,
-    paymentItems.length === 0 ? "payment" : null
-  ].filter((value): value is "framework" | "hostingCdn" | "aiProvider" | "analytics" | "payment" => value !== null);
-
-  const chips: DesignStackChip[] = [
-    ...frameworkItems.slice(0, 2).map((item) => ({
-      label: item.label,
-      tone: "tech" as const,
-      brandColor: item.brandColor
-    })),
-    ...hostingItems.slice(0, 2).map((item) => ({
-      label: item.label,
-      tone: "provider" as const,
-      brandColor: item.brandColor
-    })),
-    ...aiItems.slice(0, 1).map((item) => ({
-      label: item.label,
-      tone: "ai" as const,
-      brandColor: item.brandColor
+  const detection = detectMoneyStack(snapshot, answers);
+  const groups = detection.groups.map((group) => ({
+    label: group.label,
+    items: group.vendors.map((vendor) => ({
+      label: vendor.label,
+      brandColor: vendor.brandColor
     }))
-  ];
+  }));
 
-  return {
-    chips,
-    groups: [
-      { label: "Framework", items: frameworkItems },
-      { label: "Hosting / CDN", items: hostingItems },
-      { label: "AI Providers", items: aiItems },
-      { label: "Analytics", items: analyticsItems },
-      { label: "Payment", items: paymentItems }
-    ].filter((group) => group.items.length > 0),
-    missingGroups
-  };
+  const chips: DesignStackChip[] = detection.groups.flatMap((group) =>
+    group.vendors.slice(0, group.id === "framework" ? 2 : group.id === "hostingCdn" ? 2 : 1).map((vendor) => ({
+      label: vendor.label,
+      tone:
+        group.id === "hostingCdn"
+          ? ("provider" as const)
+          : group.id === "aiProviders"
+            ? ("ai" as const)
+            : group.id === "framework"
+              ? ("tech" as const)
+              : ("neutral" as const),
+      brandColor: vendor.brandColor
+    }))
+  );
+
+  const missingGroups = detection.missingCostGroups.map((group) => {
+    switch (group) {
+      case "hostingCdn":
+        return "hostingCdn" as const;
+      case "aiProviders":
+        return "aiProvider" as const;
+      case "analyticsAdsRum":
+      default:
+        return "analytics" as const;
+    }
+  });
+
+  return { chips, groups, missingGroups };
 }
 
 function buildStackChips(
@@ -582,6 +480,31 @@ const FIX_LIBRARY: Partial<
     fix:
       "Remove low-value third-party tags, delay non-critical vendors, and collapse overlapping tools where possible.",
     scaleImpact: "At 10× traffic → external vendor overhead becomes a larger share of the route cost profile."
+  },
+  aiSpendSurface: {
+    saveLabel: "Save ~$9/mo",
+    priorityLabel: "Fix First",
+    rootCause:
+      "An AI provider is active on this route, and the current request path suggests the feature can fire more often than the user flow really needs.",
+    fix:
+      "Debounce or batch AI triggers, cache repeated prompts, and move non-essential completions off the hottest interaction path.",
+    scaleImpact: "At 10× traffic → direct model spend climbs much faster than standard request overhead."
+  },
+  analyticsAdsRumSurface: {
+    saveLabel: "Save ~$4/mo",
+    rootCause:
+      "Analytics, ad-tech, or RUM vendors are stacking on this route and each one adds execution, transfer, or paid measurement overhead.",
+    fix:
+      "Keep the highest-value tags, lazy-load non-critical vendors, and remove redundant measurement scripts that duplicate attribution or session replay.",
+    scaleImpact: "At 10× traffic → tag overhead becomes a steady vendor and execution tax on the route."
+  },
+  hostingCdnSpendSurface: {
+    saveLabel: "Save ~$5/mo",
+    rootCause:
+      "The active hosting or CDN path means cache misses, heavy transfer, and repeated compute have a clearer infra billing impact.",
+    fix:
+      "Push harder on caching, reduce transfer-heavy assets, and keep repeated work off the hottest edge or function path.",
+    scaleImpact: "At 10× traffic → infra billing compounds faster when cache misses and payload weight stay high."
   }
 };
 

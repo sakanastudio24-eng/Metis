@@ -51,6 +51,24 @@ export const INSIGHT_SUMMARY_TEMPLATES: Record<
     healthy: "The page still looks controlled, but third-party sprawl is growing.",
     watch: "Third-party sprawl is starting to make the page harder to control.",
     "high risk": "Third-party sprawl is a major source of operational and network risk."
+  },
+  aiSpendSurface: {
+    "warming up": "Metis is still warming up on this page.",
+    healthy: "The page looks stable, but an AI cost surface is already present.",
+    watch: "AI-backed work is contributing to this route's cost profile.",
+    "high risk": "AI-backed requests are a major source of cost pressure on this route."
+  },
+  analyticsAdsRumSurface: {
+    "warming up": "Metis is still warming up on this page.",
+    healthy: "The page is mostly controlled, but vendor measurement overhead is present.",
+    watch: "Analytics and ad-tech vendors are adding measurable cost pressure.",
+    "high risk": "Vendor measurement and ad-tech overhead are a major cost driver here."
+  },
+  hostingCdnSpendSurface: {
+    "warming up": "Metis is still warming up on this page.",
+    healthy: "The route is controlled, but its hosting path already matters financially.",
+    watch: "Hosting and CDN choices are shaping this route's cost profile.",
+    "high risk": "The hosting and CDN path is amplifying cost on this route."
   }
 };
 
@@ -65,5 +83,11 @@ export const INSIGHT_NEXT_STEPS: Record<IssueCategory | "default", string> = {
   largeImages:
     "Start with the heaviest images and reduce bytes through resizing, better formats, or lazy loading.",
   thirdPartySprawl:
-    "Review third-party tags and keep only the vendors that still justify their network and operational cost."
+    "Review third-party tags and keep only the vendors that still justify their network and operational cost.",
+  aiSpendSurface:
+    "Reduce AI call frequency first through debouncing, caching, and narrower trigger points before traffic multiplies the spend.",
+  analyticsAdsRumSurface:
+    "Trim low-value analytics, ad-tech, and RUM vendors first, then keep the remaining tags lazy and well-scoped.",
+  hostingCdnSpendSurface:
+    "Treat cache misses, transfer-heavy assets, and repeated compute as infra-cost problems and tune them against the active host/CDN path."
 };

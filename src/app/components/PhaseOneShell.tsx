@@ -325,7 +325,7 @@ export function PhaseOneShell({
   const lastSnapshotKeyRef = useRef<string | null>(null);
 
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
-  const issues = activeSnapshot ? detectIssues(activeSnapshot) : [];
+  const issues = activeSnapshot ? detectIssues(activeSnapshot, plusAnswers) : [];
   const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
   const insight =
     activeSnapshot && score ? buildInsight(activeSnapshot, issues, score) : null;
