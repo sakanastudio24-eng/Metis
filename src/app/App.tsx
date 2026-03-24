@@ -1,11 +1,13 @@
 // App.tsx owns the live content-script runtime.
 // It refreshes scan data, guards against invalid extension contexts,
-// and passes the latest snapshots into the injected Metis panel.
+// and passes the latest snapshots into the injected Metis panel. Phase 4 also
+// guarantees one post-load rescan so pages that are still settling get a second,
+// deterministic pass before the steady interval loop takes over.
 import type { MouseEvent, PointerEvent } from "react";
 import { useEffect } from "react";
 import { PhaseOneShell } from "./components/PhaseOneShell";
 import { useMetisState } from "./useMetisState";
-import { collectRawScanSnapshot } from "../features/scan";
+import { buildScanDebugSummary, collectRawScanSnapshot } from "../features/scan";
 import {
   getOrCreateSiteBaseline,
   upsertVisitedSiteSnapshot
@@ -46,6 +48,13 @@ export default function App() {
     let isStopped = false;
     let intervalId: number | null = null;
     let navigationCheckId: number | null = null;
+    const handlePostLoadSync = () => {
+      if (isStopped) {
+        return;
+      }
+
+      void syncSnapshots();
+    };
 
     const handlePageChange = () => {
       if (isStopped || window.location.href === lastHref) {
@@ -73,6 +82,7 @@ export default function App() {
 
       window.removeEventListener("popstate", handlePageChange);
       window.removeEventListener("hashchange", handlePageChange);
+      window.removeEventListener("load", handlePostLoadSync);
     };
 
     const syncSnapshots = async () => {
@@ -89,6 +99,7 @@ export default function App() {
         setBaselineSnapshot(baseline);
         setVisitedSnapshots(visited);
 
+        console.info("[Metis] scan summary", buildScanDebugSummary(snapshot));
         console.info("[Metis] raw scan snapshot", snapshot);
         console.info("[Metis] site baseline snapshot", baseline);
         console.info("[Metis] visited site snapshots", visited);
@@ -104,6 +115,10 @@ export default function App() {
     };
 
     void syncSnapshots();
+
+    if (document.readyState !== "complete") {
+      window.addEventListener("load", handlePostLoadSync, { once: true });
+    }
 
     intervalId = window.setInterval(() => {
       void syncSnapshots();

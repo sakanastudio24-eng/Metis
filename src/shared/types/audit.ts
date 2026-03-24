@@ -2,6 +2,7 @@
 // scoring, and the later insight stage. Keep these types stable because multiple
 // extension surfaces and docs depend on them.
 export type Severity = "low" | "medium" | "high";
+export type ScoreLabel = "warming up" | "healthy" | "watch" | "high risk";
 export type IssueCategory =
   | "requestCount"
   | "duplicateRequests"
@@ -104,13 +105,16 @@ export interface ScoreDeduction {
 
 export interface ScoreBreakdown {
   score: number;
-  label: string;
+  label: ScoreLabel;
   deductions: ScoreDeduction[];
 }
 
 export interface CostInsight {
   summary: string;
-  estimateLabel?: string;
+  supportingDetail: string;
+  estimateLabel: string;
+  nextStep: string;
+  primaryCategory: IssueCategory | null;
 }
 
 export interface MetisSnapshot {

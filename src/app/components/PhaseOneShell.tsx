@@ -1,5 +1,5 @@
-// Render the injected Metis panel around Phase 3 scoring, issue detection,
-// and the supporting diagnostics that help a page owner trust the result.
+// Render the injected Metis panel around scoring, deterministic Phase 4 insight
+// output, and the supporting diagnostics that help a page owner trust the result.
 import {
   ChevronLeft,
   CircleCheckBig,
@@ -12,10 +12,12 @@ import {
   X
 } from "lucide-react";
 import { detectIssues } from "../../features/detection";
+import { buildInsight } from "../../features/insights";
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
+  CostInsight,
   DetectedIssue,
   RawScanSnapshot,
   ResourceAggregate,
@@ -38,14 +40,14 @@ const phaseStatus = [
   {
     phase: "Phase 3",
     title: "Detection and scoring",
-    status: "Active",
-    tone: "active"
+    status: "Complete",
+    tone: "done"
   },
   {
     phase: "Phase 4",
     title: "Insight and polish",
-    status: "Queued",
-    tone: "queued"
+    status: "Active",
+    tone: "active"
   }
 ];
 
@@ -287,7 +289,7 @@ function ScoreOverview({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
-            {compact ? "Phase 3 Score" : "Phase 3 Cost-Risk Score"}
+            {compact ? "Phase 4 Score" : "Phase 4 Cost-Risk Score"}
           </div>
           <div className="mt-2 flex items-end gap-3">
             <div className="text-[3rem] font-semibold leading-none text-white">
@@ -323,6 +325,37 @@ function ScoreOverview({
   );
 }
 
+function InsightCard({
+  insight,
+  compact = false
+}: {
+  insight: CostInsight;
+  compact?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+          Phase 4 Insight
+        </div>
+        <div className="rounded-full bg-[#10253a] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/58">
+          {insight.estimateLabel}
+        </div>
+      </div>
+      <div className="mt-3 text-sm font-semibold text-white">{insight.summary}</div>
+      {!compact && (
+        <>
+          <div className="mt-2 text-sm leading-6 text-white/58">{insight.supportingDetail}</div>
+          <div className="mt-4 rounded-2xl bg-[#0d2234] px-4 py-3.5">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">Next Step</div>
+            <div className="mt-1 text-sm leading-6 text-white/74">{insight.nextStep}</div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function SnapshotSummary({
   scanScope,
   setScanScope,
@@ -341,8 +374,10 @@ function SnapshotSummary({
   if (!rawSnapshot) {
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-        <SectionLabel>Phase 3 Scoring</SectionLabel>
-        <div className="text-base text-white/60">Collecting enough signal to score the page…</div>
+        <SectionLabel>Phase 4 Insight</SectionLabel>
+        <div className="text-base text-white/60">
+          Collecting enough signal to score the page and build an insight…
+        </div>
       </div>
     );
   }
@@ -352,6 +387,7 @@ function SnapshotSummary({
   const activeMetrics = activeSnapshot.metrics;
   const issues = detectIssues(activeSnapshot);
   const score = scoreSnapshot(activeSnapshot, issues);
+  const insight = buildInsight(activeSnapshot, issues, score);
   const visibleIssues = compact ? issues.slice(0, 2) : issues;
   const pagesVisited = Math.max(visitedSnapshots.length, 1);
 
@@ -403,7 +439,7 @@ function SnapshotSummary({
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-      <SectionLabel>Phase 3 Scoring</SectionLabel>
+      <SectionLabel>Phase 4 Insight</SectionLabel>
       <div className="flex items-center gap-2 text-white">
         <Radar size={16} className="text-[#f97316]" />
         <div className="text-base font-semibold">{rawSnapshot.page.hostname}</div>
@@ -458,6 +494,10 @@ function SnapshotSummary({
         )}
       </div>
 
+      <div className="mt-5">
+        <InsightCard insight={insight} compact={compact} />
+      </div>
+
       {!compact && (
         <>
           <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 p-4">
@@ -495,7 +535,7 @@ function SnapshotSummary({
             <div className="mt-4 space-y-2">
               {score.deductions.length === 0 ? (
                 <div className="rounded-2xl bg-[#0d2234] px-4 py-3.5 text-sm text-white/58">
-                  No deductions were applied from the current issue set.
+                  No deductions were applied from the current issue set, so the insight is based on a controlled scan profile.
                 </div>
               ) : (
                 score.deductions.map((deduction) => (
@@ -591,7 +631,7 @@ function MiniPanel({
           </div>
           <div>
             <div className="text-base font-semibold">Metis</div>
-            <div className="text-sm text-white/48">Phase 3 live scoring</div>
+            <div className="text-sm text-white/48">Phase 4 live insight</div>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -619,12 +659,12 @@ function MiniPanel({
           <div className="mb-3 flex items-center gap-2 text-[#f97316]">
             <ScanSearch size={16} />
             <span className="text-sm font-semibold uppercase tracking-[0.16em]">
-              Phase 3
+              Phase 4
             </span>
           </div>
-          <div className="text-[2rem] font-semibold leading-none">Scoring Live Cost Risk</div>
+          <div className="text-[2rem] font-semibold leading-none">Insight Is Now Live</div>
           <p className="mt-3 text-base leading-7 text-white/62">
-            Metis now turns cleaned request data into issues and a score instead of only showing raw scan output.
+            Metis now turns cleaned request data into issues, a weighted score, and one deterministic insight instead of stopping at raw scan output.
           </p>
           <p className="mt-3 text-sm leading-6 text-white/48">
             Refresh the extension in chrome://extensions and refresh the page whenever the content script changes.
@@ -710,7 +750,7 @@ function FullPanel({
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <div>
             <div className="text-base font-semibold">Metis Full Panel</div>
-            <div className="text-sm text-white/48">Phase 3 cost-risk scoring</div>
+            <div className="text-sm text-white/48">Phase 4 insight and polish</div>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -735,9 +775,9 @@ function FullPanel({
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
             <SectionLabel>Current State</SectionLabel>
-            <div className="text-[2.6rem] font-semibold leading-none">Phase 3 Active</div>
+            <div className="text-[2.6rem] font-semibold leading-none">Phase 4 Active</div>
             <p className="mt-4 text-base leading-7 text-white/64">
-              The extension now converts normalized request data into a score, a short issue stack, and supporting diagnostics that explain why the page looks healthy or risky.
+              The extension now converts normalized request data into a score, a short issue stack, and one deterministic insight that explains what is likely driving cost pressure.
             </p>
             <p className="mt-3 text-sm leading-6 text-white/48">
               This still runs fully in the content script with Manifest V3 and uses chrome.storage.local only for baseline and visited-page state.
@@ -756,7 +796,7 @@ function FullPanel({
               <SectionLabel>Permissions</SectionLabel>
               <div className="text-xl font-semibold">Storage + Host Access</div>
               <p className="mt-2 text-base text-white/58">
-                No new Phase 3 permissions were added beyond the current scan flow.
+                No new Phase 4 permissions were added beyond the current scan flow.
               </p>
             </div>
           </div>

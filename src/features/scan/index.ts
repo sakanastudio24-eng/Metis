@@ -1,5 +1,6 @@
 // scan/index.ts assembles the canonical raw scan snapshot.
-// It also reshapes multiple visited pages into one aggregate snapshot for multipage scoring.
+// It also reshapes multiple visited pages into one aggregate snapshot for multipage scoring
+// and exposes a small debug summary for console-only runtime verification.
 import type { RawScanSnapshot } from "../../shared/types/audit";
 import { inspectDomSurface } from "./dom";
 import { buildResourceMetrics, collectResourceSummaries } from "./performance";
@@ -48,6 +49,17 @@ export function buildMultipageSnapshot(
         0
       )
     })
+  };
+}
+
+export function buildScanDebugSummary(snapshot: RawScanSnapshot) {
+  return {
+    totalRequests: snapshot.metrics.requestCount,
+    duplicateEndpoints: snapshot.metrics.duplicateEndpointCount,
+    totalBytes: snapshot.metrics.totalEncodedBodySize,
+    imageCount: snapshot.metrics.meaningfulImageCount,
+    rawCount: snapshot.metrics.rawRequestCount,
+    filteredCount: snapshot.metrics.requestCount
   };
 }
 

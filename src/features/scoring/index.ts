@@ -1,6 +1,11 @@
 // scoring/index.ts turns detected issues into a weighted cost-risk score.
 // It applies public severity penalties, category multipliers, and label thresholds.
-import type { DetectedIssue, RawScanSnapshot, ScoreBreakdown } from "../../shared/types/audit";
+import type {
+  DetectedIssue,
+  RawScanSnapshot,
+  ScoreBreakdown,
+  ScoreLabel
+} from "../../shared/types/audit";
 import { SCORE_CONFIG } from "./config";
 
 function roundScoreValue(value: number) {
@@ -28,7 +33,7 @@ export function scoreSnapshot(
     roundScoreValue(SCORE_CONFIG.baseScore - totalDeduction)
   );
 
-  let label = "healthy";
+  let label: ScoreLabel = "healthy";
   if (score < SCORE_CONFIG.labels.watchMin) {
     label = "high risk";
   } else if (score < SCORE_CONFIG.labels.healthyMin) {
