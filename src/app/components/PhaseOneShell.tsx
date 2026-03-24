@@ -5,7 +5,7 @@
  * Live Phase 4 data still powers the surfaces, but the chrome now follows the
  * original prototype's account, loading, footer, and Plus-upgrade behaviors.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronRight, FileText, Maximize2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import {
   PANEL_BG
 } from "../data/metis-mock-data";
 import { FullReportLayout } from "./figures/FullReportLayout";
+import { isSoftRefresh, shouldReplayLoading } from "./figures/loadingState";
 import { PanelLayout } from "./figures/PanelLayout";
 import {
   CopyReportButton,
@@ -93,49 +94,52 @@ function LauncherButton({
       <AnimatePresence>
         {hovered && (
           <motion.div
-            className="absolute right-[72px] top-1/2 w-[182px] -translate-y-1/2 rounded-[18px] px-4 py-3"
+            className="absolute right-[68px] top-1/2 -translate-y-1/2 rounded-full px-4 py-2.5"
             style={{
               background: "#0d1825",
               border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.45)"
+              boxShadow: "0 20px 46px rgba(0,0,0,0.42)"
             }}
-            initial={{ opacity: 0, x: 10, scale: 0.96 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 10, scale: 0.96 }}
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 12 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div
-              style={{
-                color: "rgba(255,255,255,0.3)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase"
-              }}
-            >
-              Cost Risk: {score ?? "…"}
-            </div>
-            <div
-              style={{
-                color: "white",
-                fontFamily: "Jua, sans-serif",
-                fontSize: 16,
-                marginTop: 8
-              }}
-            >
-              {riskLabel ?? "Metis ready"}
-            </div>
-            <div
-              style={{
-                color: "rgba(255,255,255,0.45)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 11,
-                lineHeight: "16px",
-                marginTop: 8
-              }}
-            >
-              Click to scan this page and open Metis.
+            <div className="flex items-center gap-3 whitespace-nowrap">
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.38)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase"
+                }}
+              >
+                Metis
+              </div>
+              <div className="h-1 w-1 rounded-full bg-white/20" />
+              <div
+                style={{
+                  color: "white",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 12,
+                  fontWeight: 600
+                }}
+              >
+                Cost Risk: {score ?? "…"}
+              </div>
+              <div className="h-1 w-1 rounded-full bg-white/20" />
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.66)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 12,
+                  fontWeight: 500
+                }}
+              >
+                {riskLabel ?? "Ready"}
+              </div>
             </div>
           </motion.div>
         )}
@@ -162,7 +166,7 @@ function LauncherButton({
           x: panelTransition,
           scale: panelTransition
         }}
-        whileHover={{ x: -4, scale: 1.02 }}
+        whileHover={{ x: -6 }}
         whileTap={{ scale: 0.98 }}
       >
         <div className="relative flex h-[28px] w-[28px] items-center justify-center">
@@ -298,9 +302,13 @@ export function PhaseOneShell({
   setIsPlusRefinementOpen: (value: boolean) => void;
 }) {
   const [miniLoaded, setMiniLoaded] = useState(false);
-  const [miniSessionKey, setMiniSessionKey] = useState(0);
+  const [fullLoaded, setFullLoaded] = useState(false);
+  const [miniRouteKey, setMiniRouteKey] = useState<string | null>(null);
+  const [fullRouteKey, setFullRouteKey] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
+  const lastSnapshotKeyRef = useRef<string | null>(null);
 
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
   const issues = activeSnapshot ? detectIssues(activeSnapshot) : [];
@@ -326,25 +334,62 @@ export function PhaseOneShell({
           requiredQuestionCount: PLUS_CORE_KEYS.length
         })
       : null;
+  const routeKey = viewModel?.routeKey ?? rawSnapshot?.page.href ?? null;
+  const snapshotKey = viewModel?.snapshotKey ?? null;
 
-  const currentQuestion =
-    PLUS_QUESTION_DEFINITIONS.filter((definition) => {
+  const questionDefinitions = useMemo(() => {
+    const baseDefinitions = PLUS_QUESTION_DEFINITIONS.filter((definition) => {
       if (!definition.dependsOn) {
         return true;
       }
 
       return plusAnswers[definition.dependsOn.key] === definition.dependsOn.value;
-    }).find((definition) => plusAnswers[definition.key] === undefined) ?? null;
+    });
+
+    return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])];
+  }, [plusAnswers, viewModel?.stackQuestionDefinitions]);
+
+  const currentQuestion =
+    questionDefinitions.find((definition) => plusAnswers[definition.key] === undefined) ?? null;
 
   useEffect(() => {
-    if (panelMode !== "mini" || miniSessionKey === 0) {
+    if (!snapshotKey || !routeKey) {
+      return;
+    }
+
+    const lastSnapshotKey = lastSnapshotKeyRef.current;
+    if (isSoftRefresh(lastSnapshotKey, snapshotKey)) {
+      setRefreshTick((current) => current + 1);
+    }
+
+    lastSnapshotKeyRef.current = snapshotKey;
+  }, [routeKey, snapshotKey]);
+
+  useEffect(() => {
+    if (panelMode !== "mini" || !shouldReplayLoading(miniRouteKey, routeKey)) {
       return;
     }
 
     setMiniLoaded(false);
-    const timer = window.setTimeout(() => setMiniLoaded(true), DETECTION_TOTAL_DURATION_MS);
+    const timer = window.setTimeout(() => {
+      setMiniRouteKey(routeKey);
+      setMiniLoaded(true);
+    }, DETECTION_TOTAL_DURATION_MS);
     return () => window.clearTimeout(timer);
-  }, [panelMode, miniSessionKey]);
+  }, [miniRouteKey, panelMode, routeKey]);
+
+  useEffect(() => {
+    if (panelMode !== "full" || !shouldReplayLoading(fullRouteKey, routeKey)) {
+      return;
+    }
+
+    setFullLoaded(false);
+    const timer = window.setTimeout(() => {
+      setFullRouteKey(routeKey);
+      setFullLoaded(true);
+    }, DETECTION_TOTAL_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [fullRouteKey, panelMode, routeKey]);
 
   const handleAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
     setPlusAnswers({
@@ -368,7 +413,6 @@ export function PhaseOneShell({
   };
 
   const handleOpenMini = () => {
-    setMiniSessionKey((current) => current + 1);
     setPanelMode("mini");
   };
 
@@ -429,7 +473,7 @@ export function PhaseOneShell({
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <PanelLayout viewModel={viewModel} compact />
+                  <PanelLayout viewModel={viewModel} compact refreshTick={refreshTick} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -497,29 +541,53 @@ export function PhaseOneShell({
                 exit={{ opacity: 0, y: 18, scale: 0.985 }}
                 transition={panelTransition}
               >
-                <FullReportLayout
-                  viewModel={viewModel}
-                  scanScope={scanScope}
-                  onSetScanScope={setScanScope}
-                  currentQuestion={currentQuestion}
-                  plusAnswers={plusAnswers}
-                  isRefinementOpen={isPlusRefinementOpen}
-                  setIsRefinementOpen={setIsPlusRefinementOpen}
-                  onAnswer={handleAnswer}
-                  onCopyReport={() => {
-                    void handleCopyReport();
-                  }}
-                  onUpgrade={() => setIsPlusModalOpen(true)}
-                  isPlusUser={isPlusUser}
-                  headerAccessory={
-                    <ProfileButton
-                      onUpgrade={() => setIsPlusModalOpen(true)}
-                      isPlusUser={isPlusUser}
-                      onDark
-                    />
-                  }
-                  onClose={() => setPanelMode("mini")}
-                />
+                <AnimatePresence mode="wait">
+                  {!fullLoaded ? (
+                    <motion.div
+                      key="full-loading"
+                      className="h-full"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <LoadingScreen />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="full-content"
+                      className="h-full"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.24 }}
+                    >
+                      <FullReportLayout
+                        viewModel={viewModel}
+                        scanScope={scanScope}
+                        onSetScanScope={setScanScope}
+                        currentQuestion={currentQuestion}
+                        plusAnswers={plusAnswers}
+                        isRefinementOpen={isPlusRefinementOpen}
+                        setIsRefinementOpen={setIsPlusRefinementOpen}
+                        onAnswer={handleAnswer}
+                        onCopyReport={() => {
+                          void handleCopyReport();
+                        }}
+                        onUpgrade={() => setIsPlusModalOpen(true)}
+                        isPlusUser={isPlusUser}
+                        headerAccessory={
+                          <ProfileButton
+                            onUpgrade={() => setIsPlusModalOpen(true)}
+                            isPlusUser={isPlusUser}
+                            onDark
+                          />
+                        }
+                        refreshTick={refreshTick}
+                        onClose={() => setPanelMode("mini")}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             </div>
           </>

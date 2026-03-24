@@ -11,6 +11,7 @@ import { DetectedStackBadges } from "./DetectedStackBadges";
 interface PanelLayoutProps {
   viewModel: MetisDesignViewModel | null;
   compact?: boolean;
+  refreshTick?: number;
 }
 
 function RiskBadge({
@@ -39,7 +40,11 @@ function RiskBadge({
   );
 }
 
-export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
+export function PanelLayout({
+  viewModel,
+  compact = false,
+  refreshTick = 0
+}: PanelLayoutProps) {
   if (!viewModel) {
     return (
       <div
@@ -66,15 +71,17 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
     >
       <motion.div
         className="flex flex-col items-center gap-4"
-        initial={{ opacity: 0, y: 8 }}
+        key={refreshTick}
+        initial={{ opacity: 0.88, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.26, ease: "easeOut" }}
       >
         <ScoreVisualization
           score={viewModel.score}
-          size={compact ? 128 : 150}
+          size={compact ? 108 : 138}
           color={viewModel.riskColor}
           trackColor="rgba(255,255,255,0.08)"
+          pulseKey={refreshTick}
         />
 
         <div className="text-center">
@@ -82,7 +89,7 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
             style={{
               color: "rgba(255,255,255,0.5)",
               fontFamily: "Inter, sans-serif",
-              fontSize: compact ? 16 : 18
+              fontSize: compact ? 14 : 18
             }}
           >
             Cost Risk:{" "}
@@ -110,7 +117,7 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
             style={{
               color: "rgba(255,255,255,0.7)",
               fontFamily: "Inter, sans-serif",
-              fontSize: compact ? 13 : 14,
+              fontSize: compact ? 12 : 14,
               lineHeight: compact ? "20px" : "22px",
               fontWeight: 500
             }}
@@ -131,18 +138,26 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
         transition={{ duration: 0.26, delay: 0.08, ease: "easeOut" }}
       >
         <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-          <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
-            <div
-              style={{
-                color: "rgba(255,255,255,0.38)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 12,
-                fontWeight: 600
-              }}
-            >
-              {viewModel.pagesSampledLabel}
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {viewModel.metaTokens.map((token, index) => (
+              <div key={token} className="flex items-center gap-2">
+                {index === 0 ? (
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
+                ) : (
+                  <div className="h-1 w-1 rounded-full bg-white/20" />
+                )}
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.38)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: compact ? 11 : 12,
+                    fontWeight: 600
+                  }}
+                >
+                  {token}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -153,8 +168,8 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
                 style={{
                   color: "rgba(255,255,255,0.65)",
                   fontFamily: "Inter, sans-serif",
-                  fontSize: compact ? 12 : 13,
-                  lineHeight: compact ? "18px" : "20px"
+                  fontSize: compact ? 11 : 13,
+                  lineHeight: compact ? "16px" : "20px"
                 }}
               >
                 Current session cost ({viewModel.scopeLabel.toLowerCase()})
@@ -163,7 +178,7 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
                 style={{
                   color: "rgba(255,255,255,0.38)",
                   fontFamily: "Inter, sans-serif",
-                  fontSize: 11,
+                  fontSize: compact ? 10 : 11,
                   marginTop: 4
                 }}
               >
@@ -174,7 +189,7 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
               style={{
                 color: "white",
                 fontFamily: "Jua, sans-serif",
-                fontSize: compact ? 20 : 22
+                fontSize: compact ? 18 : 22
               }}
             >
               {viewModel.sessionCost}

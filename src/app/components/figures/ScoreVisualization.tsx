@@ -3,19 +3,22 @@
  * Prototype-faithful score ring used across the mini panel and full report.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 
 interface ScoreVisualizationProps {
   score: number;
   size?: number;
   color: string;
   trackColor?: string;
+  pulseKey?: number;
 }
 
 export function ScoreVisualization({
   score,
   size = 140,
   color,
-  trackColor = "rgba(255,255,255,0.08)"
+  trackColor = "rgba(255,255,255,0.08)",
+  pulseKey = 0
 }: ScoreVisualizationProps) {
   const [displayed, setDisplayed] = useState(score);
   const rafRef = useRef<number | null>(null);
@@ -64,7 +67,14 @@ export function ScoreVisualization({
   const dashOffset = circumference - (displayed / 100) * circumference;
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+    <motion.div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: size, height: size }}
+      key={pulseKey}
+      initial={{ opacity: 0.94, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.24, ease: "easeOut" }}
+    >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <circle
           cx={size / 2}
@@ -100,6 +110,6 @@ export function ScoreVisualization({
           {displayed}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
