@@ -1,5 +1,6 @@
 // Render the injected Metis panel around scoring, deterministic Phase 4 insight
 // output, and the supporting diagnostics that help a page owner trust the result.
+import { useState } from "react";
 import {
   ChevronLeft,
   CircleCheckBig,
@@ -77,6 +78,12 @@ const triggerTitleStyle = {
 const triggerSubtitleStyle = {
   fontSize: "11px",
   lineHeight: "14px"
+} as const;
+
+const dashboardCardStyle = {
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 100%)",
+  border: "1px solid rgba(255,255,255,0.08)"
 } as const;
 
 const severityTone = {
@@ -433,8 +440,15 @@ function PlusRefinementCard({
     analysis.score,
     plusAnswers
   );
-  const coreQuestions = PLUS_QUESTION_DEFINITIONS.filter((question) => question.required);
-  const optionalQuestions = PLUS_QUESTION_DEFINITIONS.filter((question) => !question.required);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const questionCount = PLUS_QUESTION_DEFINITIONS.length;
+  const boundedQuestionIndex = Math.min(activeQuestionIndex, questionCount - 1);
+  const activeQuestion = PLUS_QUESTION_DEFINITIONS[boundedQuestionIndex];
+  const answeredCount = PLUS_QUESTION_DEFINITIONS.filter((question) =>
+    Boolean(plusAnswers[question.key])
+  ).length;
+  const remainingCoreCount = PLUS_CORE_KEYS.filter((key) => !plusAnswers[key]).length;
+  const questionProgress = `${boundedQuestionIndex + 1} / ${questionCount}`;
 
   const updateAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
     const nextValue = plusAnswers[key] === value ? undefined : value;
@@ -442,81 +456,143 @@ function PlusRefinementCard({
       ...plusAnswers,
       [key]: nextValue
     });
+
+    if (nextValue && boundedQuestionIndex < questionCount - 1) {
+      setActiveQuestionIndex(boundedQuestionIndex + 1);
+    }
   };
 
   return (
-    <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <SectionLabel>Plus Optimization</SectionLabel>
-          <div className="text-xl font-semibold text-white">Refine This Report</div>
-          <p className="mt-2 text-sm leading-6 text-white/58">
-            Answer a few high-value questions and Metis will sharpen stack-specific urgency, cost framing, and next-step guidance.
-          </p>
+    <div className="overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
+      <div className="relative overflow-hidden rounded-[24px] border border-white/8 bg-[#101b27] p-5">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#f97316]/15 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-24 w-40 rounded-full bg-white/5 blur-3xl" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="max-w-[320px]">
+            <SectionLabel>Plus Optimization</SectionLabel>
+            <div className="text-[1.75rem] font-semibold leading-none text-white">
+              Refine This Report
+            </div>
+            <p className="mt-3 text-sm leading-6 text-white/60">
+              Move through one question at a time and Metis will tighten stack context,
+              traffic weighting, and next-step guidance without turning the dashboard into a long form.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPlusRefinementOpen(!isPlusRefinementOpen)}
+            className="rounded-full bg-white/8 px-4 py-2 text-sm font-semibold text-white/78 transition hover:bg-white/12 hover:text-white"
+          >
+            {isPlusRefinementOpen ? "Collapse Flow" : "Improve Estimate Accuracy"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsPlusRefinementOpen(!isPlusRefinementOpen)}
-          className="rounded-full bg-[#10253a] px-4 py-2 text-sm font-semibold text-white/74 transition hover:bg-white/10 hover:text-white"
-        >
-          {isPlusRefinementOpen ? "Hide Questions" : "Improve Estimate Accuracy"}
-        </button>
+
+        <div className="relative mt-5 grid grid-cols-3 gap-3">
+          <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">Answered</div>
+            <div className="mt-1.5 text-2xl font-semibold leading-none text-white">
+              {answeredCount}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+              Core Left
+            </div>
+            <div className="mt-1.5 text-2xl font-semibold leading-none text-white">
+              {remainingCoreCount}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+              Current Focus
+            </div>
+            <div className="mt-1.5 text-sm font-semibold text-white">
+              {activeQuestion.required ? "Core question" : "Optional depth"}
+            </div>
+          </div>
+        </div>
       </div>
 
       {isPlusRefinementOpen && (
-        <div className="mt-5 space-y-5">
-          <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-              Core Questions
+        <div className="mt-5 rounded-[24px] border border-white/8 bg-black/20 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/38">
+                {activeQuestion.group} · Question {questionProgress}
+              </div>
+              <div className="mt-2 text-lg font-semibold text-white">{activeQuestion.label}</div>
+              <div className="mt-1 text-sm text-white/52">{activeQuestion.helper}</div>
             </div>
-            <div className="mt-4 space-y-4">
-              {coreQuestions.map((question) => (
-                <div key={question.key}>
-                  <div className="text-sm font-semibold text-white">{question.label}</div>
-                  <div className="mt-1 text-sm text-white/50">{question.helper}</div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {question.options.map((option) => (
-                      <QuestionOptionButton
-                        key={`${question.key}-${option.value}`}
-                        label={option.label}
-                        isSelected={plusAnswers[question.key] === option.value}
-                        onClick={() => updateAnswer(question.key, option.value)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div
+              className={`rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                activeQuestion.required
+                  ? "bg-[#f97316]/15 text-[#ffb48a]"
+                  : "bg-white/8 text-white/62"
+              }`}
+            >
+              {activeQuestion.required ? "Most important" : "Optional"}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-              Optional Depth
+          <div className="mt-4 flex flex-wrap gap-2">
+            {activeQuestion.improves.map((item) => (
+              <div
+                key={`${activeQuestion.key}-${item}`}
+                className="rounded-full bg-[#10253a] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/58"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-2xl bg-[#0d2234] px-4 py-3.5">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
+              Why It Matters
             </div>
-            <div className="mt-4 space-y-4">
-              {optionalQuestions.map((question) => (
-                <div key={question.key}>
-                  <div className="text-sm font-semibold text-white">{question.label}</div>
-                  <div className="mt-1 text-sm text-white/50">{question.helper}</div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {question.options.map((option) => (
-                      <QuestionOptionButton
-                        key={`${question.key}-${option.value}`}
-                        label={option.label}
-                        isSelected={plusAnswers[question.key] === option.value}
-                        onClick={() => updateAnswer(question.key, option.value)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="mt-1 text-sm leading-6 text-white/74">
+              {activeQuestion.whyItMatters}
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {activeQuestion.options.map((option) => (
+              <QuestionOptionButton
+                key={`${activeQuestion.key}-${option.value}`}
+                label={option.label}
+                isSelected={plusAnswers[activeQuestion.key] === option.value}
+                onClick={() => updateAnswer(activeQuestion.key, option.value)}
+              />
+            ))}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveQuestionIndex(Math.max(0, boundedQuestionIndex - 1))}
+              disabled={boundedQuestionIndex === 0}
+              className="rounded-full bg-white/8 px-4 py-2 text-sm font-semibold text-white/72 transition hover:bg-white/12 hover:text-white disabled:cursor-default disabled:opacity-35"
+            >
+              Previous
+            </button>
+            <div className="text-xs text-white/44">
+              Answer once and Metis advances automatically.
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setActiveQuestionIndex(Math.min(questionCount - 1, boundedQuestionIndex + 1))
+              }
+              disabled={boundedQuestionIndex === questionCount - 1}
+              className="rounded-full bg-[#f97316] px-4 py-2 text-sm font-semibold text-[#0d1b2a] transition hover:brightness-105 disabled:cursor-default disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
 
       {report ? (
-        <div className="mt-5 rounded-2xl border border-[#f97316]/20 bg-[#10253a] p-5">
+        <div className="mt-5 rounded-[24px] border border-[#f97316]/20 bg-[#10253a] p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
               Refined Plus Report
@@ -527,11 +603,25 @@ function PlusRefinementCard({
           </div>
           <div className="mt-3 text-sm font-semibold text-white">{report.summary}</div>
           <div className="mt-2 text-sm leading-6 text-white/58">{report.detail}</div>
-          <div className="mt-4 rounded-2xl bg-[#0d2234] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-              Recommended Next Step
+          <div className="mt-4 grid gap-3 grid-cols-2">
+            <div className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
+                Recommended Next Step
+              </div>
+              <div className="mt-1 text-sm leading-6 text-white/74">{report.nextStep}</div>
             </div>
-            <div className="mt-1 text-sm leading-6 text-white/74">{report.nextStep}</div>
+            <div className="rounded-2xl bg-black/20 px-4 py-3.5">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
+                Accuracy Status
+              </div>
+              <div className="mt-1 text-sm leading-6 text-white/74">
+                {report.missingCoreQuestions.length > 0
+                  ? `${report.missingCoreQuestions.length} core question${
+                      report.missingCoreQuestions.length === 1 ? "" : "s"
+                    } still open.`
+                  : "All core questions are covered, so the guidance is fully calibrated."}
+              </div>
+            </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/48">
             <div className="rounded-full bg-black/20 px-3 py-1.5">
@@ -950,7 +1040,7 @@ function FullPanel({
         className="fixed inset-0 z-[2147483646] bg-black/30 backdrop-blur-[2px]"
         onClick={() => setPanelMode("idle")}
       />
-      <div className="fixed right-5 top-5 z-[2147483647] flex h-[calc(100vh-40px)] w-[460px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
+      <div className="fixed right-5 top-5 z-[2147483647] flex h-[calc(100vh-40px)] w-[560px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <div>
             <div className="text-base font-semibold">Metis Full Panel</div>
@@ -977,26 +1067,55 @@ function FullPanel({
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-            <SectionLabel>Current State</SectionLabel>
-            <div className="text-[2.6rem] font-semibold leading-none">Phase 4 Active</div>
-            <p className="mt-4 text-base leading-7 text-white/64">
-              The extension now converts normalized request data into a score, a short issue stack, and one deterministic insight that explains what is likely driving cost pressure.
-            </p>
-            <p className="mt-3 text-sm leading-6 text-white/48">
-              This still runs fully in the content script with Manifest V3 and uses chrome.storage.local only for baseline and visited-page state.
-            </p>
+          <div className="relative overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
+            <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#f97316]/12 blur-3xl" />
+            <div className="pointer-events-none absolute left-0 top-16 h-28 w-48 rounded-full bg-white/5 blur-3xl" />
+            <div className="relative">
+              <SectionLabel>Current State</SectionLabel>
+              <div className="grid gap-5 grid-cols-[1.25fr_0.75fr]">
+                <div>
+                  <div className="text-[2.8rem] font-semibold leading-none">Phase 4 Active</div>
+                  <p className="mt-4 max-w-[360px] text-base leading-7 text-white/64">
+                    The dashboard now turns normalized request activity into score,
+                    surfaced issues, deterministic insight, and guided Plus refinement from the same local scan.
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-white/48">
+                    This still runs fully in the content script with Manifest V3 and uses chrome.storage.local only for baseline and visited-page state.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <div className="rounded-[22px] bg-black/20 px-4 py-4">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                      Dashboard Mode
+                    </div>
+                    <div className="mt-1.5 text-lg font-semibold text-white">Full Report</div>
+                    <div className="mt-1 text-sm leading-6 text-white/54">
+                      Score, insights, offenders, and guided questions live in one surface.
+                    </div>
+                  </div>
+                  <div className="rounded-[22px] bg-black/20 px-4 py-4">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                      Data Source
+                    </div>
+                    <div className="mt-1.5 text-lg font-semibold text-white">Resource Timing</div>
+                    <div className="mt-1 text-sm leading-6 text-white/54">
+                      Cleaned through the staged raw, filtered, normalized, and grouped scan path.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
               <SectionLabel>Surface</SectionLabel>
               <div className="text-xl font-semibold">Content Script UI</div>
               <p className="mt-2 text-base text-white/58">
                 Injected into normal webpages inside a Shadow DOM.
               </p>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
               <SectionLabel>Permissions</SectionLabel>
               <div className="text-xl font-semibold">Storage + Host Access</div>
               <p className="mt-2 text-base text-white/58">
@@ -1027,7 +1146,7 @@ function FullPanel({
             </div>
           )}
 
-          <div className="mt-5 rounded-[28px] border border-white/10 bg-white/[0.03] p-6">
+          <div className="mt-5 rounded-[28px] p-6" style={dashboardCardStyle}>
             <SectionLabel>Roadmap Status</SectionLabel>
             <div className="space-y-3">
               {phaseStatus.map((item) => (
