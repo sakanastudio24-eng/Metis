@@ -45,9 +45,7 @@ export function PanelLayout({
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="space-y-6 p-6 pb-8">
-        {/* ─────────────────────────────────────────────────────────────────────────── */
-        /* Header: Score + Risk + Summary */
-        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {/* Header: Score + Risk + Summary */}
         <div className="space-y-4">
           <ScoreVisualization score={score.score} label={score.label} size={140} />
 
@@ -64,9 +62,7 @@ export function PanelLayout({
           )}
         </div>
 
-        {/* ─────────────────────────────────────────────────────────────────────────── */
-        /* Page info + Cost cards */
-        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {/* Page info + Cost cards */}
         <div className="space-y-3">
           {/* Multi-page indicator */}
           {pageCount > 1 && (
@@ -105,14 +101,10 @@ export function PanelLayout({
           </div>
         </div>
 
-        {/* ─────────────────────────────────────────────────────────────────────────── */
-        /* Top Issues */
-        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {/* Top Issues */}
         <TopIssuesList issues={issues} maxItems={5} />
 
-        {/* ─────────────────────────────────────────────────────────────────────────── */
-        /* Detected Stack */
-        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {/* Detected Stack */}
         <DetectedStackBadges
           badges={[
             { label: "React 18", type: "tech" },
@@ -128,9 +120,7 @@ export function PanelLayout({
           }}
         />
 
-        {/* ─────────────────────────────────────────────────────────────────────────── */
-        /* Expandable: What just happened? */
-        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {/* Expandable: What just happened? */}
         <details className="group cursor-pointer">
           <summary className="flex items-center justify-between p-4 rounded-lg hover:bg-white/5 transition-colors" style={{ background: "rgba(255, 255, 255, 0.03)" }}>
             <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
@@ -151,9 +141,7 @@ export function PanelLayout({
           </div>
         </details>
 
-        {/* ─────────────────────────────────────────────────────────────────────────── */
-        /* Full Report Button */
-        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {/* Full Report Button */}
         <button
           onClick={onExpandReport}
           className="w-full py-3 px-4 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
