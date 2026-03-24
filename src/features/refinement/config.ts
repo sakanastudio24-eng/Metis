@@ -26,6 +26,8 @@ export interface PlusQuestionDefinition {
   key: keyof PlusRefinementAnswers;
   label: string;
   helper: string;
+  improves: string[];
+  whyItMatters: string;
   group: QuestionGroup;
   required: boolean;
   options: PlusQuestionOption[];
@@ -42,6 +44,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "hostingProvider",
     label: "Which hosting provider are you using?",
     helper: "This sharpens compute and bandwidth interpretation.",
+    improves: [
+      "compute risk interpretation",
+      "bandwidth cost framing",
+      "provider-specific next steps"
+    ],
+    whyItMatters:
+      "The same request pattern means different things on different hosts and billing models.",
     group: "Stack",
     required: true,
     options: [
@@ -58,6 +67,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "hostingPlan",
     label: "What plan are you on?",
     helper: "This changes overage risk and urgency framing.",
+    improves: [
+      "overage risk interpretation",
+      "urgency framing",
+      "upgrade versus optimize guidance"
+    ],
+    whyItMatters:
+      "A watch score on a free plan can be more urgent than the same score on an enterprise plan.",
     group: "Stack",
     required: false,
     options: [
@@ -72,6 +88,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "appType",
     label: "What kind of app is this?",
     helper: "This reduces false positives and changes what normal looks like.",
+    improves: [
+      "baseline expectations",
+      "false positive control",
+      "recommendation relevance"
+    ],
+    whyItMatters:
+      "A route that looks heavy on a portfolio may be acceptable on a dashboard or marketplace.",
     group: "Stack",
     required: true,
     options: [
@@ -89,6 +112,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "monthlyVisits",
     label: "About how many monthly visits do you get?",
     helper: "This is the highest-value input for impact and savings framing.",
+    improves: [
+      "monthly impact framing",
+      "scale projection",
+      "savings prioritization"
+    ],
+    whyItMatters:
+      "Raw page weight means little without traffic. Volume determines whether a small issue is negligible or expensive.",
     group: "Traffic",
     required: true,
     options: [
@@ -103,6 +133,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "highTrafficRoute",
     label: "Is this route one of your highest-traffic pages?",
     helper: "This changes prioritization more than raw page weight alone.",
+    improves: [
+      "issue prioritization",
+      "projected impact relevance",
+      "action ordering"
+    ],
+    whyItMatters:
+      "A problem on a homepage or other hot route deserves faster cleanup than the same issue on a low-traffic admin path.",
     group: "Traffic",
     required: false,
     options: [
@@ -116,6 +153,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "pageDynamics",
     label: "How dynamic is this page?",
     helper: "This helps separate expected request activity from waste.",
+    improves: [
+      "request-count interpretation",
+      "duplicate request seriousness",
+      "caching guidance"
+    ],
+    whyItMatters:
+      "Heavy request activity is more expected on highly dynamic apps, but repeated work can still be expensive.",
     group: "Traffic",
     required: false,
     options: [
@@ -129,6 +173,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "paidApis",
     label: "Does this page use paid APIs?",
     helper: "This makes duplicate requests materially more expensive.",
+    improves: [
+      "API cost sensitivity",
+      "duplicate request seriousness",
+      "premium action quality"
+    ],
+    whyItMatters:
+      "Repeated calls are much worse if they hit paid services such as search, maps, auth, or email vendors.",
     group: "Cost sensitivity",
     required: false,
     options: [
@@ -141,6 +192,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "aiUsage",
     label: "Does this page use AI per user action?",
     helper: "Frequent AI calls can dominate the cost profile.",
+    improves: [
+      "AI cost sensitivity",
+      "per-session scaling logic",
+      "cost-driver prioritization"
+    ],
+    whyItMatters:
+      "A single AI call on submit is very different from AI usage on every keystroke or repeated action.",
     group: "Cost sensitivity",
     required: false,
     options: [
@@ -154,6 +212,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "mediaImportance",
     label: "Are images or media important on this page?",
     helper: "This tunes how aggressively image issues should be framed.",
+    improves: [
+      "image severity weighting",
+      "optimization priority",
+      "recommendation tone"
+    ],
+    whyItMatters:
+      "A photography or media product should be optimized differently than a docs site or admin tool.",
     group: "Cost sensitivity",
     required: false,
     options: [
@@ -166,6 +231,13 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
     key: "optimizationCoverage",
     label: "Are you already using a CDN or image optimization?",
     helper: "This changes what the next best action should be.",
+    improves: [
+      "recommendation accuracy",
+      "false positive cleanup",
+      "image and bandwidth guidance"
+    ],
+    whyItMatters:
+      "Knowing whether optimization tooling already exists changes whether the best next move is adoption, tuning, or deeper cleanup.",
     group: "Cost sensitivity",
     required: false,
     options: [
