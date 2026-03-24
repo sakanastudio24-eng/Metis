@@ -19,6 +19,10 @@ function createHost() {
   host.style.all = "initial";
   host.style.position = "relative";
   host.style.zIndex = "2147483647";
+  host.style.fontSize = "16px";
+  host.style.lineHeight = "1.5";
+  host.style.zoom = "1";
+  host.style.setProperty("-webkit-text-size-adjust", "100%");
 
   const shadowRoot = host.attachShadow({ mode: "open" });
   const styleTag = document.createElement("style");
@@ -26,6 +30,8 @@ function createHost() {
 
   styleTag.textContent = styles;
   appRoot.id = "metis-react-root";
+  appRoot.style.fontSize = "16px";
+  appRoot.style.lineHeight = "1.5";
 
   shadowRoot.append(styleTag, appRoot);
   (document.body ?? document.documentElement).appendChild(host);
