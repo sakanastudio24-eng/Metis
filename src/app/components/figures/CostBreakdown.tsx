@@ -1,7 +1,18 @@
 /**
  * CostBreakdown
- * Displays where the estimated cost waste is coming from.
- * Shows major cost drivers: Bandwidth, Requests/Compute, AI API Usage, etc.
+ * Displays where estimated cost waste is coming from.
+ * 
+ * DESIGN SPECS:
+ * - Shows 4-5 major cost drivers (bandwidth, compute, AI, APIs)
+ * - Each item has icon, label, and monthly estimate (~$6/mo, ~$10/mo, etc.)
+ * - Darker backgrounds indicate lower priority items
+ * - Descriptive header: "Where your estimated waste is coming from"
+ * 
+ * DATA FLOW:
+ * - Receives ScoreDeduction[] from score breakdown
+ * - Maps deduction reasons to cost categories with icons
+ * - Shows estimated monthly cost per driver
+ * - Green info box if no deductions (efficient page)
  */
 import { HardDrive, Zap, Brain, Package } from "lucide-react";
 import type { ScoreDeduction } from "../../../shared/types/audit";
@@ -29,7 +40,8 @@ export function CostBreakdown({
   deductions,
   monthlyProjection = "~$240/month"
 }: CostBreakdownProps) {
-  // Map deductions to display items
+  // Transform raw deduction data into display items with icons and estimates
+  // Limits to 4 items for readability (most significant cost drivers)
   const items: CostBreakdownItem[] = deductions
     .slice(0, 4)
     .map((ded, idx) => ({

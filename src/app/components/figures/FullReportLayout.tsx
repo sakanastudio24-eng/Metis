@@ -1,7 +1,19 @@
 /**
  * FullReportLayout
  * Expanded modal view showing detailed breakdown, all issues, and cost analysis.
- * This is shown when user clicks "Full Report" on the panel.
+ * This is shown when user clicks \"Full Report\" button on the panel.
+ * 
+ * DESIGN SPECS:
+ * - Full-width desktop view with sticky header
+ * - Displays complete metrics table with all detected issues
+ * - Cost breakdown section shows all major cost drivers
+ * - Page metrics table with request counts, weights, etc.
+ * 
+ * INTEGRATION NOTES:
+ * - Currently rendered in a fixed-size modal (should be responsive)
+ * - Export PDF button is stubbed (needs pdf-lib or similar)
+ * - Copy link functionality uses browser clipboard API
+ * - Report can be opened from PanelLayout or directly from diagnostics panel
  */
 import { ChevronLeft, Copy, Download, X } from "lucide-react";
 import type { MetisSnapshot, RawScanSnapshot } from "../../../shared/types/audit";
@@ -37,7 +49,7 @@ export function FullReportLayout({
 
   return (
     <div className="w-full bg-gray-950 text-gray-50 min-h-screen">
-      {/* Header */}
+      {/* Sticky header with report title, timestamp, and action buttons */}
       <div className="border-b border-gray-800 sticky top-0 z-10 bg-gray-950/95 backdrop-blur">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>

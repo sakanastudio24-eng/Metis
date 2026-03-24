@@ -1,18 +1,30 @@
 /**
  * ScoreVisualization
- * Displays the cost risk score with a circular progress ring and risk label.
- * Matches the Figma design: large orange ring with centered score number.
+ * Displays the cost risk score with animated circular progress ring and risk label.
+ * 
+ * DESIGN SPECS:
+ * - Large SVG circle with animated stroke-dasharray (0-100%)
+ * - Orange ring (#f97316) for "watch" state matches Figma design
+ * - Center text shows numeric score and "Cost Risk" label
+ * - Risk badge below (Warming up / Healthy / Moderate Risk / High Risk)
+ * 
+ * ANIMATION:
+ * - Animates from old score to new score over 750ms
+ * - Uses cubic ease-out for smooth natural motion
+ * - Re-animates whenever score prop changes
  */
 import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import type { ScoreLabel } from "../../../shared/types/audit";
 
+// Color mapping for each risk level - used for both SVG ring and badge styling
 const RISK_COLORS: Record<ScoreLabel, string> = {
-  "warming up": "#6b7280",
-  healthy: "#22c55e",
-  watch: "#f97316",
-  "high risk": "#dc2626"
+  "warming up": "#6b7280",    // Gray - still gathering data
+  healthy: "#22c55e",           // Green - excellent performance
+  watch: "#f97316",             // Orange - moderate issues detected
+  "high risk": "#dc2626"        // Red - critical issues requiring attention
 };
 
+// Display labels that match the Figma design labels
 const RISK_LABELS: Record<ScoreLabel, string> = {
   "warming up": "Warming up",
   healthy: "Healthy",
@@ -34,17 +46,19 @@ export function ScoreVisualization({
   const [displayedScore, setDisplayedScore] = useState(score);
   const rafRef = useRef<number | null>(null);
 
+  // Animates score from current value to new value using requestAnimationFrame
+  // Provides smooth visual feedback when score changes
   const animateTo = useCallback((to: number) => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     const from = displayedScore;
-    if (from === to) return;
+    if (from === to) return; // Skip animation if value hasn't changed
 
-    const duration = 750;
+    const duration = 750; // Animation duration in milliseconds
     const startTime = performance.now();
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
-      const eased = 1 - Math.pow(1 - t, 3); // Cubic ease-out
+      const eased = 1 - Math.pow(1 - t, 3); // Cubic ease-out easing function for natural motion
       const val = Math.round(from + (to - from) * eased);
       setDisplayedScore(val);
       if (t < 1) {
@@ -62,9 +76,10 @@ export function ScoreVisualization({
     };
   }, [score, animateTo]);
 
+  // Calculate SVG stroke properties for the animated ring
   const ringColor = RISK_COLORS[label];
-  const circumference = 2 * Math.PI * (size / 2 - 12);
-  const strokeDashoffset = circumference * (1 - displayedScore / 100);
+  const circumference = 2 * Math.PI * (size / 2 - 12); // SVG circle circumference
+  const strokeDashoffset = circumference * (1 - displayedScore / 100); // Progress as dash offset
 
   return (
     <div className="flex flex-col items-center gap-4">

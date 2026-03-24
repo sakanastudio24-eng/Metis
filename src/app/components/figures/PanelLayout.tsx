@@ -3,7 +3,16 @@
  * Main panel component that integrates all Figma design components.
  * Shows score, cost insight, top issues, stack, and cost breakdown.
  * 
- * This is the main layout rendered in the extension panel.
+ * This is the main layout rendered in the extension panel (410px width).
+ * 
+ * INTEGRATION NOTES:
+ * - Receives MetisSnapshot from PhaseOneShell (or parent)
+ * - Queries multiPageSnapshots for multi-page mode indicator
+ * - Pass onExpandReport to open FullReportLayout modal
+ * - Cost calculations (sessionCost, monthlyProjection) currently stubbed
+ *   - Will need real data from metrics + hosting provider rates + traffic data
+ * - Stack badges are currently hardcoded demo data
+ *   - Should be populated from detection features (React, Next.js, etc.)
  */
 import { ChevronDown, Copy, Download, FileText } from "lucide-react";
 import type { MetisSnapshot, RawScanSnapshot, CostInsight } from "../../../shared/types/audit";
@@ -38,9 +47,12 @@ export function PanelLayout({
   }
 
   const { raw, issues, score, insight } = snapshot;
-  const sessionCost = "$0.024"; // TODO: Calculate from metrics
-  const monthlyProjection = "~$240/month"; // TODO: Calculate from traffic data
-  const pageCount = multiPageSnapshots.length || 1;
+  // TODO: Calculate these from actual data
+  // sessionCost: derive from raw.metrics and hosting provider rates
+  // monthlyProjection: multiply by traffic data from plusAnswers.monthlyVisits
+  const sessionCost = "$0.024"; 
+  const monthlyProjection = "~$240/month"; 
+  const pageCount = multiPageSnapshots.length || 1; // Single-page or multi-page mode
 
   return (
     <div className="w-full max-w-2xl mx-auto">

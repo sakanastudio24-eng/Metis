@@ -1,7 +1,19 @@
 /**
  * DetectedStackBadges
- * Shows the detected technology stack and key insights about the site.
- * Includes tech tags like React, Next.js, Vercel, plus custom insights.
+ * Shows detected technology stack and site insights.
+ * 
+ * DESIGN SPECS:
+ * - Blue tags for tech (React 18, Next.js 14)
+ * - Purple tags for hosting provider (Vercel, Netlify)
+ * - Green tags for insights (AI usage detected)
+ * - Page info indicator (single vs multi-page mode)
+ * 
+ * DATA INTEGRATION:
+ * - Currently receives hardcoded demo badges
+ * - Should be populated from detection/scan features:
+ *   - Frameworks from DOM analysis
+ *   - Providers from headers and known CDN IPs
+ *   - Insights from scoring heuristics (AI, third-party, etc.)
  */
 import { X } from "lucide-react";
 
@@ -49,7 +61,7 @@ export function DetectedStackBadges({
 }: DetectedStackBadgesProps) {
   return (
     <div className="space-y-4">
-      {/* Page info */}
+      {/* Page context: shows whether scanning single or multiple pages */}
       {pageInfo && (
         <div className="p-3 rounded-lg" style={{ background: "rgba(59, 130, 246, 0.05)" }}>
           <div className="flex items-center gap-2 text-xs text-blue-400">
@@ -62,12 +74,13 @@ export function DetectedStackBadges({
         </div>
       )}
 
-      {/* Stack badges */}
+      {/* Technology stack and detected insights - helps user understand what was analyzed */}
       <div className="space-y-3">
         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
           Detected Stack
         </h3>
 
+        {/* Badges colored by type: tech (blue), provider (purple), insight (green) */}
         <div className="flex flex-wrap gap-2">
           {badges.map((badge, idx) => {
             const colors = TYPE_COLORS[badge.type];

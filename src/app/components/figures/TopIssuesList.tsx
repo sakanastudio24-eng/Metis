@@ -1,7 +1,17 @@
 /**
  * TopIssuesList
- * Displays detected issues with severity color-coding.
- * Shows up to N issues with title and severity badge.
+ * Displays detected issues with color-coded severity badges.
+ * 
+ * DESIGN SPECS:
+ * - Issue cards stacked vertically with icon, title, detail, severity badge
+ * - Summary badges at top showing count breakdown (2 Critical, 2 Moderate, 1 Low)
+ * - Red (#dc2626) for high, orange (#f97316) for medium, yellow (#eab308) for low
+ * - Optional "View all" link if issues exceed maxItems
+ * 
+ * USAGE:
+ * - Pass issues array from detection pipeline
+ * - Control visible count with maxItems prop (default 5)
+ * - Empty state message if no issues detected
  */
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 import type { DetectedIssue, Severity } from "../../../shared/types/audit";
@@ -40,7 +50,8 @@ export function TopIssuesList({ issues, maxItems = 5 }: TopIssuesListProps) {
     );
   }
 
-  // Count issues by severity for header
+  // Pre-calculate severity counts for the summary badges
+  // This helps users quickly understand the issue distribution at a glance
   const counts = {
     high: issues.filter(i => i.severity === "high").length,
     medium: issues.filter(i => i.severity === "medium").length,
