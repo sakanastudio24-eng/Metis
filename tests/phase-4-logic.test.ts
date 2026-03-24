@@ -8,6 +8,7 @@ import { buildInsight } from "../src/features/insights";
 import { buildPlusOptimizationReport } from "../src/features/refinement";
 import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } from "../src/features/scan";
 import { scoreSnapshot } from "../src/features/scoring";
+import { detectMoneyStack } from "../src/features/stack";
 import { buildMetisDesignViewModel } from "../src/app/components/figures/liveAdapter";
 import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figures/loadingState";
 import {
@@ -415,11 +416,11 @@ test("design view model adds stack fallback questions for missing groups", () =>
   });
 
   const fallbackKeys = viewModel.stackQuestionDefinitions.map((question) => question.key);
-  assert.ok(fallbackKeys.includes("stackFramework"));
   assert.ok(fallbackKeys.includes("stackCdnProvider"));
   assert.ok(fallbackKeys.includes("stackAiProvider"));
   assert.ok(fallbackKeys.includes("stackAnalytics"));
-  assert.ok(fallbackKeys.includes("stackPayment"));
+  assert.equal(fallbackKeys.includes("stackFramework"), false);
+  assert.equal(fallbackKeys.includes("stackPayment"), false);
 });
 
 test("design view model detects known stack from raw stack signals even when retained resources are sparse", () => {
@@ -464,7 +465,7 @@ test("design view model detects known stack from raw stack signals even when ret
       (group) => group.label === "Hosting / CDN" && group.items.some((item) => item.label === "Vercel")
     )
   );
-  assert.ok(viewModel.stackGroups.some((group) => group.label === "Analytics"));
+  assert.ok(viewModel.stackGroups.some((group) => group.label === "Analytics / Ads / RUM"));
 });
 
 test("design view model keeps brand colors for detected stack and fix cards", () => {
@@ -515,7 +516,10 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
       encodedBodySize: 90_000
     })
   ]);
-  const issues = detectIssues(snapshot);
+  const issues = detectIssues(snapshot, {
+    aiUsage: "yesOften",
+    hostingProvider: "vercel"
+  });
   const score = scoreSnapshot(snapshot, issues);
   const insight = buildInsight(snapshot, issues, score);
 
@@ -538,6 +542,49 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
   assert.ok(viewModel.stackGroups.some((group) => group.label === "Payment"));
   assert.ok(viewModel.fixRecommendationCards.length > 0);
   assert.ok(viewModel.fixRecommendationCards.every((card) => !("placeholder" in card)));
+  assert.ok(issues.some((issue) => issue.category === "aiSpendSurface"));
+  assert.ok(issues.some((issue) => issue.category === "analyticsAdsRumSurface"));
+  assert.ok(issues.some((issue) => issue.category === "hostingCdnSpendSurface"));
+  assert.equal(issues.some((issue) => issue.category === "requestCount"), false);
+});
+
+test("money stack detector recognizes amazon spend signals without generic tech spam", () => {
+  const snapshot = createSnapshot([], {
+    page: {
+      href: "https://www.amazon.com/Amazon_Basics",
+      origin: "https://www.amazon.com",
+      hostname: "www.amazon.com",
+      pathname: "/Amazon_Basics"
+    },
+    stackSignals: [
+      {
+        name: "https://d123.cloudfront.net/static/nav.js",
+        hostname: "d123.cloudfront.net",
+        pathname: "/static/nav.js",
+        source: "resource"
+      },
+      {
+        name: "https://s.amazon-adsystem.com/iu3?slot=navFooter",
+        hostname: "s.amazon-adsystem.com",
+        pathname: "/iu3",
+        source: "resource"
+      },
+      {
+        name: "https://client.rum.us-east-1.amazonaws.com/appmonitors/amazon",
+        hostname: "client.rum.us-east-1.amazonaws.com",
+        pathname: "/appmonitors/amazon",
+        source: "resource"
+      }
+    ]
+  });
+
+  const detection = detectMoneyStack(snapshot, {});
+  const analyticsGroup = detection.groups.find((group) => group.id === "analyticsAdsRum");
+  const hostingGroup = detection.groups.find((group) => group.id === "hostingCdn");
+
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "CloudFront"));
+  assert.ok(analyticsGroup?.vendors.some((vendor) => vendor.label === "Amazon Advertising"));
+  assert.ok(analyticsGroup?.vendors.some((vendor) => vendor.label === "CloudWatch RUM"));
 });
 
 test("loading helpers only replay on new routes and soften same-route refreshes", () => {
