@@ -76,6 +76,12 @@ export interface ResourceSummary {
   isMeaningfulImage: boolean;
 }
 
+export interface StackSignal {
+  name: string;
+  hostname: string;
+  pathname: string;
+}
+
 export interface ResourceAggregate {
   normalizedUrl: string;
   sampleUrl: string;
@@ -118,6 +124,7 @@ export interface RawScanSnapshot {
   scannedAt: string;
   page: PageContext;
   resources: ResourceSummary[];
+  stackSignals?: StackSignal[];
   dom: DomSummary;
   metrics: ResourceMetricsSummary;
 }

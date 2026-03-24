@@ -8,12 +8,13 @@ import { parsePageContext } from "./url";
 
 export function collectRawScanSnapshot(): RawScanSnapshot {
   const page = parsePageContext(window.location.href);
-  const { resources, metrics } = collectResourceSummaries(page);
+  const { resources, stackSignals, metrics } = collectResourceSummaries(page);
 
   return {
     scannedAt: new Date().toISOString(),
     page,
     resources,
+    stackSignals,
     dom: inspectDomSurface(),
     metrics
   };
@@ -25,11 +26,13 @@ export function buildMultipageSnapshot(
 ): RawScanSnapshot {
   const scopedSnapshots = visitedSnapshots.length > 0 ? visitedSnapshots : [currentSnapshot];
   const resources = scopedSnapshots.flatMap((snapshot) => snapshot.resources);
+  const stackSignals = scopedSnapshots.flatMap((snapshot) => snapshot.stackSignals ?? []);
 
   return {
     scannedAt: currentSnapshot.scannedAt,
     page: currentSnapshot.page,
     resources,
+    stackSignals,
     dom: {
       scriptCount: scopedSnapshots.reduce((total, snapshot) => total + snapshot.dom.scriptCount, 0),
       imageCount: scopedSnapshots.reduce((total, snapshot) => total + snapshot.dom.imageCount, 0),

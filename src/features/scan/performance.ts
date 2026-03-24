@@ -5,13 +5,15 @@ import type {
   ResourceAggregate,
   ResourceCategory,
   ResourceMetricsSummary,
-  ResourceSummary
+  ResourceSummary,
+  StackSignal
 } from "../../shared/types/audit";
 
 const RESOURCE_TIMING_BUFFER_SIZE = 2000;
 const MIN_RESOURCE_BYTES = 1000;
 const MEANINGFUL_IMAGE_BYTES = 50_000;
 const TOP_OFFENDER_LIMIT = 3;
+const STACK_SIGNAL_LIMIT = 160;
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".avif", ".ico"];
 const SCRIPT_EXTENSIONS = [".js", ".mjs"];
 const STYLESHEET_EXTENSIONS = [".css"];
@@ -175,6 +177,7 @@ export function buildResourceMetrics(
 
 export function collectResourceSummaries(page: PageContext): {
   resources: ResourceSummary[];
+  stackSignals: StackSignal[];
   metrics: ResourceMetricsSummary;
 } {
   try {
@@ -185,10 +188,31 @@ export function collectResourceSummaries(page: PageContext): {
 
   const entries = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
   const resources: ResourceSummary[] = [];
+  const stackSignals: StackSignal[] = [];
+  const seenStackSignals = new Set<string>();
   let droppedZeroTransferCount = 0;
   let droppedTinyCount = 0;
 
   for (const entry of entries) {
+    let url: URL;
+
+    try {
+      url = new URL(entry.name, page.href);
+    } catch {
+      continue;
+    }
+
+    const stackSignalKey = `${url.hostname}${url.pathname}`;
+
+    if (!seenStackSignals.has(stackSignalKey) && stackSignals.length < STACK_SIGNAL_LIMIT) {
+      seenStackSignals.add(stackSignalKey);
+      stackSignals.push({
+        name: entry.name,
+        hostname: url.hostname,
+        pathname: url.pathname
+      });
+    }
+
     const transferSize = entry.transferSize ?? 0;
     const encodedBodySize = entry.encodedBodySize ?? 0;
 
@@ -199,14 +223,6 @@ export function collectResourceSummaries(page: PageContext): {
 
     if (encodedBodySize < MIN_RESOURCE_BYTES) {
       droppedTinyCount += 1;
-      continue;
-    }
-
-    let url: URL;
-
-    try {
-      url = new URL(entry.name, page.href);
-    } catch {
       continue;
     }
 
@@ -229,6 +245,7 @@ export function collectResourceSummaries(page: PageContext): {
 
   return {
     resources,
+    stackSignals,
     metrics: buildResourceMetrics(resources, {
       rawRequestCount: entries.length,
       droppedZeroTransferCount,

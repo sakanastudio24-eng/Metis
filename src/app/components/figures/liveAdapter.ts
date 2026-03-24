@@ -324,10 +324,21 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
   ];
 }
 
+function hasStackMatch(haystacks: string[], patterns: string[]) {
+  return patterns.some((pattern) => haystacks.some((value) => value.includes(pattern)));
+}
+
 function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
   const resources = snapshot.resources;
+  const stackSignals = snapshot.stackSignals ?? [];
+  const signalNames = stackSignals.map((signal) => signal.name.toLowerCase());
+  const signalHostnames = stackSignals.map((signal) => signal.hostname.toLowerCase());
+  const signalPathnames = stackSignals.map((signal) => signal.pathname.toLowerCase());
   const resourceNames = resources.map((resource) => resource.name.toLowerCase());
   const hostnames = resources.map((resource) => resource.hostname.toLowerCase());
+  const names = [...resourceNames, ...signalNames];
+  const hosts = [...hostnames, ...signalHostnames];
+  const paths = [...resources.map((resource) => resource.pathname.toLowerCase()), ...signalPathnames];
 
   const frameworkItems: DesignStackGroupItem[] = [];
   const hostingItems: DesignStackGroupItem[] = [];
@@ -335,14 +346,19 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
   const analyticsItems: DesignStackGroupItem[] = [];
   const paymentItems: DesignStackGroupItem[] = [];
 
-  if (resourceNames.some((name) => name.includes("/_next/")) || answers.stackFramework === "nextjs") {
+  const hasNext =
+    hasStackMatch(names, ["/_next/", "__next", "next.js", "nextjs"]) ||
+    hasStackMatch(paths, ["/_next/", "/next-static/"]) ||
+    answers.stackFramework === "nextjs";
+
+  if (hasNext) {
     frameworkItems.push({ label: "Next.js 14", brandColor: STACK_BRAND_COLORS.nextjs });
   }
 
   if (
-    resourceNames.some((name) => name.includes("react")) ||
+    hasStackMatch(names, ["react", "react-dom", "react.production"]) ||
     answers.stackFramework === "react" ||
-    frameworkItems.some((item) => item.label === "Next.js 14")
+    hasNext
   ) {
     frameworkItems.unshift({ label: "React 18", brandColor: STACK_BRAND_COLORS.react });
   }
@@ -368,22 +384,36 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
   }
 
   if (
-    hostnames.some((host) => host.includes("cloudflare")) ||
+    hasStackMatch(hosts, ["cloudflare", "cloudflareinsights.com", "challenges.cloudflare.com"]) ||
     answers.stackCdnProvider === "cloudflare"
   ) {
     hostingItems.push({ label: "Cloudflare CDN", brandColor: STACK_BRAND_COLORS.cloudflare });
+  } else if (
+    hasStackMatch(hosts, ["vercel", "vercel-insights.com", "vercel.live"]) ||
+    hasStackMatch(paths, ["/_vercel/"]) ||
+    answers.hostingProvider === "vercel" ||
+    answers.stackCdnProvider === "vercelEdge"
+  ) {
+    if (!hostingItems.some((item) => item.label === "Vercel")) {
+      hostingItems.unshift({ label: "Vercel", brandColor: STACK_BRAND_COLORS.vercel });
+    }
   } else if (answers.stackCdnProvider) {
     hostingItems.push({ label: PLUS_LABELS.stackCdnProvider[answers.stackCdnProvider] });
   }
 
-  if (hostnames.some((host) => host.includes("openai")) || answers.stackAiProvider === "openai") {
+  if (hasStackMatch(hosts, ["openai", "oaistatic.com"]) || answers.stackAiProvider === "openai") {
     aiItems.push({ label: "OpenAI GPT-4", brandColor: STACK_BRAND_COLORS.openai });
   } else if (answers.stackAiProvider) {
     aiItems.push({ label: PLUS_LABELS.stackAiProvider[answers.stackAiProvider] });
   }
 
   if (
-    hostnames.some((host) => host.includes("google-analytics") || host.includes("googletagmanager")) ||
+    hasStackMatch(hosts, [
+      "google-analytics",
+      "googletagmanager",
+      "analytics.google.com",
+      "googleads.g.doubleclick.net"
+    ]) ||
     answers.stackAnalytics === "ga4"
   ) {
     analyticsItems.push({ label: "Google Analytics 4", brandColor: STACK_BRAND_COLORS.ga4 });
@@ -391,7 +421,7 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
     analyticsItems.push({ label: PLUS_LABELS.stackAnalytics[answers.stackAnalytics] });
   }
 
-  if (hostnames.some((host) => host.includes("stripe")) || answers.stackPayment === "stripe") {
+  if (hasStackMatch(hosts, ["stripe", "js.stripe.com"]) || answers.stackPayment === "stripe") {
     paymentItems.push({ label: "Stripe v3", brandColor: STACK_BRAND_COLORS.stripe });
   } else if (answers.stackPayment) {
     paymentItems.push({ label: PLUS_LABELS.stackPayment[answers.stackPayment] });

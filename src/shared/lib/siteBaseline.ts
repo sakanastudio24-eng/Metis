@@ -54,7 +54,8 @@ function isValidSnapshot(snapshot: unknown): snapshot is RawScanSnapshot {
     !isRecord(page) ||
     !isRecord(dom) ||
     !isRecord(metrics) ||
-    !Array.isArray(snapshot.resources)
+    !Array.isArray(snapshot.resources) ||
+    ("stackSignals" in snapshot && !Array.isArray(snapshot.stackSignals))
   ) {
     return false;
   }
