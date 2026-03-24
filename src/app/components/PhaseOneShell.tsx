@@ -393,7 +393,7 @@ export function PhaseOneShell({
   }, [fullRouteKey, panelMode, routeKey]);
 
   useEffect(() => {
-    const shouldLockPageScroll = panelMode !== "idle" || isPlusModalOpen;
+    const shouldLockPageScroll = panelMode === "full" || isPlusModalOpen;
     if (!shouldLockPageScroll) {
       return;
     }
