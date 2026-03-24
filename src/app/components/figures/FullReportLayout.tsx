@@ -1,8 +1,10 @@
 /**
  * FullReportLayout
- * Wider desktop report modal that clearly separates itself from the side panel.
+ * Treats the dashboard as a wide report surface instead of a slightly larger
+ * panel. The overview is intentionally compact so the dashboard can fit more
+ * meaningful sections above the fold.
  */
-import { Copy, Download, Expand, X } from "lucide-react";
+import { Copy, Download, X } from "lucide-react";
 import type { ScanScope } from "../../useMetisState";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type { PlusRefinementAnswers } from "../../../shared/types/audit";
@@ -74,7 +76,7 @@ export function FullReportLayout({
   return (
     <div className="metis-report-shell flex h-full flex-col overflow-hidden rounded-[24px]">
       <div
-        className="flex shrink-0 items-center justify-between border-b px-7 py-5"
+        className="flex shrink-0 items-center justify-between border-b px-8 py-5"
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
         <div className="flex items-center gap-4">
@@ -90,13 +92,7 @@ export function FullReportLayout({
             M
           </div>
           <div>
-            <div
-              style={{
-                color: "white",
-                fontFamily: "Jua, sans-serif",
-                fontSize: 22
-              }}
-            >
+            <div className="metis-display" style={{ color: "white", fontSize: 22 }}>
               Metis Full Report
             </div>
             <div
@@ -142,14 +138,6 @@ export function FullReportLayout({
           </div>
           <button
             type="button"
-            className="rounded-full p-2"
-            style={{ color: "rgba(255,255,255,0.4)" }}
-            aria-label="Expand"
-          >
-            <Expand size={16} />
-          </button>
-          <button
-            type="button"
             onClick={onClose}
             className="rounded-full p-2"
             style={{ color: "rgba(255,255,255,0.4)" }}
@@ -160,32 +148,32 @@ export function FullReportLayout({
         </div>
       </div>
 
-      <div className="metis-scroll flex-1 overflow-y-auto px-7 py-7">
-        <div className="space-y-7">
+      <div className="metis-scroll flex-1 overflow-y-auto px-8 py-7">
+        <div className="space-y-6">
           <div
-            className="rounded-[30px] p-7"
+            className="rounded-[28px] p-6"
             style={{
               background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
               border: "1px solid rgba(255,255,255,0.08)"
             }}
           >
-            <div className="grid items-start gap-10 lg:grid-cols-[240px_1fr]">
-              <div className="flex flex-col items-center justify-start gap-5">
+            <div className="grid items-start gap-6 xl:grid-cols-[168px_minmax(0,1fr)_360px]">
+              <div className="flex flex-col items-center justify-start gap-4">
                 <ScoreVisualization
                   score={viewModel.score}
-                  size={196}
+                  size={152}
                   color={viewModel.riskColor}
                   trackColor="rgba(255,255,255,0.08)"
                 />
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-4">
                   <div
+                    className="metis-display"
                     style={{
                       color: "white",
-                      fontFamily: "Jua, sans-serif",
-                      fontSize: 46,
+                      fontSize: 40,
                       lineHeight: 1
                     }}
                   >
@@ -202,24 +190,24 @@ export function FullReportLayout({
                   style={{
                     color: "rgba(255,255,255,0.5)",
                     fontFamily: "Inter, sans-serif",
-                    fontSize: 18
+                    fontSize: 16
                   }}
                 >
                   Cost Risk Score
                 </div>
 
                 <div
-                  className="rounded-[24px] px-6 py-5"
+                  className="rounded-[22px] px-5 py-4"
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.06)"
                   }}
                 >
                   <div
+                    className="metis-display"
                     style={{
                       color: "white",
-                      fontFamily: "Jua, sans-serif",
-                      fontSize: 24
+                      fontSize: 22
                     }}
                   >
                     {viewModel.estimateRange}
@@ -228,7 +216,8 @@ export function FullReportLayout({
                     style={{
                       color: "rgba(255,255,255,0.42)",
                       fontFamily: "Inter, sans-serif",
-                      fontSize: 14,
+                      fontSize: 13,
+                      lineHeight: "20px",
                       marginTop: 8
                     }}
                   >
@@ -237,119 +226,163 @@ export function FullReportLayout({
                 </div>
 
                 <div
-                  className="overflow-hidden rounded-[26px]"
+                  className="rounded-[22px] px-5 py-4"
                   style={{
                     background: "rgba(255,255,255,0.04)",
                     border: "1px solid rgba(255,255,255,0.07)"
                   }}
                 >
-                  <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
-                      <div
-                        style={{
-                          color: "rgba(255,255,255,0.38)",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 12,
-                          fontWeight: 600
-                        }}
-                      >
-                        {viewModel.pagesSampledLabel}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-start justify-between gap-4 px-5 py-5">
-                    <div>
-                      <div
-                        style={{
-                          color: "rgba(255,255,255,0.68)",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 14
-                        }}
-                      >
-                        Current session cost ({viewModel.scopeLabel.toLowerCase()})
-                      </div>
-                      <div
-                        style={{
-                          color: "rgba(255,255,255,0.38)",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 12,
-                          marginTop: 6
-                        }}
-                      >
-                        Counting as page loads · estimated
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        color: "white",
-                        fontFamily: "Jua, sans-serif",
-                        fontSize: 24
-                      }}
-                    >
-                      {viewModel.sessionCost}
-                    </div>
-                  </div>
                   <div
-                    className="flex flex-wrap items-center gap-3 px-5 py-4"
                     style={{
-                      background: "rgba(99,102,241,0.10)",
-                      borderTop: "1px solid rgba(99,102,241,0.18)"
+                      color: "rgba(255,255,255,0.32)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      marginBottom: 10
                     }}
                   >
-                    <div style={{ color: "#a5b4fc", fontSize: 16 }}>⚡</div>
+                    Quick Insight
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.78)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 15,
+                      lineHeight: "22px",
+                      fontWeight: 500
+                    }}
+                  >
+                    {viewModel.quickInsight}
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.45)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
+                      lineHeight: "18px",
+                      marginTop: 10
+                    }}
+                  >
+                    {viewModel.supportingDetail}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className="overflow-hidden rounded-[24px]"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.07)"
+                }}
+              >
+                <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
                     <div
                       style={{
-                        color: "rgba(255,255,255,0.55)",
+                        color: "rgba(255,255,255,0.38)",
                         fontFamily: "Inter, sans-serif",
-                        fontSize: 13
+                        fontSize: 12,
+                        fontWeight: 600
                       }}
                     >
-                      At 10k users →
-                    </div>
-                    <div
-                      style={{
-                        color: "#aeb5ff",
-                        fontFamily: "Jua, sans-serif",
-                        fontSize: 22
-                      }}
-                    >
-                      {viewModel.monthlyProjection}
+                      {viewModel.pagesSampledLabel}
                     </div>
                   </div>
                 </div>
-
-                {viewModel.summaryPills.length > 0 && (
-                  <div className="flex flex-wrap gap-3">
-                    {viewModel.summaryPills.map((pill) => (
-                      <div
-                        key={pill.label}
-                        className="rounded-full px-4 py-2"
-                        style={{
-                          background:
-                            pill.tone === "critical"
-                              ? "rgba(239,68,68,0.16)"
-                              : pill.tone === "moderate"
-                                ? "rgba(249,115,22,0.16)"
-                                : "rgba(234,179,8,0.16)",
-                          color:
-                            pill.tone === "critical"
-                              ? "#ff5d55"
-                              : pill.tone === "moderate"
-                                ? "#ff8b22"
-                                : "#facc15",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 12,
-                          fontWeight: 600
-                        }}
-                      >
-                        {pill.label}
-                      </div>
-                    ))}
+                <div className="flex items-start justify-between gap-4 px-5 py-5">
+                  <div>
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.68)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 14
+                      }}
+                    >
+                      Current session cost ({viewModel.scopeLabel.toLowerCase()})
+                    </div>
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.38)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 12,
+                        marginTop: 6
+                      }}
+                    >
+                      Counting as page loads · estimated
+                    </div>
                   </div>
-                )}
+                  <div
+                    className="metis-display"
+                    style={{
+                      color: "white",
+                      fontSize: 24
+                    }}
+                  >
+                    {viewModel.sessionCost}
+                  </div>
+                </div>
+                <div
+                  className="flex flex-wrap items-center gap-3 px-5 py-4"
+                  style={{
+                    background: "rgba(99,102,241,0.10)",
+                    borderTop: "1px solid rgba(99,102,241,0.18)"
+                  }}
+                >
+                  <div style={{ color: "#a5b4fc", fontSize: 16 }}>⚡</div>
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.55)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 13
+                    }}
+                  >
+                    At 10k users →
+                  </div>
+                  <div
+                    className="metis-display"
+                    style={{
+                      color: "#aeb5ff",
+                      fontSize: 22
+                    }}
+                  >
+                    {viewModel.monthlyProjection}
+                  </div>
+                </div>
               </div>
             </div>
+
+            {viewModel.summaryPills.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-3">
+                {viewModel.summaryPills.map((pill) => (
+                  <div
+                    key={pill.label}
+                    className="rounded-full px-4 py-2"
+                    style={{
+                      background:
+                        pill.tone === "critical"
+                          ? "rgba(239,68,68,0.16)"
+                          : pill.tone === "moderate"
+                            ? "rgba(249,115,22,0.16)"
+                            : "rgba(234,179,8,0.16)",
+                      color:
+                        pill.tone === "critical"
+                          ? "#ff5d55"
+                          : pill.tone === "moderate"
+                            ? "#ff8b22"
+                            : "#facc15",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
+                      fontWeight: 600
+                    }}
+                  >
+                    {pill.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="metis-report-grid">

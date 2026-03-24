@@ -1,8 +1,9 @@
 /**
  * PhaseOneShell
- * Live MV3 shell rebuilt against the zip-backed Metis prototype hierarchy.
+ * Keeps the interaction flow intentionally simple: launcher -> side panel ->
+ * full dashboard modal. This avoids the awkward "panel to slightly larger panel"
+ * transition and lets the dashboard feel like a distinct report surface.
  */
-import { useState } from "react";
 import { Copy, Expand, Minimize2, X } from "lucide-react";
 import { detectIssues } from "../../features/detection";
 import { buildInsight } from "../../features/insights";
@@ -198,38 +199,26 @@ function ShellHeader({
 }
 
 function PanelFooter({
-  primaryLabel,
-  onPrimary,
   onCopy
 }: {
-  primaryLabel: string;
-  onPrimary: () => void;
   onCopy: () => void;
 }) {
   return (
     <div
-      className="shrink-0 border-t px-4 pb-4 pt-3"
+      className="shrink-0 border-t px-4 py-3"
       style={{ borderColor: "rgba(255,255,255,0.08)" }}
     >
-      <div className="mb-3">
-        <button
-          type="button"
-          className="w-full rounded-[24px] px-5 py-4"
-          onClick={onPrimary}
+      <div className="flex items-center justify-between gap-3">
+        <div
           style={{
-            background: "#dc5e5e",
-            color: "white",
+            color: "rgba(255,255,255,0.34)",
             fontFamily: "Inter, sans-serif",
-            fontSize: 14,
-            fontWeight: 700,
-            boxShadow: "0 8px 24px rgba(220,94,94,0.35)"
+            fontSize: 11,
+            lineHeight: "15px"
           }}
         >
-          {primaryLabel}
-        </button>
-      </div>
-
-      <div className="flex items-center justify-end gap-3">
+          Expand from the header for the dashboard view.
+        </div>
         <button
           type="button"
           onClick={onCopy}
@@ -276,7 +265,6 @@ export function PhaseOneShell({
   isPlusRefinementOpen: boolean;
   setIsPlusRefinementOpen: (value: boolean) => void;
 }) {
-  const [showReport, setShowReport] = useState(false);
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
   const issues = activeSnapshot ? detectIssues(activeSnapshot) : [];
   const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
@@ -353,8 +341,6 @@ export function PhaseOneShell({
             <PanelLayout viewModel={viewModel} compact />
           </div>
           <PanelFooter
-            primaryLabel="Open Full Panel"
-            onPrimary={() => setPanelMode("full")}
             onCopy={() => {
               void handleCopyReport();
             }}
@@ -367,53 +353,14 @@ export function PhaseOneShell({
           <div
             className="fixed inset-0 z-[2147483646]"
             style={{
-              background: "rgba(0,0,0,0.2)",
-              backdropFilter: "blur(3px)"
+              background: "rgba(0,0,0,0.62)",
+              backdropFilter: "blur(14px)"
             }}
-            onClick={() => setPanelMode("idle")}
-          />
-          <div
-            className="fixed bottom-5 right-5 top-5 z-[2147483647] flex w-[410px] flex-col overflow-hidden rounded-[22px] shadow-2xl"
-            style={{
-              background: "#111d2b",
-              border: "1px solid rgba(255,255,255,0.07)"
-            }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <ShellHeader
-              title="Metis Full Report"
-              subtitle={viewModel ? `${viewModel.hostname} · ${viewModel.scannedAt}` : "Scanning current page"}
-              onClose={() => setPanelMode("idle")}
-              onMinimize={() => setPanelMode("mini")}
-              isMini={false}
-            />
-            <div className="metis-scroll flex-1 overflow-y-auto px-5 py-5">
-              <PanelLayout viewModel={viewModel} />
-            </div>
-            <PanelFooter
-              primaryLabel="Open Full Report"
-              onPrimary={() => setShowReport(true)}
-              onCopy={() => {
-                void handleCopyReport();
-              }}
-            />
-          </div>
-        </>
-      )}
-
-      {showReport && (
-        <>
-          <div
-            className="fixed inset-0 z-[2147483647]"
-            style={{
-              background: "rgba(0,0,0,0.72)",
-              backdropFilter: "blur(16px)"
-            }}
-            onClick={() => setShowReport(false)}
+            onClick={() => setPanelMode("mini")}
           />
           <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
             <div
-              className="pointer-events-auto h-[94vh] w-full max-w-[1180px]"
+              className="pointer-events-auto h-[94vh] w-full max-w-[1320px]"
               onClick={(event) => event.stopPropagation()}
             >
               <FullReportLayout
@@ -428,7 +375,7 @@ export function PhaseOneShell({
                 onCopyReport={() => {
                   void handleCopyReport();
                 }}
-                onClose={() => setShowReport(false)}
+                onClose={() => setPanelMode("mini")}
               />
             </div>
           </div>
