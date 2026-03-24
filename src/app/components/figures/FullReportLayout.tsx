@@ -1,6 +1,6 @@
 /**
  * FullReportLayout
- * Centered prototype-faithful report modal for the live Metis runtime.
+ * Wider desktop report modal that clearly separates itself from the side panel.
  */
 import { Copy, Download, Expand, X } from "lucide-react";
 import type { ScanScope } from "../../useMetisState";
@@ -65,23 +65,16 @@ export function FullReportLayout({
 }: FullReportLayoutProps) {
   if (!viewModel) {
     return (
-      <div className="flex min-h-[480px] items-center justify-center text-white/50">
+      <div className="metis-report-shell flex min-h-[480px] items-center justify-center rounded-[24px] text-white/50">
         Scanning this page…
       </div>
     );
   }
 
   return (
-    <div
-      className="flex h-full flex-col overflow-hidden rounded-[22px]"
-      style={{
-        background: "#0c1623",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 40px 100px rgba(0,0,0,0.6)"
-      }}
-    >
+    <div className="metis-report-shell flex h-full flex-col overflow-hidden rounded-[24px]">
       <div
-        className="flex shrink-0 items-center justify-between border-b px-6 py-5"
+        className="flex shrink-0 items-center justify-between border-b px-7 py-5"
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
         <div className="flex items-center gap-4">
@@ -167,32 +160,32 @@ export function FullReportLayout({
         </div>
       </div>
 
-      <div className="metis-scroll flex-1 overflow-y-auto px-6 py-6">
-        <div className="space-y-6">
+      <div className="metis-scroll flex-1 overflow-y-auto px-7 py-7">
+        <div className="space-y-7">
           <div
-            className="rounded-[28px] p-6"
+            className="rounded-[30px] p-7"
             style={{
               background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
               border: "1px solid rgba(255,255,255,0.08)"
             }}
           >
-            <div className="grid grid-cols-[220px_1fr] gap-8">
+            <div className="grid items-start gap-10 lg:grid-cols-[240px_1fr]">
               <div className="flex flex-col items-center justify-start gap-5">
                 <ScoreVisualization
                   score={viewModel.score}
-                  size={180}
+                  size={196}
                   color={viewModel.riskColor}
                   trackColor="rgba(255,255,255,0.08)"
                 />
               </div>
 
               <div className="space-y-5">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div
                     style={{
                       color: "white",
                       fontFamily: "Jua, sans-serif",
-                      fontSize: 42,
+                      fontSize: 46,
                       lineHeight: 1
                     }}
                   >
@@ -216,7 +209,7 @@ export function FullReportLayout({
                 </div>
 
                 <div
-                  className="max-w-[520px] rounded-[24px] px-6 py-5"
+                  className="rounded-[24px] px-6 py-5"
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.06)"
@@ -226,7 +219,7 @@ export function FullReportLayout({
                     style={{
                       color: "white",
                       fontFamily: "Jua, sans-serif",
-                      fontSize: 22
+                      fontSize: 24
                     }}
                   >
                     {viewModel.estimateRange}
@@ -298,7 +291,7 @@ export function FullReportLayout({
                     </div>
                   </div>
                   <div
-                    className="flex items-center gap-3 px-5 py-4"
+                    className="flex flex-wrap items-center gap-3 px-5 py-4"
                     style={{
                       background: "rgba(99,102,241,0.10)",
                       borderTop: "1px solid rgba(99,102,241,0.18)"
@@ -359,11 +352,68 @@ export function FullReportLayout({
             </div>
           </div>
 
-          <CostBreakdown rows={viewModel.costRows} />
+          <div className="metis-report-grid">
+            <div className="space-y-6">
+              <CostBreakdown rows={viewModel.costRows} />
+              <TopIssuesList issues={viewModel.issues} title="Top Issues" />
+            </div>
 
-          <TopIssuesList issues={viewModel.issues} title="Top Issues" />
+            <div className="space-y-6">
+              <DetectedStackBadges chips={viewModel.stackChips} groups={viewModel.stackGroups} />
 
-          <DetectedStackBadges chips={viewModel.stackChips} groups={viewModel.stackGroups} />
+              <div
+                className="rounded-[24px] px-5 py-4"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)"
+                }}
+              >
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.28)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    marginBottom: 14
+                  }}
+                >
+                  Scan Scope
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onSetScanScope("single")}
+                    className="rounded-full px-5 py-3"
+                    style={{
+                      background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
+                      color: scanScope === "single" ? "#0c1623" : "white",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 13,
+                      fontWeight: 700
+                    }}
+                  >
+                    Single Page
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSetScanScope("multi")}
+                    className="rounded-full px-5 py-3"
+                    style={{
+                      background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
+                      color: scanScope === "multi" ? "#0c1623" : "white",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 13,
+                      fontWeight: 700
+                    }}
+                  >
+                    Multipage
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div
             className="rounded-[28px] p-6"
@@ -372,7 +422,7 @@ export function FullReportLayout({
               border: "1px solid rgba(220,94,94,0.2)"
             }}
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div
                   style={{
@@ -403,7 +453,7 @@ export function FullReportLayout({
                     fontSize: 13,
                     lineHeight: "20px",
                     marginTop: 10,
-                    maxWidth: 620
+                    maxWidth: 760
                   }}
                 >
                   Answer a few stack and traffic questions to sharpen the cost interpretation without changing the underlying scan.
@@ -425,197 +475,160 @@ export function FullReportLayout({
               </button>
             </div>
 
-            {isRefinementOpen && currentQuestion && (
-              <div
-                className="mt-5 rounded-[24px] px-5 py-5"
-                style={{
-                  background: "rgba(12,22,35,0.45)",
-                  border: "1px solid rgba(255,255,255,0.08)"
-                }}
-              >
+            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
+              {isRefinementOpen && currentQuestion && (
                 <div
+                  className="rounded-[24px] px-5 py-5"
                   style={{
-                    color: "rgba(255,255,255,0.28)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase"
+                    background: "rgba(12,22,35,0.45)",
+                    border: "1px solid rgba(255,255,255,0.08)"
                   }}
                 >
-                  {currentQuestion.group}
-                </div>
-                <div
-                  style={{
-                    color: "white",
-                    fontFamily: "Jua, sans-serif",
-                    fontSize: 20,
-                    marginTop: 10
-                  }}
-                >
-                  {currentQuestion.label}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.55)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 13,
-                    marginTop: 10
-                  }}
-                >
-                  {currentQuestion.helper}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.42)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 12,
-                    marginTop: 12
-                  }}
-                >
-                  {currentQuestion.whyItMatters}
-                </div>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {currentQuestion.options.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => onAnswer(currentQuestion.key, option.value)}
-                      className="rounded-full px-4 py-2"
-                      style={{
-                        background:
-                          plusAnswers[currentQuestion.key] === option.value
-                            ? "#dc5e5e"
-                            : "rgba(255,255,255,0.08)",
-                        border: `1px solid ${
-                          plusAnswers[currentQuestion.key] === option.value
-                            ? "rgba(220,94,94,0.4)"
-                            : "rgba(255,255,255,0.1)"
-                        }`,
-                        color: "white",
-                        fontFamily: "Inter, sans-serif",
-                        fontSize: 12,
-                        fontWeight: 600
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {(viewModel.questionState.summary || viewModel.questionState.detail) && (
-              <div
-                className="mt-5 rounded-[24px] px-5 py-5"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)"
-                }}
-              >
-                <div className="flex items-center justify-between gap-4">
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.28)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase"
+                    }}
+                  >
+                    {currentQuestion.group}
+                  </div>
                   <div
                     style={{
                       color: "white",
                       fontFamily: "Jua, sans-serif",
-                      fontSize: 18
+                      fontSize: 20,
+                      marginTop: 10
                     }}
                   >
-                    {viewModel.questionState.summary ?? "Plus refinement ready"}
+                    {currentQuestion.label}
                   </div>
-                  {viewModel.questionState.priorityLabel && (
-                    <div
-                      className="rounded-full px-4 py-2"
-                      style={{
-                        background: "rgba(255,255,255,0.08)",
-                        color: "rgba(255,255,255,0.7)",
-                        fontFamily: "Inter, sans-serif",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase"
-                      }}
-                    >
-                      {viewModel.questionState.priorityLabel}
-                    </div>
-                  )}
-                </div>
-                {viewModel.questionState.detail && (
                   <div
                     style={{
-                      color: "rgba(255,255,255,0.6)",
+                      color: "rgba(255,255,255,0.55)",
                       fontFamily: "Inter, sans-serif",
                       fontSize: 13,
-                      lineHeight: "21px",
+                      marginTop: 10
+                    }}
+                  >
+                    {currentQuestion.helper}
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.42)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
                       marginTop: 12
                     }}
                   >
-                    {viewModel.questionState.detail}
+                    {currentQuestion.whyItMatters}
                   </div>
-                )}
-                {viewModel.questionState.nextStep && (
-                  <div
-                    className="mt-4 rounded-[18px] px-4 py-4"
-                    style={{
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.72)",
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: 12,
-                      lineHeight: "18px"
-                    }}
-                  >
-                    {viewModel.questionState.nextStep}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          <div
-            className="rounded-[24px] px-5 py-4"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.06)"
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onSetScanScope("single")}
-                className="rounded-full px-5 py-3"
-                style={{
-                  background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
-                  color: scanScope === "single" ? "#0c1623" : "white",
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 13,
-                  fontWeight: 700
-                }}
-              >
-                Single Page
-              </button>
-              <button
-                type="button"
-                onClick={() => onSetScanScope("multi")}
-                className="rounded-full px-5 py-3"
-                style={{
-                  background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
-                  color: scanScope === "multi" ? "#0c1623" : "white",
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 13,
-                  fontWeight: 700
-                }}
-              >
-                Multipage
-              </button>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {currentQuestion.options.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => onAnswer(currentQuestion.key, option.value)}
+                        className="rounded-full px-4 py-2"
+                        style={{
+                          background:
+                            plusAnswers[currentQuestion.key] === option.value
+                              ? "#dc5e5e"
+                              : "rgba(255,255,255,0.08)",
+                          border: `1px solid ${
+                            plusAnswers[currentQuestion.key] === option.value
+                              ? "rgba(220,94,94,0.4)"
+                              : "rgba(255,255,255,0.1)"
+                          }`,
+                          color: "white",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 12,
+                          fontWeight: 600
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(viewModel.questionState.summary || viewModel.questionState.detail) && (
+                <div
+                  className="rounded-[24px] px-5 py-5"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)"
+                  }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div
+                      style={{
+                        color: "white",
+                        fontFamily: "Jua, sans-serif",
+                        fontSize: 18
+                      }}
+                    >
+                      {viewModel.questionState.summary ?? "Plus refinement ready"}
+                    </div>
+                    {viewModel.questionState.priorityLabel && (
+                      <div
+                        className="rounded-full px-4 py-2"
+                        style={{
+                          background: "rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.7)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase"
+                        }}
+                      >
+                        {viewModel.questionState.priorityLabel}
+                      </div>
+                    )}
+                  </div>
+                  {viewModel.questionState.detail && (
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.6)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 13,
+                        lineHeight: "21px",
+                        marginTop: 12
+                      }}
+                    >
+                      {viewModel.questionState.detail}
+                    </div>
+                  )}
+                  {viewModel.questionState.nextStep && (
+                    <div
+                      className="mt-4 rounded-[18px] px-4 py-4"
+                      style={{
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        color: "rgba(255,255,255,0.72)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 12,
+                        lineHeight: "18px"
+                      }}
+                    >
+                      {viewModel.questionState.nextStep}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <div
-        className="flex shrink-0 items-center justify-between border-t px-6 py-4"
+        className="flex shrink-0 items-center justify-between border-t px-7 py-4"
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
         <div

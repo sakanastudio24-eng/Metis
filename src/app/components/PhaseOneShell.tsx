@@ -413,7 +413,7 @@ export function PhaseOneShell({
           />
           <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
             <div
-              className="pointer-events-auto h-[92vh] w-full max-w-[672px]"
+              className="pointer-events-auto h-[94vh] w-full max-w-[1180px]"
               onClick={(event) => event.stopPropagation()}
             >
               <FullReportLayout
