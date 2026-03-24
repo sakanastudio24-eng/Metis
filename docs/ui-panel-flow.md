@@ -17,9 +17,12 @@ This is the current UI flow for the injected Metis panel.
    - or a multipage snapshot reshaped from visited pages
 4. `detection/index.ts` turns the active snapshot into issues.
 5. `scoring/index.ts` converts those issues into deductions and a score.
-6. `PhaseOneShell.tsx` renders:
+6. `insights/index.ts` converts the score and issue stack into the Phase 4 insight.
+7. `PhaseOneShell.tsx` renders:
    - score at the top
    - surfaced issues next
+   - deterministic insight next
+   - Plus guided refinement below that in the full panel
    - breakdown, offenders, and baseline comparison below
 
 ## Current Panel Rule
@@ -28,6 +31,9 @@ The panel should keep the scoring story clear:
 
 - score first
 - issues second
-- diagnostics third
+- insight third
+- diagnostics after that
+
+The full dashboard now also supports a guided one-question refinement flow instead of rendering the entire Plus questionnaire at once.
 
 The panel still supports both `Single Page` and `Multipage`.

@@ -24,19 +24,19 @@ Keep the default Metis report instant, then let a user answer a few high-value q
 
 1. Run the normal scan, detection, scoring, and insight path first.
 2. Show `Refine This Report` as an optional next step in the full panel.
-3. Ask a short set of core questions:
-   - hosting provider
-   - monthly visits
-   - app type
-4. Offer optional depth questions for plan, paid APIs, AI usage, route importance, and optimization coverage.
-5. Keep all answers local to the panel state.
-6. Build a refined Plus report from:
+3. Open a guided dashboard card, not a long form.
+4. Ask one question at a time in a fixed order:
+   - move through the core questions first
+   - then let the user continue into optional depth
+5. Auto-advance after an answer so the flow feels fast and lightweight.
+6. Keep all answers local to the panel state.
+7. Build a refined Plus report from:
    - base insight
    - normalized snapshot
    - detected issues
    - score breakdown
    - optional user answers
-7. Render stack-aware urgency, context, and next-step guidance without changing the base score.
+8. Render stack-aware urgency, context, and next-step guidance without changing the base score.
 
 ## Question Groups
 
@@ -161,6 +161,16 @@ Each question definition should stay explicit about:
 - which group it belongs to
 
 That keeps the Plus layer reviewable without reading the full refinement engine.
+
+## Current UI Rule
+
+The Plus dashboard flow should:
+
+- keep the report visible while questions are answered
+- ask one question at a time
+- make core versus optional priority obvious
+- show why each question matters before the user answers
+- keep the refined report visible directly below the question flow
 
 ## Current Rule
 
