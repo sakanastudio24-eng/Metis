@@ -1037,144 +1037,195 @@ function FullPanel({
   setIsPlusRefinementOpen: (value: boolean) => void;
 }) {
   const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
+  const activeSnapshot = analysis?.activeSnapshot ?? rawSnapshot;
+  const snapshotTimestamp = activeSnapshot
+    ? new Date(activeSnapshot.scannedAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      })
+    : null;
 
   return (
     <>
       <div
-        className="fixed inset-0 z-[2147483646] bg-black/30 backdrop-blur-[2px]"
+        className="fixed inset-0 z-[2147483646] bg-black/60 backdrop-blur-[14px]"
         onClick={() => setPanelMode("idle")}
       />
-      <div className="fixed right-5 top-5 z-[2147483647] flex h-[calc(100vh-40px)] w-[560px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <div>
-            <div className="text-base font-semibold">Metis Full Panel</div>
-            <div className="text-sm text-white/48">Phase 4 insight and polish</div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setPanelMode("mini")}
-              className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-              title="Minimize"
-            >
-              <Minimize2 size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPanelMode("idle")}
-              className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-              title="Close"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="relative overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
-            <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#f97316]/12 blur-3xl" />
-            <div className="pointer-events-none absolute left-0 top-16 h-28 w-48 rounded-full bg-white/5 blur-3xl" />
-            <div className="relative">
-              <SectionLabel>Current State</SectionLabel>
-              <div className="grid gap-5 grid-cols-[1.25fr_0.75fr]">
-                <div>
-                  <div className="text-[2.8rem] font-semibold leading-none">Phase 4 Active</div>
-                  <p className="mt-4 max-w-[360px] text-base leading-7 text-white/64">
-                    The dashboard now turns normalized request activity into score,
-                    surfaced issues, deterministic insight, and guided Plus refinement from the same local scan.
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-white/48">
-                    This still runs fully in the content script with Manifest V3 and uses chrome.storage.local only for baseline and visited-page state.
-                  </p>
+      <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
+        <div className="pointer-events-auto flex max-h-[92vh] w-full max-w-[1040px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
+          <div className="relative overflow-hidden border-b border-white/10 px-6 py-5">
+            <div className="pointer-events-none absolute left-1/2 top-0 h-16 w-56 -translate-x-1/2 rounded-full bg-[#f97316]/18 blur-2xl" />
+            <div className="relative flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f97316] text-base font-bold text-[#0d1b2a]">
+                  M
                 </div>
-                <div className="space-y-3">
-                  <div className="rounded-[22px] bg-black/20 px-4 py-4">
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                      Dashboard Mode
-                    </div>
-                    <div className="mt-1.5 text-lg font-semibold text-white">Full Report</div>
-                    <div className="mt-1 text-sm leading-6 text-white/54">
-                      Score, insights, offenders, and guided questions live in one surface.
+                <div>
+                  <div className="text-base font-semibold">Metis Full Report</div>
+                  <div className="text-sm text-white/42">
+                    {activeSnapshot
+                      ? `${activeSnapshot.page.hostname} · ${snapshotTimestamp}`
+                      : "Phase 4 insight and polish"}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="rounded-full border border-[#f97316]/25 bg-[#f97316]/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ffb48a]">
+                  Phase 4
+                </div>
+                {analysis && (
+                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/60">
+                    {titleCase(analysis.score.label)}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPanelMode("mini")}
+                  className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
+                  title="Minimize"
+                >
+                  <Minimize2 size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelMode("idle")}
+                  className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
+                  title="Close"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="relative overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
+              <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#f97316]/12 blur-3xl" />
+              <div className="pointer-events-none absolute left-0 top-16 h-28 w-48 rounded-full bg-white/5 blur-3xl" />
+              <div className="relative">
+                <SectionLabel>Current State</SectionLabel>
+                <div className="grid gap-5 md:grid-cols-[1.15fr_0.85fr]">
+                  <div>
+                    <div className="text-[2.8rem] font-semibold leading-none">Phase 4 Active</div>
+                    <p className="mt-4 max-w-[460px] text-base leading-7 text-white/64">
+                      The dashboard now turns normalized request activity into score,
+                      surfaced issues, deterministic insight, and guided Plus refinement from the same local scan.
+                    </p>
+                    <p className="mt-3 text-sm leading-6 text-white/48">
+                      This runs fully in the content script, keeps data local, and reshapes the scan into one report surface instead of a raw metrics dump.
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <div className="rounded-full bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62">
+                        Content script UI
+                      </div>
+                      <div className="rounded-full bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62">
+                        Deterministic insights
+                      </div>
+                      <div className="rounded-full bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62">
+                        Guided Plus refinement
+                      </div>
                     </div>
                   </div>
-                  <div className="rounded-[22px] bg-black/20 px-4 py-4">
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                      Data Source
+                  <div className="grid gap-3">
+                    <div className="rounded-[22px] bg-black/20 px-4 py-4">
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                        Dashboard Mode
+                      </div>
+                      <div className="mt-1.5 text-lg font-semibold text-white">Full Report</div>
+                      <div className="mt-1 text-sm leading-6 text-white/54">
+                        Score, insights, offenders, and guided questions live in one surface.
+                      </div>
                     </div>
-                    <div className="mt-1.5 text-lg font-semibold text-white">Resource Timing</div>
-                    <div className="mt-1 text-sm leading-6 text-white/54">
-                      Cleaned through the staged raw, filtered, normalized, and grouped scan path.
+                    <div className="rounded-[22px] bg-black/20 px-4 py-4">
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                        Data Source
+                      </div>
+                      <div className="mt-1.5 text-lg font-semibold text-white">Resource Timing</div>
+                      <div className="mt-1 text-sm leading-6 text-white/54">
+                        Cleaned through the staged raw, filtered, normalized, and grouped scan path.
+                      </div>
+                    </div>
+                    <div className="rounded-[22px] bg-black/20 px-4 py-4">
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                        Storage Scope
+                      </div>
+                      <div className="mt-1.5 text-lg font-semibold text-white">Local Only</div>
+                      <div className="mt-1 text-sm leading-6 text-white/54">
+                        Baseline and visited-page state stay in chrome.storage.local with no new Phase 4 permissions.
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
-              <SectionLabel>Surface</SectionLabel>
-              <div className="text-xl font-semibold">Content Script UI</div>
-              <p className="mt-2 text-base text-white/58">
-                Injected into normal webpages inside a Shadow DOM.
-              </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
+                <SectionLabel>Surface</SectionLabel>
+                <div className="text-xl font-semibold">Content Script UI</div>
+                <p className="mt-2 text-base text-white/58">
+                  Injected into normal webpages inside a Shadow DOM.
+                </p>
+              </div>
+              <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
+                <SectionLabel>Permissions</SectionLabel>
+                <div className="text-xl font-semibold">Storage + Host Access</div>
+                <p className="mt-2 text-base text-white/58">
+                  No new Phase 4 permissions were added beyond the current scan flow.
+                </p>
+              </div>
             </div>
-            <div className="rounded-[24px] p-5" style={dashboardCardStyle}>
-              <SectionLabel>Permissions</SectionLabel>
-              <div className="text-xl font-semibold">Storage + Host Access</div>
-              <p className="mt-2 text-base text-white/58">
-                No new Phase 4 permissions were added beyond the current scan flow.
-              </p>
-            </div>
-          </div>
 
-          <div className="mt-5">
-            <SnapshotSummary
-              scanScope={scanScope}
-              setScanScope={setScanScope}
-              rawSnapshot={rawSnapshot}
-              baselineSnapshot={baselineSnapshot}
-              visitedSnapshots={visitedSnapshots}
-            />
-          </div>
-
-          {analysis && (
             <div className="mt-5">
-              <PlusRefinementCard
-                analysis={analysis}
-                plusAnswers={plusAnswers}
-                setPlusAnswers={setPlusAnswers}
-                isPlusRefinementOpen={isPlusRefinementOpen}
-                setIsPlusRefinementOpen={setIsPlusRefinementOpen}
+              <SnapshotSummary
+                scanScope={scanScope}
+                setScanScope={setScanScope}
+                rawSnapshot={rawSnapshot}
+                baselineSnapshot={baselineSnapshot}
+                visitedSnapshots={visitedSnapshots}
               />
             </div>
-          )}
 
-          <div className="mt-5 rounded-[28px] p-6" style={dashboardCardStyle}>
-            <SectionLabel>Roadmap Status</SectionLabel>
-            <div className="space-y-3">
-              {phaseStatus.map((item) => (
-                <div
-                  key={item.phase}
-                  className="flex items-start justify-between gap-3 rounded-2xl bg-[#10253a] px-4 py-4"
-                >
-                  <div className="flex items-start gap-3">
-                    {item.tone === "done" ? (
-                      <CircleCheckBig size={18} className="mt-0.5 shrink-0 text-[#22c55e]" />
-                    ) : item.tone === "active" ? (
-                      <Sparkles size={18} className="mt-0.5 shrink-0 text-[#f97316]" />
-                    ) : (
-                      <TriangleAlert size={18} className="mt-0.5 shrink-0 text-[#facc15]" />
-                    )}
-                    <div>
-                      <div className="text-base font-semibold text-white">
-                        {item.phase} · {item.title}
+            {analysis && (
+              <div className="mt-5">
+                <PlusRefinementCard
+                  analysis={analysis}
+                  plusAnswers={plusAnswers}
+                  setPlusAnswers={setPlusAnswers}
+                  isPlusRefinementOpen={isPlusRefinementOpen}
+                  setIsPlusRefinementOpen={setIsPlusRefinementOpen}
+                />
+              </div>
+            )}
+
+            <div className="mt-5 rounded-[28px] p-6" style={dashboardCardStyle}>
+              <SectionLabel>Roadmap Status</SectionLabel>
+              <div className="grid gap-3 md:grid-cols-2">
+                {phaseStatus.map((item) => (
+                  <div
+                    key={item.phase}
+                    className="flex items-start justify-between gap-3 rounded-2xl bg-[#10253a] px-4 py-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      {item.tone === "done" ? (
+                        <CircleCheckBig size={18} className="mt-0.5 shrink-0 text-[#22c55e]" />
+                      ) : item.tone === "active" ? (
+                        <Sparkles size={18} className="mt-0.5 shrink-0 text-[#f97316]" />
+                      ) : (
+                        <TriangleAlert size={18} className="mt-0.5 shrink-0 text-[#facc15]" />
+                      )}
+                      <div>
+                        <div className="text-base font-semibold text-white">
+                          {item.phase} · {item.title}
+                        </div>
+                        <div className="mt-1 text-sm text-white/58">{item.status}</div>
                       </div>
-                      <div className="mt-1 text-sm text-white/58">{item.status}</div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
