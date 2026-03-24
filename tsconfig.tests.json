@@ -17,6 +17,7 @@
     "src/features/detection/**/*.ts",
     "src/features/scoring/**/*.ts",
     "src/features/insights/**/*.ts",
+    "src/features/refinement/**/*.ts",
     "src/features/scan/index.ts",
     "src/features/scan/performance.ts",
     "tests/**/*.ts"

@@ -5,6 +5,7 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { detectIssues } from "../src/features/detection";
 import { buildInsight } from "../src/features/insights";
+import { buildPlusOptimizationReport } from "../src/features/refinement";
 import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } from "../src/features/scan";
 import { scoreSnapshot } from "../src/features/scoring";
 import type {
@@ -236,4 +237,75 @@ test("third-party-heavy snapshots point to dependency sprawl", () => {
   assert.ok(["healthy", "watch", "high risk"].includes(score.label));
   assert.match(insight.supportingDetail, /third-party domains/i);
   assert.match(insight.nextStep, /vendors|third-party tags/i);
+});
+
+test("plus refinement stays dormant until answers are provided", () => {
+  const snapshot = createSnapshot([
+    createResource("https://example.com/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 120_000
+    })
+  ]);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+
+  const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {});
+
+  assert.equal(report, null);
+});
+
+test("plus refinement raises priority with traffic, free plan, and paid APIs", () => {
+  const resources = Array.from({ length: 9 }, (_, index) =>
+    createResource(`https://example.com/api/feed?slot=${index}`, {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 65_000
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+  const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {
+    hostingProvider: "vercel",
+    hostingPlan: "free",
+    monthlyVisits: "100kPlus",
+    appType: "marketing",
+    highTrafficRoute: "yes",
+    paidApis: "yes"
+  });
+
+  assert.ok(report);
+  assert.equal(report?.priorityLabel, "High priority");
+  assert.equal(report?.missingCoreQuestions.length, 0);
+  assert.match(report?.detail ?? "", /Vercel|100k\+|marketing/i);
+  assert.match(report?.nextStep ?? "", /Vercel|caching|function work/i);
+});
+
+test("plus refinement keeps partial output when only some core answers are present", () => {
+  const resources = Array.from({ length: 8 }, (_, index) =>
+    createResource(`https://images.example.net/gallery-${index}.jpg`, {
+      category: "image",
+      initiatorType: "img",
+      encodedBodySize: 300_000,
+      isThirdParty: true,
+      isMeaningfulImage: true
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+  const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {
+    hostingProvider: "cloudflare",
+    mediaImportance: "core",
+    optimizationCoverage: "no"
+  });
+
+  assert.ok(report);
+  assert.equal(report?.summary.startsWith("Partial Plus read:"), true);
+  assert.ok((report?.missingCoreQuestions.length ?? 0) > 0);
+  assert.match(report?.nextStep ?? "", /Cloudflare|cache rules|media delivery/i);
 });

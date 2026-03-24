@@ -35,6 +35,7 @@ What is working now:
 - issue detection from normalized metrics
 - score labels and deduction breakdowns
 - deterministic insight generation from score + issue output
+- optional Plus report refinement questions and stack-aware guidance
 - logic tests for normalization, scoring, and insights
 - local visual test pages for layout checks
 - public threshold, weighting, and scoring flow docs
@@ -77,6 +78,7 @@ src/
     detection/          Phase 3 issue detection
     scoring/            Phase 3 scoring
     insights/           Phase 4 cost insight output
+    refinement/         Plus question-based report refinement
   shared/
     types/              Shared contracts
   styles/               Tailwind entry and design tokens
@@ -192,6 +194,7 @@ Phase 4
 - insight generation
 - scan hardening
 - logic tests
+- plus report refinement layer
 - estimate refinement
 - polish and ship prep
 
@@ -227,3 +230,4 @@ Phase 4 planning now lives in:
 - [docs/phase-4-research-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-research-flow.md)
 - [docs/phase-4-implementation-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-implementation-plan.md)
 - [docs/phase-4-insight-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-insight-flow.md)
+- [docs/plus-refinement-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/plus-refinement-flow.md)
