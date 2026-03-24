@@ -32,6 +32,8 @@ body {
 }
 
 #metis-react-root {
+  all: initial;
+  display: block;
   font-family: var(--metis-font-body);
   font-size: 16px !important;
   line-height: 1.5 !important;
@@ -40,6 +42,9 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  font-synthesis: none;
   isolation: isolate;
 }
 
@@ -47,6 +52,8 @@ body {
 #metis-react-root * {
   box-sizing: border-box;
   font-family: var(--metis-font-body);
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 #metis-react-root h1,

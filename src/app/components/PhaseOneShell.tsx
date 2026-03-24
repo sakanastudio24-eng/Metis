@@ -1,11 +1,13 @@
 /**
  * PhaseOneShell
- * Keeps the interaction flow intentionally simple: launcher -> side panel ->
- * full dashboard modal. This avoids the awkward "panel to slightly larger panel"
- * transition and lets the dashboard feel like a distinct report surface.
+ * Restores the prototype-led Metis interaction flow:
+ * launcher hover -> startup scan animation -> mini side panel -> full report.
+ * Live Phase 4 data still powers the surfaces, but the chrome now follows the
+ * original prototype's account, loading, footer, and Plus-upgrade behaviors.
  */
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Copy, Expand, Minimize2, X } from "lucide-react";
+import { ChevronRight, FileText, Maximize2, X } from "lucide-react";
 import { toast } from "sonner";
 import { detectIssues } from "../../features/detection";
 import { buildInsight } from "../../features/insights";
@@ -21,14 +23,21 @@ import type {
   PlusRefinementAnswers,
   RawScanSnapshot
 } from "../../shared/types/audit";
-import { PanelLayout } from "./figures/PanelLayout";
+import {
+  DETECTION_TOTAL_DURATION_MS,
+  METIS_RED,
+  PANEL_BG
+} from "../data/metis-mock-data";
 import { FullReportLayout } from "./figures/FullReportLayout";
+import { PanelLayout } from "./figures/PanelLayout";
+import {
+  CopyReportButton,
+  LoadingScreen,
+  PlusUpgradeModal,
+  ProfileButton,
+  WhatJustHappened
+} from "./figures/PrototypeChrome";
 import { buildMetisDesignViewModel } from "./figures/liveAdapter";
-
-const HOST_BUTTON_STYLE = {
-  background: "#0c1623",
-  border: "1px solid rgba(255,255,255,0.1)"
-} as const;
 
 const panelTransition = {
   type: "spring",
@@ -69,212 +78,195 @@ function buildReportCopyText(
 }
 
 function LauncherButton({
-  onOpen
+  onOpen,
+  score,
+  riskLabel
 }: {
   onOpen: () => void;
+  score?: number;
+  riskLabel?: string;
 }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <div className="fixed right-0 z-[2147483647]" style={{ bottom: "5rem" }}>
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            className="absolute right-[72px] top-1/2 w-[182px] -translate-y-1/2 rounded-[18px] px-4 py-3"
+            style={{
+              background: "#0d1825",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.45)"
+            }}
+            initial={{ opacity: 0, x: 10, scale: 0.96 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 10, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div
+              style={{
+                color: "rgba(255,255,255,0.3)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase"
+              }}
+            >
+              Cost Risk: {score ?? "…"}
+            </div>
+            <div
+              style={{
+                color: "white",
+                fontFamily: "Jua, sans-serif",
+                fontSize: 16,
+                marginTop: 8
+              }}
+            >
+              {riskLabel ?? "Metis ready"}
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.45)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                lineHeight: "16px",
+                marginTop: 8
+              }}
+            >
+              Click to scan this page and open Metis.
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.button
         type="button"
         onClick={onOpen}
-        className="group flex min-w-[44px] flex-col items-center gap-2 px-3 py-4 shadow-2xl"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="group flex min-w-[48px] items-center justify-center px-3 py-4 shadow-2xl"
         style={{
-          ...HOST_BUTTON_STYLE,
-          borderRadius: "12px 0 0 12px",
+          background: "#0d1825",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: "14px 0 0 14px",
           borderRight: "none",
           boxShadow: "0 18px 44px rgba(0,0,0,0.32)"
         }}
         title="Open Metis"
-        initial={{ opacity: 0, x: 18, scale: 0.88 }}
-        animate={{
-          opacity: 1,
-          x: 0,
-          scale: 1,
-          y: [0, -3, 0]
-        }}
+        initial={{ opacity: 0, x: 18, scale: 0.9 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={{
           opacity: { duration: 0.28, ease: "easeOut" },
           x: panelTransition,
-          scale: panelTransition,
-          y: { duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.65 }
+          scale: panelTransition
         }}
-        whileHover={{ x: -3, scale: 1.02 }}
+        whileHover={{ x: -4, scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        <motion.div
-          className="flex h-[18px] w-[18px] items-center justify-center"
-          animate={{ rotate: [0, -6, 0, 6, 0] }}
-          transition={{ duration: 1.8, delay: 0.45, ease: "easeInOut" }}
-        >
+        <div className="relative flex h-[28px] w-[28px] items-center justify-center">
+          <motion.div
+            className="absolute inset-0 rounded-full"
+            style={{ background: "rgba(220,94,94,0.15)" }}
+            animate={{ scale: [1, 1.16, 1], opacity: [0.6, 0.2, 0.6] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          />
           <div
-            style={{
-              color: "white",
-              fontFamily: "Jua, sans-serif",
-              fontSize: 18,
-              lineHeight: 1
-            }}
+            className="relative flex h-[28px] w-[28px] items-center justify-center rounded-[10px]"
+            style={{ background: METIS_RED }}
           >
-            M
+            <span
+              style={{
+                color: "white",
+                fontFamily: "Jua, sans-serif",
+                fontSize: 16,
+                lineHeight: 1
+              }}
+            >
+              M
+            </span>
           </div>
-        </motion.div>
-        <div
-          className="hidden text-center group-hover:block"
-          style={{
-            color: "rgba(255,255,255,0.35)",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 11,
-            lineHeight: "14px"
-          }}
-        >
-          Open
         </div>
       </motion.button>
     </div>
   );
 }
 
-function ShellHeader({
-  title,
-  subtitle,
+function MiniPanelHeader({
   onClose,
-  onExpand,
-  onMinimize,
-  isMini
+  onOpenReport,
+  onUpgrade,
+  isPlusUser
 }: {
-  title: string;
-  subtitle: string;
   onClose: () => void;
-  onExpand?: () => void;
-  onMinimize?: () => void;
-  isMini: boolean;
+  onOpenReport: () => void;
+  onUpgrade: () => void;
+  isPlusUser: boolean;
 }) {
   return (
     <div
-      className="flex shrink-0 items-center justify-between border-b px-4 py-4"
-      style={{ borderColor: "rgba(255,255,255,0.08)" }}
+      className="flex items-center justify-between px-4 pb-3 pt-4 shrink-0"
+      style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <div
-          className="flex items-center justify-center rounded-[18px]"
-          style={{
-            width: isMini ? 48 : 52,
-            height: isMini ? 48 : 52,
-            background: "#dc5e5e",
-            color: "white",
-            fontFamily: "Jua, sans-serif",
-            fontSize: isMini ? 24 : 28
-          }}
+          className="flex h-6 w-6 items-center justify-center rounded-md shrink-0"
+          style={{ background: METIS_RED }}
         >
-          M
+          <span style={{ color: "white", fontFamily: "Jua, sans-serif", fontSize: 14 }}>
+            M
+          </span>
         </div>
-        <div>
-          <div
+        <span
+          className="text-white"
+          style={{ fontFamily: "Jua, sans-serif", fontSize: 14 }}
+        >
+          Metis
+        </span>
+        {isPlusUser && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 480, damping: 22 }}
+            className="flex items-center gap-1 rounded-full px-2 py-0.5"
             style={{
-              color: "white",
-              fontFamily: "Jua, sans-serif",
-              fontSize: isMini ? 18 : 20
+              background: "rgba(220,94,94,0.18)",
+              border: "1px solid rgba(220,94,94,0.3)"
             }}
           >
-            {title}
-          </div>
-          <div
-            style={{
-              color: "rgba(255,255,255,0.4)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: isMini ? 11 : 12
-            }}
-          >
-            {subtitle}
-          </div>
-        </div>
+            <span
+              style={{
+                fontFamily: "Inter, sans-serif",
+                fontSize: 9,
+                color: METIS_RED,
+                fontWeight: 700
+              }}
+            >
+              Plus
+            </span>
+          </motion.div>
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
-        {onExpand && (
-        <motion.button
+      <div className="flex items-center gap-1.5">
+        <ProfileButton onUpgrade={onUpgrade} isPlusUser={isPlusUser} />
+        <button
           type="button"
-          onClick={onExpand}
-          className="rounded-full p-2"
-          style={{ color: "rgba(255,255,255,0.4)" }}
-          title="Expand"
-          whileHover={{ scale: 1.08, backgroundColor: "rgba(255,255,255,0.06)" }}
-          whileTap={{ scale: 0.96 }}
+          onClick={onOpenReport}
+          className="rounded-full p-1.5 hover:bg-white/8 transition-colors"
+          title="Open full report"
         >
-          <Expand size={16} />
-        </motion.button>
-      )}
-      {onMinimize && (
-          <motion.button
-            type="button"
-            onClick={onMinimize}
-            className="rounded-full p-2"
-            style={{ color: "rgba(255,255,255,0.4)" }}
-            title="Minimize"
-            whileHover={{ scale: 1.08, backgroundColor: "rgba(255,255,255,0.06)" }}
-            whileTap={{ scale: 0.96 }}
-          >
-            <Minimize2 size={16} />
-          </motion.button>
-        )}
-        <motion.button
+          <Maximize2 size={12} className="text-white/40" />
+        </button>
+        <button
           type="button"
           onClick={onClose}
-          className="rounded-full p-2"
-          style={{ color: "rgba(255,255,255,0.4)" }}
+          className="rounded-full p-1.5 hover:bg-white/8 transition-colors"
           title="Close"
-          whileHover={{ scale: 1.08, backgroundColor: "rgba(255,255,255,0.06)" }}
-          whileTap={{ scale: 0.96 }}
         >
-          <X size={18} />
-        </motion.button>
-      </div>
-    </div>
-  );
-}
-
-function PanelFooter({
-  onCopy
-}: {
-  onCopy: () => void;
-}) {
-  return (
-    <div
-      className="shrink-0 border-t px-4 py-3"
-      style={{ borderColor: "rgba(255,255,255,0.08)" }}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div
-          style={{
-            color: "rgba(255,255,255,0.34)",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 11,
-            lineHeight: "15px"
-          }}
-        >
-          Expand from the header for the dashboard view.
-        </div>
-        <motion.button
-          type="button"
-          onClick={onCopy}
-          className="flex items-center gap-2 rounded-[18px] px-4 py-3"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "rgba(255,255,255,0.7)",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 12,
-            fontWeight: 700
-          }}
-          whileHover={{
-            scale: 1.03,
-            backgroundColor: "rgba(255,255,255,0.08)"
-          }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Copy size={14} />
-          Copy
-        </motion.button>
+          <X size={12} className="text-white/40" />
+        </button>
       </div>
     </div>
   );
@@ -305,6 +297,11 @@ export function PhaseOneShell({
   isPlusRefinementOpen: boolean;
   setIsPlusRefinementOpen: (value: boolean) => void;
 }) {
+  const [miniLoaded, setMiniLoaded] = useState(false);
+  const [miniSessionKey, setMiniSessionKey] = useState(0);
+  const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
+  const [isPlusUser, setIsPlusUser] = useState(false);
+
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
   const issues = activeSnapshot ? detectIssues(activeSnapshot) : [];
   const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
@@ -339,6 +336,16 @@ export function PhaseOneShell({
       return plusAnswers[definition.dependsOn.key] === definition.dependsOn.value;
     }).find((definition) => plusAnswers[definition.key] === undefined) ?? null;
 
+  useEffect(() => {
+    if (panelMode !== "mini" || miniSessionKey === 0) {
+      return;
+    }
+
+    setMiniLoaded(false);
+    const timer = window.setTimeout(() => setMiniLoaded(true), DETECTION_TOTAL_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [panelMode, miniSessionKey]);
+
   const handleAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
     setPlusAnswers({
       ...plusAnswers,
@@ -360,91 +367,172 @@ export function PhaseOneShell({
     });
   };
 
+  const handleOpenMini = () => {
+    setMiniSessionKey((current) => current + 1);
+    setPanelMode("mini");
+  };
+
+  const handleUpgradeConfirm = () => {
+    setIsPlusUser(true);
+    setIsPlusModalOpen(false);
+    toast.success("Metis+ unlocked", {
+      description: "The prototype Plus experience is now enabled in this session."
+    });
+  };
+
   void baselineSnapshot;
 
   return (
     <>
       <AnimatePresence mode="wait">
-        {panelMode === "idle" && <LauncherButton key="launcher" onOpen={() => setPanelMode("mini")} />}
+        {panelMode === "idle" && (
+          <LauncherButton
+            key="launcher"
+            onOpen={handleOpenMini}
+            score={viewModel?.score}
+            riskLabel={viewModel?.riskLabel}
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
         {panelMode === "mini" && (
-        <motion.div
-          key="mini-panel"
-          className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[288px] flex-col overflow-hidden shadow-2xl"
-          style={{
-            background: "#111d2b",
-            borderLeft: "1px solid rgba(255,255,255,0.06)"
-          }}
-          initial={{ opacity: 0, x: 32, scale: 0.98 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 24, scale: 0.98 }}
-          transition={panelTransition}
-        >
-          <ShellHeader
-            title="Metis"
-            subtitle="Phase 4 live insight"
-            onClose={() => setPanelMode("idle")}
-            onExpand={() => setPanelMode("full")}
-            isMini
-          />
-          <div className="metis-scroll flex-1 overflow-y-auto px-4 py-4">
-            <PanelLayout viewModel={viewModel} compact />
-          </div>
-          <PanelFooter
-            onCopy={() => {
-              void handleCopyReport();
+          <motion.div
+            key="mini-panel"
+            className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[288px] flex-col overflow-hidden shadow-2xl"
+            style={{
+              background: PANEL_BG,
+              borderLeft: "1px solid rgba(255,255,255,0.06)"
             }}
-          />
-        </motion.div>
-      )}
+            initial={{ opacity: 0, x: 32, scale: 0.98 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 24, scale: 0.98 }}
+            transition={panelTransition}
+          >
+            <MiniPanelHeader
+              onClose={() => setPanelMode("idle")}
+              onOpenReport={() => setPanelMode("full")}
+              onUpgrade={() => setIsPlusModalOpen(true)}
+              isPlusUser={isPlusUser}
+            />
+
+            <AnimatePresence mode="wait">
+              {!miniLoaded ? (
+                <motion.div key="loading" className="flex-1">
+                  <LoadingScreen />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="content"
+                  className="metis-scroll flex-1 overflow-y-auto px-4 py-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PanelLayout viewModel={viewModel} compact />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div
+              className="shrink-0 space-y-2 px-4 pb-4 pt-3"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              <WhatJustHappened
+                hostname={viewModel?.hostname ?? rawSnapshot?.page.hostname ?? window.location.hostname}
+              />
+              <div className="flex gap-2">
+                <motion.button
+                  type="button"
+                  onClick={() => setPanelMode("full")}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 font-bold"
+                  style={{
+                    background: METIS_RED,
+                    color: "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 12
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <FileText size={12} />
+                  Full Report
+                  <ChevronRight size={12} />
+                </motion.button>
+                <CopyReportButton
+                  onCopy={() => {
+                    void handleCopyReport();
+                  }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
-      {panelMode === "full" && (
-        <>
-          <motion.div
-            key="report-backdrop"
-            className="fixed inset-0 z-[2147483646]"
-            style={{
-              background: "rgba(0,0,0,0.62)",
-              backdropFilter: "blur(14px)"
-            }}
-            onClick={() => setPanelMode("mini")}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-          />
-          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
+        {panelMode === "full" && (
+          <>
             <motion.div
-              key="report-modal"
-              className="pointer-events-auto h-[94vh] w-full max-w-[1320px]"
-              onClick={(event) => event.stopPropagation()}
-              initial={{ opacity: 0, y: 26, scale: 0.975 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: 0.985 }}
-              transition={panelTransition}
-            >
-              <FullReportLayout
-                viewModel={viewModel}
-                scanScope={scanScope}
-                onSetScanScope={setScanScope}
-                currentQuestion={currentQuestion}
-                plusAnswers={plusAnswers}
-                isRefinementOpen={isPlusRefinementOpen}
-                setIsRefinementOpen={setIsPlusRefinementOpen}
-                onAnswer={handleAnswer}
-                onCopyReport={() => {
-                  void handleCopyReport();
-                }}
-                onClose={() => setPanelMode("mini")}
-              />
-            </motion.div>
-          </div>
-        </>
-      )}
+              key="report-backdrop"
+              className="fixed inset-0 z-[2147483646]"
+              style={{
+                background: "rgba(0,0,0,0.78)",
+                backdropFilter: "blur(18px)"
+              }}
+              onClick={() => setPanelMode("mini")}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            />
+
+            <div className="pointer-events-none fixed inset-0 z-[2147483647] flex items-center justify-center p-5">
+              <motion.div
+                key="report-modal"
+                className="pointer-events-auto h-[92vh] w-full max-w-[1360px]"
+                onClick={(event) => event.stopPropagation()}
+                initial={{ opacity: 0, y: 26, scale: 0.975 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 18, scale: 0.985 }}
+                transition={panelTransition}
+              >
+                <FullReportLayout
+                  viewModel={viewModel}
+                  scanScope={scanScope}
+                  onSetScanScope={setScanScope}
+                  currentQuestion={currentQuestion}
+                  plusAnswers={plusAnswers}
+                  isRefinementOpen={isPlusRefinementOpen}
+                  setIsRefinementOpen={setIsPlusRefinementOpen}
+                  onAnswer={handleAnswer}
+                  onCopyReport={() => {
+                    void handleCopyReport();
+                  }}
+                  onUpgrade={() => setIsPlusModalOpen(true)}
+                  isPlusUser={isPlusUser}
+                  headerAccessory={
+                    <ProfileButton
+                      onUpgrade={() => setIsPlusModalOpen(true)}
+                      isPlusUser={isPlusUser}
+                      onDark
+                    />
+                  }
+                  onClose={() => setPanelMode("mini")}
+                />
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isPlusModalOpen && (
+          <PlusUpgradeModal
+            onClose={() => setIsPlusModalOpen(false)}
+            onConfirm={handleUpgradeConfirm}
+          />
+        )}
       </AnimatePresence>
     </>
   );

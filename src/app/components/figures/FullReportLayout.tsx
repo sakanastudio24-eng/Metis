@@ -4,6 +4,7 @@
  * panel. The overview is intentionally compact so the dashboard can fit more
  * meaningful sections above the fold.
  */
+import type { ReactNode } from "react";
 import { Copy, Download, X } from "lucide-react";
 import { motion } from "motion/react";
 import type { ScanScope } from "../../useMetisState";
@@ -51,6 +52,9 @@ interface FullReportLayoutProps {
   setIsRefinementOpen: (value: boolean) => void;
   onAnswer: (key: keyof PlusRefinementAnswers, value: string) => void;
   onCopyReport: () => void;
+  onUpgrade?: () => void;
+  isPlusUser?: boolean;
+  headerAccessory?: ReactNode;
   onClose?: () => void;
 }
 
@@ -64,6 +68,9 @@ export function FullReportLayout({
   setIsRefinementOpen,
   onAnswer,
   onCopyReport,
+  onUpgrade,
+  isPlusUser = false,
+  headerAccessory,
   onClose
 }: FullReportLayoutProps) {
   if (!viewModel) {
@@ -142,6 +149,26 @@ export function FullReportLayout({
           >
             {viewModel.riskLabel}
           </div>
+          {!isPlusUser && onUpgrade && (
+            <button
+              type="button"
+              onClick={onUpgrade}
+              className="rounded-full px-4 py-2"
+              style={{
+                border: "1px solid rgba(220,94,94,0.28)",
+                background: "rgba(220,94,94,0.1)",
+                color: "#dc8d72",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase"
+              }}
+            >
+              Plus
+            </button>
+          )}
+          {headerAccessory}
           <button
             type="button"
             onClick={onClose}
@@ -405,7 +432,11 @@ export function FullReportLayout({
           >
             <div className="space-y-6">
               <CostBreakdown rows={viewModel.costRows} />
-              <TopIssuesList issues={viewModel.issues} title="Top Issues" />
+              <TopIssuesList
+                issues={viewModel.issues}
+                title="Problems · Sorted by Severity"
+                showSummaryPills={false}
+              />
             </div>
 
             <div className="space-y-6">
@@ -718,6 +749,7 @@ export function FullReportLayout({
           </motion.button>
           <motion.button
             type="button"
+            onClick={onUpgrade}
             className="flex items-center gap-2 rounded-[18px] px-6 py-3"
             style={{
               background: "rgba(255,255,255,0.08)",

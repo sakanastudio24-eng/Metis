@@ -446,7 +446,7 @@ export function buildMetisDesignViewModel({
     pagesSampledLabel:
       scope === "multi"
         ? `Live · Sampled ${pageCount} pages · ${snapshot.page.hostname}`
-        : `Live · Current page · ${snapshot.page.hostname}`,
+        : `Live · Sampled 1 page · ${snapshot.page.hostname}`,
     score: Math.round(score.score),
     riskLabel: riskTone.label,
     riskColor: riskTone.color,
