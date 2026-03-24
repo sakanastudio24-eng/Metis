@@ -2,6 +2,7 @@
  * CostBreakdown
  * Dense report rows for the prototype cost breakdown section.
  */
+import { motion } from "motion/react";
 import { Brain, HardDrive, Zap } from "lucide-react";
 import type { DesignCostRow } from "./liveAdapter";
 
@@ -18,7 +19,12 @@ interface CostBreakdownProps {
 
 export function CostBreakdown({ rows }: CostBreakdownProps) {
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+    >
       <div
         style={{
           color: "rgba(255,255,255,0.3)",
@@ -44,17 +50,20 @@ export function CostBreakdown({ rows }: CostBreakdownProps) {
       </div>
 
       <div className="space-y-3">
-        {rows.map((row) => {
+        {rows.map((row, index) => {
           const Icon = iconMap[row.label as keyof typeof iconMap] ?? HardDrive;
 
           return (
-            <div
+            <motion.div
               key={row.label}
               className="flex items-center justify-between rounded-[22px] px-5 py-5"
               style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.04)"
               }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24, delay: index * 0.06, ease: "easeOut" }}
             >
               <div className="flex items-center gap-3">
                 <Icon size={16} style={{ color: row.accent }} />
@@ -78,10 +87,10 @@ export function CostBreakdown({ rows }: CostBreakdownProps) {
               >
                 {row.amount}
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }

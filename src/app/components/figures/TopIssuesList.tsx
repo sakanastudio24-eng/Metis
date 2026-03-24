@@ -2,6 +2,7 @@
  * TopIssuesList
  * Prototype issue rows and severity summary pills.
  */
+import { motion } from "motion/react";
 import type { DesignIssue, DesignSummaryPill } from "./liveAdapter";
 
 function summaryToneStyle(tone: DesignSummaryPill["tone"]) {
@@ -60,7 +61,12 @@ export function TopIssuesList({
   title = "Top Issues"
 }: TopIssuesListProps) {
   return (
-    <div className="space-y-3">
+    <motion.div
+      className="space-y-3"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+    >
       <div
         style={{
           color: "rgba(255,255,255,0.3)",
@@ -76,8 +82,8 @@ export function TopIssuesList({
 
       {summaryPills.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {summaryPills.map((pill) => (
-            <div
+          {summaryPills.map((pill, index) => (
+            <motion.div
               key={pill.label}
               className="rounded-full px-4 py-2"
               style={{
@@ -86,9 +92,12 @@ export function TopIssuesList({
                 fontSize: compact ? 11 : 12,
                 fontWeight: 600
               }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.22, delay: index * 0.04, ease: "easeOut" }}
             >
               {pill.label}
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -109,13 +118,16 @@ export function TopIssuesList({
       ) : (
         <div className="space-y-0">
           {issues.map((issue, index) => (
-            <div
+            <motion.div
               key={issue.id}
               className={`flex items-center justify-between gap-4 ${index < issues.length - 1 ? "border-b" : ""}`}
               style={{
                 padding: compact ? "14px 0" : "16px 0",
                 borderColor: "rgba(255,255,255,0.08)"
               }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24, delay: index * 0.05, ease: "easeOut" }}
             >
               <div className="flex min-w-0 items-center gap-4">
                 <div
@@ -146,10 +158,10 @@ export function TopIssuesList({
               >
                 {issue.severityLabel}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

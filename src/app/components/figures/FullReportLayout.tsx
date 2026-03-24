@@ -5,6 +5,7 @@
  * meaningful sections above the fold.
  */
 import { Copy, Download, X } from "lucide-react";
+import { motion } from "motion/react";
 import type { ScanScope } from "../../useMetisState";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type { PlusRefinementAnswers } from "../../../shared/types/audit";
@@ -74,7 +75,12 @@ export function FullReportLayout({
   }
 
   return (
-    <div className="metis-report-shell flex h-full flex-col overflow-hidden rounded-[24px]">
+    <motion.div
+      className="metis-report-shell flex h-full flex-col overflow-hidden rounded-[24px]"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, ease: "easeOut" }}
+    >
       <div
         className="flex shrink-0 items-center justify-between border-b px-8 py-5"
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
@@ -150,12 +156,15 @@ export function FullReportLayout({
 
       <div className="metis-scroll flex-1 overflow-y-auto px-8 py-7">
         <div className="space-y-6">
-          <div
+          <motion.div
             className="rounded-[28px] p-6"
             style={{
               background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
               border: "1px solid rgba(255,255,255,0.08)"
             }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.04, ease: "easeOut" }}
           >
             <div className="grid items-start gap-6 xl:grid-cols-[168px_minmax(0,1fr)_360px]">
               <div className="flex flex-col items-center justify-start gap-4">
@@ -357,7 +366,7 @@ export function FullReportLayout({
             {viewModel.summaryPills.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-3">
                 {viewModel.summaryPills.map((pill) => (
-                  <div
+                  <motion.div
                     key={pill.label}
                     className="rounded-full px-4 py-2"
                     style={{
@@ -377,15 +386,23 @@ export function FullReportLayout({
                       fontSize: 12,
                       fontWeight: 600
                     }}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
                   >
                     {pill.label}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
 
-          <div className="metis-report-grid">
+          <motion.div
+            className="metis-report-grid"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.32, delay: 0.08, ease: "easeOut" }}
+          >
             <div className="space-y-6">
               <CostBreakdown rows={viewModel.costRows} />
               <TopIssuesList issues={viewModel.issues} title="Top Issues" />
@@ -446,14 +463,17 @@ export function FullReportLayout({
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div
+          <motion.div
             className="rounded-[28px] p-6"
             style={{
               background: "rgba(220,94,94,0.08)",
               border: "1px solid rgba(220,94,94,0.2)"
             }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.12, ease: "easeOut" }}
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -492,7 +512,7 @@ export function FullReportLayout({
                   Answer a few stack and traffic questions to sharpen the cost interpretation without changing the underlying scan.
                 </div>
               </div>
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setIsRefinementOpen(!isRefinementOpen)}
                 className="rounded-full px-5 py-3"
@@ -503,9 +523,11 @@ export function FullReportLayout({
                   fontSize: 13,
                   fontWeight: 700
                 }}
+                whileHover={{ scale: 1.03, boxShadow: "0 10px 28px rgba(220,94,94,0.28)" }}
+                whileTap={{ scale: 0.98 }}
               >
                 {isRefinementOpen ? "Hide questions" : "Refine This Report"}
-              </button>
+              </motion.button>
             </div>
 
             <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
@@ -562,7 +584,7 @@ export function FullReportLayout({
 
                   <div className="mt-5 flex flex-wrap gap-2">
                     {currentQuestion.options.map((option) => (
-                      <button
+                      <motion.button
                         key={option.value}
                         type="button"
                         onClick={() => onAnswer(currentQuestion.key, option.value)}
@@ -582,9 +604,11 @@ export function FullReportLayout({
                           fontSize: 12,
                           fontWeight: 600
                         }}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.98 }}
                       >
                         {option.label}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -656,7 +680,7 @@ export function FullReportLayout({
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -674,7 +698,7 @@ export function FullReportLayout({
           ward.studio/metis
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <motion.button
             type="button"
             onClick={onCopyReport}
             className="flex items-center gap-2 rounded-[18px] px-5 py-3"
@@ -686,11 +710,13 @@ export function FullReportLayout({
               fontSize: 13,
               fontWeight: 700
             }}
+            whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.08)" }}
+            whileTap={{ scale: 0.98 }}
           >
             <Copy size={15} />
             Copy
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
             className="flex items-center gap-2 rounded-[18px] px-6 py-3"
             style={{
@@ -701,12 +727,14 @@ export function FullReportLayout({
               fontSize: 13,
               fontWeight: 700
             }}
+            whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.1)" }}
+            whileTap={{ scale: 0.98 }}
           >
             <Download size={15} />
             Export PDF (Plus)
-          </button>
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

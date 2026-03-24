@@ -5,6 +5,7 @@
 // deterministic pass before the steady interval loop takes over.
 import type { MouseEvent, PointerEvent } from "react";
 import { useEffect } from "react";
+import { Toaster } from "sonner";
 import { PhaseOneShell } from "./components/PhaseOneShell";
 import { useMetisState } from "./useMetisState";
 import { buildScanDebugSummary, collectRawScanSnapshot } from "../features/scan";
@@ -147,6 +148,21 @@ export default function App() {
       onMouseDown={stopEventPropagation}
       onPointerDown={stopEventPropagation}
     >
+      <Toaster
+        theme="dark"
+        position="top-right"
+        toastOptions={{
+          duration: 2200,
+          style: {
+            background: "#101c2b",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "#ffffff",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
+            fontFamily: "Inter, sans-serif",
+            fontSize: "13px"
+          }
+        }}
+      />
       <PhaseOneShell
         panelMode={panelMode}
         setPanelMode={setPanelMode}

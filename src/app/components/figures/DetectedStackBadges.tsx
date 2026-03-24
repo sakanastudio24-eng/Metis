@@ -2,6 +2,7 @@
  * DetectedStackBadges
  * Prototype chips plus grouped stack/context blocks.
  */
+import { motion } from "motion/react";
 import type { DesignStackChip, DesignStackGroup } from "./liveAdapter";
 
 function chipStyle(tone: DesignStackChip["tone"]) {
@@ -51,7 +52,12 @@ export function DetectedStackBadges({
   compact = false
 }: DetectedStackBadgesProps) {
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+    >
       <div
         style={{
           color: "rgba(255,255,255,0.3)",
@@ -66,8 +72,8 @@ export function DetectedStackBadges({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {chips.map((chip) => (
-          <div
+        {chips.map((chip, index) => (
+          <motion.div
             key={`${chip.label}-${chip.tone}`}
             className="rounded-full px-4 py-2"
             style={{
@@ -76,22 +82,28 @@ export function DetectedStackBadges({
               fontSize: compact ? 11 : 12,
               fontWeight: 500
             }}
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2, delay: index * 0.04, ease: "easeOut" }}
           >
             {chip.label}
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {!compact && groups.length > 0 && (
         <div className="grid gap-3">
-          {groups.map((group) => (
-            <div
+          {groups.map((group, index) => (
+            <motion.div
               key={group.label}
               className="rounded-[22px] px-4 py-4"
               style={{
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.06)"
               }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24, delay: index * 0.06, ease: "easeOut" }}
             >
               <div
                 style={{
@@ -108,25 +120,28 @@ export function DetectedStackBadges({
               </div>
               <div className="flex flex-wrap gap-2">
                 {group.items.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-full px-4 py-2"
-                    style={{
+                    <motion.div
+                      key={item}
+                      className="rounded-full px-4 py-2"
+                      style={{
                       background: "rgba(255,255,255,0.06)",
                       color: "rgba(255,255,255,0.7)",
                       fontFamily: "Inter, sans-serif",
-                      fontSize: 12,
-                      fontWeight: 500
-                    }}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
+                        fontSize: 12,
+                        fontWeight: 500
+                      }}
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                    >
+                      {item}
+                    </motion.div>
+                  ))}
+                </div>
+            </motion.div>
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

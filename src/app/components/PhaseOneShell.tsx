@@ -4,7 +4,9 @@
  * full dashboard modal. This avoids the awkward "panel to slightly larger panel"
  * transition and lets the dashboard feel like a distinct report surface.
  */
+import { AnimatePresence, motion } from "motion/react";
 import { Copy, Expand, Minimize2, X } from "lucide-react";
+import { toast } from "sonner";
 import { detectIssues } from "../../features/detection";
 import { buildInsight } from "../../features/insights";
 import { buildPlusOptimizationReport } from "../../features/refinement";
@@ -26,6 +28,13 @@ import { buildMetisDesignViewModel } from "./figures/liveAdapter";
 const HOST_BUTTON_STYLE = {
   background: "#0c1623",
   border: "1px solid rgba(255,255,255,0.1)"
+} as const;
+
+const panelTransition = {
+  type: "spring",
+  stiffness: 240,
+  damping: 24,
+  mass: 0.9
 } as const;
 
 function buildCurrentSnapshot(
@@ -66,18 +75,38 @@ function LauncherButton({
 }) {
   return (
     <div className="fixed right-0 z-[2147483647]" style={{ bottom: "5rem" }}>
-      <button
+      <motion.button
         type="button"
         onClick={onOpen}
         className="group flex min-w-[44px] flex-col items-center gap-2 px-3 py-4 shadow-2xl"
         style={{
           ...HOST_BUTTON_STYLE,
           borderRadius: "12px 0 0 12px",
-          borderRight: "none"
+          borderRight: "none",
+          boxShadow: "0 18px 44px rgba(0,0,0,0.32)"
         }}
         title="Open Metis"
+        initial={{ opacity: 0, x: 18, scale: 0.88 }}
+        animate={{
+          opacity: 1,
+          x: 0,
+          scale: 1,
+          y: [0, -3, 0]
+        }}
+        transition={{
+          opacity: { duration: 0.28, ease: "easeOut" },
+          x: panelTransition,
+          scale: panelTransition,
+          y: { duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.65 }
+        }}
+        whileHover={{ x: -3, scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
       >
-        <div className="flex h-[18px] w-[18px] items-center justify-center">
+        <motion.div
+          className="flex h-[18px] w-[18px] items-center justify-center"
+          animate={{ rotate: [0, -6, 0, 6, 0] }}
+          transition={{ duration: 1.8, delay: 0.45, ease: "easeInOut" }}
+        >
           <div
             style={{
               color: "white",
@@ -88,7 +117,7 @@ function LauncherButton({
           >
             M
           </div>
-        </div>
+        </motion.div>
         <div
           className="hidden text-center group-hover:block"
           style={{
@@ -100,7 +129,7 @@ function LauncherButton({
         >
           Open
         </div>
-      </button>
+      </motion.button>
     </div>
   );
 }
@@ -163,36 +192,42 @@ function ShellHeader({
 
       <div className="flex items-center gap-2">
         {onExpand && (
-          <button
-            type="button"
-            onClick={onExpand}
-            className="rounded-full p-2"
-            style={{ color: "rgba(255,255,255,0.4)" }}
-            title="Expand"
-          >
-            <Expand size={16} />
-          </button>
-        )}
-        {onMinimize && (
-          <button
+        <motion.button
+          type="button"
+          onClick={onExpand}
+          className="rounded-full p-2"
+          style={{ color: "rgba(255,255,255,0.4)" }}
+          title="Expand"
+          whileHover={{ scale: 1.08, backgroundColor: "rgba(255,255,255,0.06)" }}
+          whileTap={{ scale: 0.96 }}
+        >
+          <Expand size={16} />
+        </motion.button>
+      )}
+      {onMinimize && (
+          <motion.button
             type="button"
             onClick={onMinimize}
             className="rounded-full p-2"
             style={{ color: "rgba(255,255,255,0.4)" }}
             title="Minimize"
+            whileHover={{ scale: 1.08, backgroundColor: "rgba(255,255,255,0.06)" }}
+            whileTap={{ scale: 0.96 }}
           >
             <Minimize2 size={16} />
-          </button>
+          </motion.button>
         )}
-        <button
+        <motion.button
           type="button"
           onClick={onClose}
           className="rounded-full p-2"
           style={{ color: "rgba(255,255,255,0.4)" }}
           title="Close"
+          whileHover={{ scale: 1.08, backgroundColor: "rgba(255,255,255,0.06)" }}
+          whileTap={{ scale: 0.96 }}
         >
           <X size={18} />
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -219,7 +254,7 @@ function PanelFooter({
         >
           Expand from the header for the dashboard view.
         </div>
-        <button
+        <motion.button
           type="button"
           onClick={onCopy}
           className="flex items-center gap-2 rounded-[18px] px-4 py-3"
@@ -231,10 +266,15 @@ function PanelFooter({
             fontSize: 12,
             fontWeight: 700
           }}
+          whileHover={{
+            scale: 1.03,
+            backgroundColor: "rgba(255,255,255,0.08)"
+          }}
+          whileTap={{ scale: 0.98 }}
         >
           <Copy size={14} />
           Copy
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -314,21 +354,33 @@ export function PhaseOneShell({
     await navigator.clipboard.writeText(
       buildReportCopyText(activeSnapshot?.page.hostname ?? "current-page", viewModel)
     );
+
+    toast.success("Report copied", {
+      description: "Metis copied the current report summary to your clipboard."
+    });
   };
 
   void baselineSnapshot;
 
   return (
     <>
-      {panelMode === "idle" && <LauncherButton onOpen={() => setPanelMode("mini")} />}
+      <AnimatePresence mode="wait">
+        {panelMode === "idle" && <LauncherButton key="launcher" onOpen={() => setPanelMode("mini")} />}
+      </AnimatePresence>
 
-      {panelMode === "mini" && (
-        <div
+      <AnimatePresence>
+        {panelMode === "mini" && (
+        <motion.div
+          key="mini-panel"
           className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[288px] flex-col overflow-hidden shadow-2xl"
           style={{
             background: "#111d2b",
             borderLeft: "1px solid rgba(255,255,255,0.06)"
           }}
+          initial={{ opacity: 0, x: 32, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 24, scale: 0.98 }}
+          transition={panelTransition}
         >
           <ShellHeader
             title="Metis"
@@ -345,23 +397,35 @@ export function PhaseOneShell({
               void handleCopyReport();
             }}
           />
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {panelMode === "full" && (
         <>
-          <div
+          <motion.div
+            key="report-backdrop"
             className="fixed inset-0 z-[2147483646]"
             style={{
               background: "rgba(0,0,0,0.62)",
               backdropFilter: "blur(14px)"
             }}
             onClick={() => setPanelMode("mini")}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
           />
           <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
-            <div
+            <motion.div
+              key="report-modal"
               className="pointer-events-auto h-[94vh] w-full max-w-[1320px]"
               onClick={(event) => event.stopPropagation()}
+              initial={{ opacity: 0, y: 26, scale: 0.975 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.985 }}
+              transition={panelTransition}
             >
               <FullReportLayout
                 viewModel={viewModel}
@@ -377,10 +441,11 @@ export function PhaseOneShell({
                 }}
                 onClose={() => setPanelMode("mini")}
               />
-            </div>
+            </motion.div>
           </div>
         </>
       )}
+      </AnimatePresence>
     </>
   );
 }

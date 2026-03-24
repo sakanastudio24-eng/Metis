@@ -2,6 +2,7 @@
  * PanelLayout
  * Zip-authoritative mini/full panel body bound to live Phase 4 data.
  */
+import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
 import { TopIssuesList } from "./TopIssuesList";
@@ -57,8 +58,18 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center gap-4">
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
+      <motion.div
+        className="flex flex-col items-center gap-4"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.26, ease: "easeOut" }}
+      >
         <ScoreVisualization
           score={viewModel.score}
           size={compact ? 128 : 150}
@@ -85,12 +96,15 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
           background={viewModel.riskBg}
         />
 
-        <div
+        <motion.div
           className="w-full rounded-[24px] px-5 py-5"
           style={{
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.07)"
           }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24, delay: 0.06, ease: "easeOut" }}
         >
           <div
             style={{
@@ -103,15 +117,18 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
           >
             {viewModel.quickInsight}
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div
+      <motion.div
         className="overflow-hidden rounded-[28px]"
         style={{
           background: "rgba(255,255,255,0.04)",
           border: "1px solid rgba(255,255,255,0.07)"
         }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.26, delay: 0.08, ease: "easeOut" }}
       >
         <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
           <div className="flex items-center gap-2">
@@ -192,7 +209,7 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
             {viewModel.monthlyProjection}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <TopIssuesList
         issues={compact ? viewModel.topIssues.slice(0, 3) : viewModel.topIssues}
@@ -201,6 +218,6 @@ export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
       />
 
       <DetectedStackBadges chips={viewModel.stackChips} compact={compact} />
-    </div>
+    </motion.div>
   );
 }
