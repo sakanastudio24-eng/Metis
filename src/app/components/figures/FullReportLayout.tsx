@@ -485,7 +485,24 @@ export function FullReportLayout({
           >
             {viewModel.riskLabel}
           </div>
-          {!isPlusUser && onUpgrade && (
+          {isPlusUser ? (
+            <div
+              className="rounded-full px-4 py-2"
+              style={{
+                border: "1px solid rgba(220,94,94,0.34)",
+                background: "rgba(220,94,94,0.14)",
+                color: "#dc8d72",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                boxShadow: "0 10px 22px rgba(220,94,94,0.12)"
+              }}
+            >
+              Plus
+            </div>
+          ) : onUpgrade ? (
             <button
               type="button"
               onClick={onUpgrade}
@@ -501,9 +518,9 @@ export function FullReportLayout({
                 textTransform: "uppercase"
               }}
             >
-              Plus
+              Get Plus
             </button>
-          )}
+          ) : null}
           {headerAccessory}
           <button
             type="button"

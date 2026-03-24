@@ -228,29 +228,42 @@ function MiniPanelHeader({
         >
           Metis
         </span>
-        {isPlusUser && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 480, damping: 22 }}
-            className="flex items-center gap-1 rounded-full px-2 py-0.5"
+        <motion.button
+          type="button"
+          onClick={() => {
+            if (!isPlusUser) {
+              onUpgrade();
+            }
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 480, damping: 22 }}
+          className="flex items-center gap-1 rounded-full px-2.5 py-1"
+          style={{
+            background: isPlusUser
+              ? "rgba(220,94,94,0.2)"
+              : "rgba(220,94,94,0.1)",
+            border: isPlusUser
+              ? "1px solid rgba(220,94,94,0.36)"
+              : "1px solid rgba(220,94,94,0.2)",
+            boxShadow: isPlusUser ? "0 8px 18px rgba(220,94,94,0.15)" : "none",
+            cursor: isPlusUser ? "default" : "pointer"
+          }}
+          title={isPlusUser ? "Metis Plus active" : "Get Plus"}
+        >
+          <span
             style={{
-              background: "rgba(220,94,94,0.18)",
-              border: "1px solid rgba(220,94,94,0.3)"
+              fontFamily: "Inter, sans-serif",
+              fontSize: 9,
+              color: METIS_RED,
+              fontWeight: 800,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase"
             }}
           >
-            <span
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: 9,
-                color: METIS_RED,
-                fontWeight: 700
-              }}
-            >
-              Plus
-            </span>
-          </motion.div>
-        )}
+            {isPlusUser ? "Plus" : "Get Plus"}
+          </span>
+        </motion.button>
       </div>
 
       <div className="flex items-center gap-1.5">

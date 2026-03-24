@@ -156,10 +156,11 @@ export function ProfileButton({
         </span>
         {isPlusUser && (
           <motion.div
-            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-[2px]"
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-2 py-[3px]"
             style={{
-              background: "rgba(220,94,94,0.95)",
-              border: "1px solid rgba(255,255,255,0.14)"
+              background: "linear-gradient(180deg, rgba(220,94,94,0.98) 0%, rgba(196,70,70,0.98) 100%)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              boxShadow: "0 8px 18px rgba(220,94,94,0.32)"
             }}
             initial={{ opacity: 0, y: -3, scale: 0.88 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -169,7 +170,7 @@ export function ProfileButton({
               style={{
                 color: "white",
                 fontFamily: "Inter, sans-serif",
-                fontSize: 7,
+                fontSize: 7.5,
                 fontWeight: 800,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
@@ -268,7 +269,7 @@ export function ProfileButton({
             <div className="py-1.5">
               {[
                 !isPlusUser
-                  ? { icon: Sparkles, label: "Upgrade to Plus", accent: true }
+                  ? { icon: Sparkles, label: "Get Plus", accent: true }
                   : null,
                 { icon: Settings, label: "Settings", accent: false },
                 { icon: LogOut, label: "Sign out", accent: false }
@@ -288,7 +289,7 @@ export function ProfileButton({
                       className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
                       onClick={() => {
                         setOpen(false);
-                        if (item.label === "Upgrade to Plus") {
+                        if (item.label === "Get Plus") {
                           onUpgrade();
                         }
                       }}
