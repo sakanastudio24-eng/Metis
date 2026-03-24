@@ -141,7 +141,7 @@ export function ProfileButton({
         onClick={() => setOpen((current) => !current)}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.93 }}
-        className="flex h-7 w-7 items-center justify-center rounded-full"
+        className="relative flex h-7 w-7 items-center justify-center rounded-full"
         style={{
           background: avatarBackground,
           border: "1.5px solid rgba(255,255,255,0.18)"
@@ -154,6 +154,32 @@ export function ProfileButton({
         >
           JD
         </span>
+        {isPlusUser && (
+          <motion.div
+            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-[2px]"
+            style={{
+              background: "rgba(220,94,94,0.95)",
+              border: "1px solid rgba(255,255,255,0.14)"
+            }}
+            initial={{ opacity: 0, y: -3, scale: 0.88 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 420, damping: 24 }}
+          >
+            <span
+              style={{
+                color: "white",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 7,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                lineHeight: 1
+              }}
+            >
+              Plus
+            </span>
+          </motion.div>
+        )}
       </motion.button>
 
       <AnimatePresence>
