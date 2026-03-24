@@ -40,7 +40,11 @@ export default function App() {
     scanScope,
     setScanScope,
     visitedSnapshots,
-    setVisitedSnapshots
+    setVisitedSnapshots,
+    plusAnswers,
+    setPlusAnswers,
+    isPlusRefinementOpen,
+    setIsPlusRefinementOpen
   } = useMetisState();
 
   useEffect(() => {
@@ -151,6 +155,10 @@ export default function App() {
         rawSnapshot={rawSnapshot}
         baselineSnapshot={baselineSnapshot}
         visitedSnapshots={visitedSnapshots}
+        plusAnswers={plusAnswers}
+        setPlusAnswers={setPlusAnswers}
+        isPlusRefinementOpen={isPlusRefinementOpen}
+        setIsPlusRefinementOpen={setIsPlusRefinementOpen}
       />
     </div>
   );

@@ -9,6 +9,31 @@ export type IssueCategory =
   | "pageWeight"
   | "largeImages"
   | "thirdPartySprawl";
+export type HostingProvider =
+  | "vercel"
+  | "netlify"
+  | "cloudflare"
+  | "aws"
+  | "render"
+  | "railway"
+  | "other";
+export type HostingPlan = "free" | "pro" | "team" | "enterprise" | "notSure";
+export type MonthlyVisitsBand = "under1k" | "1kTo10k" | "10kTo100k" | "100kPlus" | "notSure";
+export type AppType =
+  | "marketing"
+  | "portfolio"
+  | "ecommerce"
+  | "saasDashboard"
+  | "mediaHeavy"
+  | "aiApp"
+  | "marketplace"
+  | "internalTool";
+export type PageDynamics = "mostlyStatic" | "mixed" | "highlyDynamic" | "notSure";
+export type PaidApiUsage = "yes" | "no" | "notSure";
+export type AiUsage = "yesOften" | "sometimes" | "no" | "notSure";
+export type MediaImportance = "core" | "somewhat" | "no";
+export type HighTrafficRoute = "yes" | "somewhat" | "no" | "notSure";
+export type OptimizationCoverage = "yes" | "no" | "notSure";
 export type ResourceCategory =
   | "image"
   | "script"
@@ -115,6 +140,28 @@ export interface CostInsight {
   estimateLabel: string;
   nextStep: string;
   primaryCategory: IssueCategory | null;
+}
+
+export interface PlusRefinementAnswers {
+  hostingProvider?: HostingProvider;
+  hostingPlan?: HostingPlan;
+  monthlyVisits?: MonthlyVisitsBand;
+  appType?: AppType;
+  pageDynamics?: PageDynamics;
+  paidApis?: PaidApiUsage;
+  aiUsage?: AiUsage;
+  mediaImportance?: MediaImportance;
+  highTrafficRoute?: HighTrafficRoute;
+  optimizationCoverage?: OptimizationCoverage;
+}
+
+export interface PlusOptimizationReport {
+  summary: string;
+  detail: string;
+  nextStep: string;
+  priorityLabel: string;
+  answeredCount: number;
+  missingCoreQuestions: Array<keyof PlusRefinementAnswers>;
 }
 
 export interface MetisSnapshot {

@@ -13,12 +13,15 @@ import {
 } from "lucide-react";
 import { detectIssues } from "../../features/detection";
 import { buildInsight } from "../../features/insights";
+import { PLUS_CORE_KEYS, PLUS_QUESTION_DEFINITIONS } from "../../features/refinement/config";
+import { buildPlusOptimizationReport } from "../../features/refinement";
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
   CostInsight,
   DetectedIssue,
+  PlusRefinementAnswers,
   RawScanSnapshot,
   ResourceAggregate,
   ScoreBreakdown
@@ -137,6 +140,31 @@ function titleCase(value: string) {
 
 function hasUsableMetrics(snapshot: RawScanSnapshot | null): snapshot is RawScanSnapshot {
   return Boolean(snapshot && typeof snapshot.metrics?.requestCount === "number");
+}
+
+function buildPanelAnalysis(
+  rawSnapshot: RawScanSnapshot | null,
+  scanScope: ScanScope,
+  visitedSnapshots: RawScanSnapshot[]
+) {
+  if (!rawSnapshot) {
+    return null;
+  }
+
+  const activeSnapshot =
+    scanScope === "multi" ? buildMultipageSnapshot(rawSnapshot, visitedSnapshots) : rawSnapshot;
+  const issues = detectIssues(activeSnapshot);
+  const score = scoreSnapshot(activeSnapshot, issues);
+  const insight = buildInsight(activeSnapshot, issues, score);
+
+  return {
+    activeSnapshot,
+    issues,
+    score,
+    insight,
+    metrics: activeSnapshot.metrics,
+    pagesVisited: Math.max(visitedSnapshots.length, 1)
+  };
 }
 
 function getScoreTone(score: ScoreBreakdown) {
@@ -356,6 +384,176 @@ function InsightCard({
   );
 }
 
+function QuestionOptionButton({
+  label,
+  isSelected,
+  onClick
+}: {
+  label: string;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+        isSelected
+          ? "bg-[#f97316] text-[#0d1b2a]"
+          : "bg-[#10253a] text-white/60 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function PlusRefinementCard({
+  analysis,
+  plusAnswers,
+  setPlusAnswers,
+  isPlusRefinementOpen,
+  setIsPlusRefinementOpen
+}: {
+  analysis: {
+    activeSnapshot: RawScanSnapshot;
+    issues: DetectedIssue[];
+    score: ScoreBreakdown;
+    insight: CostInsight;
+  };
+  plusAnswers: PlusRefinementAnswers;
+  setPlusAnswers: (value: PlusRefinementAnswers) => void;
+  isPlusRefinementOpen: boolean;
+  setIsPlusRefinementOpen: (value: boolean) => void;
+}) {
+  const report = buildPlusOptimizationReport(
+    analysis.insight,
+    analysis.activeSnapshot,
+    analysis.issues,
+    analysis.score,
+    plusAnswers
+  );
+  const coreQuestions = PLUS_QUESTION_DEFINITIONS.filter((question) => question.required);
+  const optionalQuestions = PLUS_QUESTION_DEFINITIONS.filter((question) => !question.required);
+
+  const updateAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
+    const nextValue = plusAnswers[key] === value ? undefined : value;
+    setPlusAnswers({
+      ...plusAnswers,
+      [key]: nextValue
+    });
+  };
+
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <SectionLabel>Plus Optimization</SectionLabel>
+          <div className="text-xl font-semibold text-white">Refine This Report</div>
+          <p className="mt-2 text-sm leading-6 text-white/58">
+            Answer a few high-value questions and Metis will sharpen stack-specific urgency, cost framing, and next-step guidance.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsPlusRefinementOpen(!isPlusRefinementOpen)}
+          className="rounded-full bg-[#10253a] px-4 py-2 text-sm font-semibold text-white/74 transition hover:bg-white/10 hover:text-white"
+        >
+          {isPlusRefinementOpen ? "Hide Questions" : "Improve Estimate Accuracy"}
+        </button>
+      </div>
+
+      {isPlusRefinementOpen && (
+        <div className="mt-5 space-y-5">
+          <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+              Core Questions
+            </div>
+            <div className="mt-4 space-y-4">
+              {coreQuestions.map((question) => (
+                <div key={question.key}>
+                  <div className="text-sm font-semibold text-white">{question.label}</div>
+                  <div className="mt-1 text-sm text-white/50">{question.helper}</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {question.options.map((option) => (
+                      <QuestionOptionButton
+                        key={`${question.key}-${option.value}`}
+                        label={option.label}
+                        isSelected={plusAnswers[question.key] === option.value}
+                        onClick={() => updateAnswer(question.key, option.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+              Optional Depth
+            </div>
+            <div className="mt-4 space-y-4">
+              {optionalQuestions.map((question) => (
+                <div key={question.key}>
+                  <div className="text-sm font-semibold text-white">{question.label}</div>
+                  <div className="mt-1 text-sm text-white/50">{question.helper}</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {question.options.map((option) => (
+                      <QuestionOptionButton
+                        key={`${question.key}-${option.value}`}
+                        label={option.label}
+                        isSelected={plusAnswers[question.key] === option.value}
+                        onClick={() => updateAnswer(question.key, option.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {report ? (
+        <div className="mt-5 rounded-2xl border border-[#f97316]/20 bg-[#10253a] p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+              Refined Plus Report
+            </div>
+            <div className="rounded-full bg-[#0d2234] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+              {report.priorityLabel}
+            </div>
+          </div>
+          <div className="mt-3 text-sm font-semibold text-white">{report.summary}</div>
+          <div className="mt-2 text-sm leading-6 text-white/58">{report.detail}</div>
+          <div className="mt-4 rounded-2xl bg-[#0d2234] px-4 py-3.5">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
+              Recommended Next Step
+            </div>
+            <div className="mt-1 text-sm leading-6 text-white/74">{report.nextStep}</div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/48">
+            <div className="rounded-full bg-black/20 px-3 py-1.5">
+              {report.answeredCount} answer{report.answeredCount === 1 ? "" : "s"} applied
+            </div>
+            {report.missingCoreQuestions.length > 0 && (
+              <div className="rounded-full bg-black/20 px-3 py-1.5">
+                Answer {report.missingCoreQuestions.length} more core question
+                {report.missingCoreQuestions.length === 1 ? "" : "s"} for a tighter estimate
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 px-4 py-4 text-sm leading-6 text-white/58">
+          Start with {PLUS_CORE_KEYS.length} core questions to tailor this report to your stack, traffic, and cost sensitivity.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SnapshotSummary({
   scanScope,
   setScanScope,
@@ -371,7 +569,9 @@ function SnapshotSummary({
   visitedSnapshots: RawScanSnapshot[];
   compact?: boolean;
 }) {
-  if (!rawSnapshot) {
+  const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
+
+  if (!analysis) {
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
         <SectionLabel>Phase 4 Insight</SectionLabel>
@@ -382,14 +582,8 @@ function SnapshotSummary({
     );
   }
 
-  const activeSnapshot =
-    scanScope === "multi" ? buildMultipageSnapshot(rawSnapshot, visitedSnapshots) : rawSnapshot;
-  const activeMetrics = activeSnapshot.metrics;
-  const issues = detectIssues(activeSnapshot);
-  const score = scoreSnapshot(activeSnapshot, issues);
-  const insight = buildInsight(activeSnapshot, issues, score);
+  const { activeSnapshot, metrics: activeMetrics, issues, score, insight, pagesVisited } = analysis;
   const visibleIssues = compact ? issues.slice(0, 2) : issues;
-  const pagesVisited = Math.max(visitedSnapshots.length, 1);
 
   const stats = [
     { label: "Requests", value: activeMetrics.requestCount },
@@ -442,10 +636,10 @@ function SnapshotSummary({
       <SectionLabel>Phase 4 Insight</SectionLabel>
       <div className="flex items-center gap-2 text-white">
         <Radar size={16} className="text-[#f97316]" />
-        <div className="text-base font-semibold">{rawSnapshot.page.hostname}</div>
+        <div className="text-base font-semibold">{activeSnapshot.page.hostname}</div>
       </div>
       <div className="mt-2 text-sm text-white/48">
-        {rawSnapshot.page.pathname || "/"} · {new Date(activeSnapshot.scannedAt).toLocaleTimeString()}
+        {activeSnapshot.page.pathname || "/"} · {new Date(activeSnapshot.scannedAt).toLocaleTimeString()}
       </div>
 
       <div className="mt-4 flex gap-2">
@@ -731,7 +925,11 @@ function FullPanel({
   setScanScope,
   rawSnapshot,
   baselineSnapshot,
-  visitedSnapshots
+  visitedSnapshots,
+  plusAnswers,
+  setPlusAnswers,
+  isPlusRefinementOpen,
+  setIsPlusRefinementOpen
 }: {
   setPanelMode: (mode: PanelMode) => void;
   scanScope: ScanScope;
@@ -739,7 +937,13 @@ function FullPanel({
   rawSnapshot: RawScanSnapshot | null;
   baselineSnapshot: RawScanSnapshot | null;
   visitedSnapshots: RawScanSnapshot[];
+  plusAnswers: PlusRefinementAnswers;
+  setPlusAnswers: (value: PlusRefinementAnswers) => void;
+  isPlusRefinementOpen: boolean;
+  setIsPlusRefinementOpen: (value: boolean) => void;
 }) {
+  const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
+
   return (
     <>
       <div
@@ -811,6 +1015,18 @@ function FullPanel({
             />
           </div>
 
+          {analysis && (
+            <div className="mt-5">
+              <PlusRefinementCard
+                analysis={analysis}
+                plusAnswers={plusAnswers}
+                setPlusAnswers={setPlusAnswers}
+                isPlusRefinementOpen={isPlusRefinementOpen}
+                setIsPlusRefinementOpen={setIsPlusRefinementOpen}
+              />
+            </div>
+          )}
+
           <div className="mt-5 rounded-[28px] border border-white/10 bg-white/[0.03] p-6">
             <SectionLabel>Roadmap Status</SectionLabel>
             <div className="space-y-3">
@@ -851,7 +1067,11 @@ export function PhaseOneShell({
   setScanScope,
   rawSnapshot,
   baselineSnapshot,
-  visitedSnapshots
+  visitedSnapshots,
+  plusAnswers,
+  setPlusAnswers,
+  isPlusRefinementOpen,
+  setIsPlusRefinementOpen
 }: {
   panelMode: PanelMode;
   setPanelMode: (mode: PanelMode) => void;
@@ -860,6 +1080,10 @@ export function PhaseOneShell({
   rawSnapshot: RawScanSnapshot | null;
   baselineSnapshot: RawScanSnapshot | null;
   visitedSnapshots: RawScanSnapshot[];
+  plusAnswers: PlusRefinementAnswers;
+  setPlusAnswers: (value: PlusRefinementAnswers) => void;
+  isPlusRefinementOpen: boolean;
+  setIsPlusRefinementOpen: (value: boolean) => void;
 }) {
   return (
     <>
@@ -908,6 +1132,10 @@ export function PhaseOneShell({
           rawSnapshot={rawSnapshot}
           baselineSnapshot={baselineSnapshot}
           visitedSnapshots={visitedSnapshots}
+          plusAnswers={plusAnswers}
+          setPlusAnswers={setPlusAnswers}
+          isPlusRefinementOpen={isPlusRefinementOpen}
+          setIsPlusRefinementOpen={setIsPlusRefinementOpen}
         />
       )}
     </>
