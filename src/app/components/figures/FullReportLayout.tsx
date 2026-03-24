@@ -1,214 +1,664 @@
 /**
  * FullReportLayout
- * Expanded modal view showing detailed breakdown, all issues, and cost analysis.
- * This is shown when user clicks \"Full Report\" button on the panel.
- * 
- * DESIGN SPECS:
- * - Full-width desktop view with sticky header
- * - Displays complete metrics table with all detected issues
- * - Cost breakdown section shows all major cost drivers
- * - Page metrics table with request counts, weights, etc.
- * 
- * INTEGRATION NOTES:
- * - Currently rendered in a fixed-size modal (should be responsive)
- * - Export PDF button is stubbed (needs pdf-lib or similar)
- * - Copy link functionality uses browser clipboard API
- * - Report can be opened from PanelLayout or directly from diagnostics panel
+ * Centered prototype-faithful report modal for the live Metis runtime.
  */
-import { ChevronLeft, Copy, Download, X } from "lucide-react";
-import type { MetisSnapshot, RawScanSnapshot } from "../../../shared/types/audit";
+import { Copy, Download, Expand, X } from "lucide-react";
+import type { ScanScope } from "../../useMetisState";
+import type { PlusQuestionDefinition } from "../../../features/refinement/config";
+import type { PlusRefinementAnswers } from "../../../shared/types/audit";
+import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
 import { TopIssuesList } from "./TopIssuesList";
 import { CostBreakdown } from "./CostBreakdown";
+import { DetectedStackBadges } from "./DetectedStackBadges";
+
+function RiskBadge({
+  label,
+  color,
+  background
+}: {
+  label: string;
+  color: string;
+  background: string;
+}) {
+  return (
+    <div
+      className="inline-flex items-center gap-2 rounded-full px-4 py-2"
+      style={{
+        background,
+        color,
+        fontFamily: "Inter, sans-serif",
+        fontSize: 12,
+        fontWeight: 600
+      }}
+    >
+      <div className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+      {label}
+    </div>
+  );
+}
 
 interface FullReportLayoutProps {
-  snapshot: MetisSnapshot | null;
-  multiPageSnapshots?: RawScanSnapshot[];
+  viewModel: MetisDesignViewModel | null;
+  scanScope: ScanScope;
+  onSetScanScope: (scope: ScanScope) => void;
+  currentQuestion: PlusQuestionDefinition | null;
+  plusAnswers: PlusRefinementAnswers;
+  isRefinementOpen: boolean;
+  setIsRefinementOpen: (value: boolean) => void;
+  onAnswer: (key: keyof PlusRefinementAnswers, value: string) => void;
+  onCopyReport: () => void;
   onClose?: () => void;
-  onBack?: () => void;
 }
 
 export function FullReportLayout({
-  snapshot,
-  multiPageSnapshots = [],
-  onClose,
-  onBack
+  viewModel,
+  scanScope,
+  onSetScanScope,
+  currentQuestion,
+  plusAnswers,
+  isRefinementOpen,
+  setIsRefinementOpen,
+  onAnswer,
+  onCopyReport,
+  onClose
 }: FullReportLayoutProps) {
-  if (!snapshot) {
+  if (!viewModel) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-400">No report data</p>
+      <div className="flex min-h-[480px] items-center justify-center text-white/50">
+        Scanning this page…
       </div>
     );
   }
 
-  const { raw, issues, score, insight } = snapshot;
-  const pageCount = multiPageSnapshots.length || 1;
-  const sessionCost = "$0.024";
-  const monthlyProjection = "~$240/month";
-
   return (
-    <div className="w-full bg-gray-950 text-gray-50 min-h-screen">
-      {/* Sticky header with report title, timestamp, and action buttons */}
-      <div className="border-b border-gray-800 sticky top-0 z-10 bg-gray-950/95 backdrop-blur">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-white">Metis Full Report</h1>
-            <p className="text-xs text-gray-500">
-              {raw.page.hostname} · {new Date(raw.scannedAt).toLocaleDateString()} {new Date(raw.scannedAt).toLocaleTimeString()}
-            </p>
+    <div
+      className="flex h-full flex-col overflow-hidden rounded-[22px]"
+      style={{
+        background: "#0c1623",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 40px 100px rgba(0,0,0,0.6)"
+      }}
+    >
+      <div
+        className="flex shrink-0 items-center justify-between border-b px-6 py-5"
+        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className="flex h-[52px] w-[52px] items-center justify-center rounded-[18px]"
+            style={{
+              background: "#dc5e5e",
+              color: "white",
+              fontFamily: "Jua, sans-serif",
+              fontSize: 28
+            }}
+          >
+            M
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigator.clipboard.writeText(window.location.href)}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-              title="Copy link"
+          <div>
+            <div
+              style={{
+                color: "white",
+                fontFamily: "Jua, sans-serif",
+                fontSize: 22
+              }}
             >
-              <Copy className="w-4 h-4 text-gray-400" />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+              Metis Full Report
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.35)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 13
+              }}
             >
-              <X className="w-4 h-4 text-gray-400" />
-            </button>
+              {viewModel.hostname} · {viewModel.scannedAt}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div
+            className="rounded-full px-4 py-2"
+            style={{
+              border: "1px solid rgba(220,94,94,0.35)",
+              color: "#dc8d72",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase"
+            }}
+          >
+            Phase 4
+          </div>
+          <div
+            className="rounded-full px-4 py-2"
+            style={{
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.45)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase"
+            }}
+          >
+            {viewModel.riskLabel}
+          </div>
+          <button
+            type="button"
+            className="rounded-full p-2"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+            aria-label="Expand"
+          >
+            <Expand size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-2"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+            aria-label="Close report"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+
+      <div className="metis-scroll flex-1 overflow-y-auto px-6 py-6">
+        <div className="space-y-6">
+          <div
+            className="rounded-[28px] p-6"
+            style={{
+              background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
+              border: "1px solid rgba(255,255,255,0.08)"
+            }}
+          >
+            <div className="grid grid-cols-[220px_1fr] gap-8">
+              <div className="flex flex-col items-center justify-start gap-5">
+                <ScoreVisualization
+                  score={viewModel.score}
+                  size={180}
+                  color={viewModel.riskColor}
+                  trackColor="rgba(255,255,255,0.08)"
+                />
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center gap-4">
+                  <div
+                    style={{
+                      color: "white",
+                      fontFamily: "Jua, sans-serif",
+                      fontSize: 42,
+                      lineHeight: 1
+                    }}
+                  >
+                    {viewModel.score}
+                  </div>
+                  <RiskBadge
+                    label={viewModel.riskLabel}
+                    color={viewModel.riskColor}
+                    background={viewModel.riskBg}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.5)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 18
+                  }}
+                >
+                  Cost Risk Score
+                </div>
+
+                <div
+                  className="max-w-[520px] rounded-[24px] px-6 py-5"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.06)"
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "white",
+                      fontFamily: "Jua, sans-serif",
+                      fontSize: 22
+                    }}
+                  >
+                    {viewModel.estimateRange}
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.42)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 14,
+                      marginTop: 8
+                    }}
+                  >
+                    Driven by bandwidth, request pressure, and vendor usage.
+                  </div>
+                </div>
+
+                <div
+                  className="overflow-hidden rounded-[26px]"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.07)"
+                  }}
+                >
+                  <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.38)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 12,
+                          fontWeight: 600
+                        }}
+                      >
+                        {viewModel.pagesSampledLabel}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-start justify-between gap-4 px-5 py-5">
+                    <div>
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.68)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 14
+                        }}
+                      >
+                        Current session cost ({viewModel.scopeLabel.toLowerCase()})
+                      </div>
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.38)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 12,
+                          marginTop: 6
+                        }}
+                      >
+                        Counting as page loads · estimated
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        color: "white",
+                        fontFamily: "Jua, sans-serif",
+                        fontSize: 24
+                      }}
+                    >
+                      {viewModel.sessionCost}
+                    </div>
+                  </div>
+                  <div
+                    className="flex items-center gap-3 px-5 py-4"
+                    style={{
+                      background: "rgba(99,102,241,0.10)",
+                      borderTop: "1px solid rgba(99,102,241,0.18)"
+                    }}
+                  >
+                    <div style={{ color: "#a5b4fc", fontSize: 16 }}>⚡</div>
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.55)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 13
+                      }}
+                    >
+                      At 10k users →
+                    </div>
+                    <div
+                      style={{
+                        color: "#aeb5ff",
+                        fontFamily: "Jua, sans-serif",
+                        fontSize: 22
+                      }}
+                    >
+                      {viewModel.monthlyProjection}
+                    </div>
+                  </div>
+                </div>
+
+                {viewModel.summaryPills.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {viewModel.summaryPills.map((pill) => (
+                      <div
+                        key={pill.label}
+                        className="rounded-full px-4 py-2"
+                        style={{
+                          background:
+                            pill.tone === "critical"
+                              ? "rgba(239,68,68,0.16)"
+                              : pill.tone === "moderate"
+                                ? "rgba(249,115,22,0.16)"
+                                : "rgba(234,179,8,0.16)",
+                          color:
+                            pill.tone === "critical"
+                              ? "#ff5d55"
+                              : pill.tone === "moderate"
+                                ? "#ff8b22"
+                                : "#facc15",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 12,
+                          fontWeight: 600
+                        }}
+                      >
+                        {pill.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <CostBreakdown rows={viewModel.costRows} />
+
+          <TopIssuesList issues={viewModel.issues} title="Top Issues" />
+
+          <DetectedStackBadges chips={viewModel.stackChips} groups={viewModel.stackGroups} />
+
+          <div
+            className="rounded-[28px] p-6"
+            style={{
+              background: "rgba(220,94,94,0.08)",
+              border: "1px solid rgba(220,94,94,0.2)"
+            }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div
+                  style={{
+                    color: "#dc8d72",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase"
+                  }}
+                >
+                  Improve Accuracy
+                </div>
+                <div
+                  style={{
+                    color: "white",
+                    fontFamily: "Jua, sans-serif",
+                    fontSize: 22,
+                    marginTop: 12
+                  }}
+                >
+                  Refine this report
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.6)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 13,
+                    lineHeight: "20px",
+                    marginTop: 10,
+                    maxWidth: 620
+                  }}
+                >
+                  Answer a few stack and traffic questions to sharpen the cost interpretation without changing the underlying scan.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRefinementOpen(!isRefinementOpen)}
+                className="rounded-full px-5 py-3"
+                style={{
+                  background: "#dc5e5e",
+                  color: "white",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 13,
+                  fontWeight: 700
+                }}
+              >
+                {isRefinementOpen ? "Hide questions" : "Refine This Report"}
+              </button>
+            </div>
+
+            {isRefinementOpen && currentQuestion && (
+              <div
+                className="mt-5 rounded-[24px] px-5 py-5"
+                style={{
+                  background: "rgba(12,22,35,0.45)",
+                  border: "1px solid rgba(255,255,255,0.08)"
+                }}
+              >
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.28)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase"
+                  }}
+                >
+                  {currentQuestion.group}
+                </div>
+                <div
+                  style={{
+                    color: "white",
+                    fontFamily: "Jua, sans-serif",
+                    fontSize: 20,
+                    marginTop: 10
+                  }}
+                >
+                  {currentQuestion.label}
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.55)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 13,
+                    marginTop: 10
+                  }}
+                >
+                  {currentQuestion.helper}
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.42)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 12,
+                    marginTop: 12
+                  }}
+                >
+                  {currentQuestion.whyItMatters}
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {currentQuestion.options.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => onAnswer(currentQuestion.key, option.value)}
+                      className="rounded-full px-4 py-2"
+                      style={{
+                        background:
+                          plusAnswers[currentQuestion.key] === option.value
+                            ? "#dc5e5e"
+                            : "rgba(255,255,255,0.08)",
+                        border: `1px solid ${
+                          plusAnswers[currentQuestion.key] === option.value
+                            ? "rgba(220,94,94,0.4)"
+                            : "rgba(255,255,255,0.1)"
+                        }`,
+                        color: "white",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 12,
+                        fontWeight: 600
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(viewModel.questionState.summary || viewModel.questionState.detail) && (
+              <div
+                className="mt-5 rounded-[24px] px-5 py-5"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)"
+                }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div
+                    style={{
+                      color: "white",
+                      fontFamily: "Jua, sans-serif",
+                      fontSize: 18
+                    }}
+                  >
+                    {viewModel.questionState.summary ?? "Plus refinement ready"}
+                  </div>
+                  {viewModel.questionState.priorityLabel && (
+                    <div
+                      className="rounded-full px-4 py-2"
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        color: "rgba(255,255,255,0.7)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase"
+                      }}
+                    >
+                      {viewModel.questionState.priorityLabel}
+                    </div>
+                  )}
+                </div>
+                {viewModel.questionState.detail && (
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.6)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 13,
+                      lineHeight: "21px",
+                      marginTop: 12
+                    }}
+                  >
+                    {viewModel.questionState.detail}
+                  </div>
+                )}
+                {viewModel.questionState.nextStep && (
+                  <div
+                    className="mt-4 rounded-[18px] px-4 py-4"
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      color: "rgba(255,255,255,0.72)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
+                      lineHeight: "18px"
+                    }}
+                  >
+                    {viewModel.questionState.nextStep}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div
+            className="rounded-[24px] px-5 py-4"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)"
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onSetScanScope("single")}
+                className="rounded-full px-5 py-3"
+                style={{
+                  background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
+                  color: scanScope === "single" ? "#0c1623" : "white",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 13,
+                  fontWeight: 700
+                }}
+              >
+                Single Page
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetScanScope("multi")}
+                className="rounded-full px-5 py-3"
+                style={{
+                  background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
+                  color: scanScope === "multi" ? "#0c1623" : "white",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 13,
+                  fontWeight: 700
+                }}
+              >
+                Multipage
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-        {/* Score + Summary */}
-        <div className="grid grid-cols-3 gap-6 items-start">
-          <div className="col-span-1 flex justify-center">
-            <ScoreVisualization score={score.score} label={score.label} size={120} />
-          </div>
-
-          <div className="col-span-2 space-y-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-white">{score.score}</h2>
-                <div
-                  className="px-3 py-1 rounded-full text-sm font-semibold"
-                  style={{
-                    backgroundColor: "#f9731625",
-                    color: "#f97316",
-                    border: "1px solid #f9731640"
-                  }}
-                >
-                  {score.label}
-                </div>
-              </div>
-              <p className="text-gray-400 text-sm">Cost Risk Score</p>
-            </div>
-
-            {insight && (
-              <div className="space-y-2">
-                <p className="text-white font-medium">{insight.summary}</p>
-                <p className="text-gray-400 text-sm">{insight.supportingDetail}</p>
-              </div>
-            )}
-
-            {/* Cost Summary */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-white/3 border border-white/6">
-                <p className="text-xs text-gray-500">Current session</p>
-                <p className="text-lg font-bold text-white">{sessionCost}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-white/3 border border-white/6">
-                <p className="text-xs text-gray-500">At 10k users</p>
-                <p className="text-lg font-bold text-orange-400">{monthlyProjection}</p>
-              </div>
-            </div>
-          </div>
+      <div
+        className="flex shrink-0 items-center justify-between border-t px-6 py-4"
+        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+      >
+        <div
+          style={{
+            color: "rgba(255,255,255,0.2)",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 10
+          }}
+        >
+          ward.studio/metis
         </div>
-
-        {/* Divider */}
-        <div className="border-t border-gray-800" />
-
-        {/* Issues Section */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-white">All Issues</h2>
-          <TopIssuesList issues={issues} maxItems={100} />
-        </section>
-
-        {/* Divider */}
-        <div className="border-t border-gray-800" />
-
-        {/* Cost Breakdown */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-white">Cost Breakdown</h2>
-          <CostBreakdown deductions={score.deductions} />
-        </section>
-
-        {/* Divider */}
-        <div className="border-t border-gray-800" />
-
-        {/* Metrics Table */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-white">Page Metrics</h2>
-          <div
-            className="overflow-x-auto rounded-lg border"
-            style={{ borderColor: "rgba(255, 255, 255, 0.06)" }}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCopyReport}
+            className="flex items-center gap-2 rounded-[18px] px-5 py-3"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.7)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 13,
+              fontWeight: 700
+            }}
           >
-            <table className="w-full text-sm">
-              <tbody>
-                <tr
-                  style={{
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.06)"
-                  }}
-                >
-                  <td className="px-4 py-3 text-gray-400">Total Requests</td>
-                  <td className="px-4 py-3 text-right font-mono text-white">
-                    {raw.metrics.requestCount}
-                  </td>
-                </tr>
-                <tr
-                  style={{
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.06)"
-                  }}
-                >
-                  <td className="px-4 py-3 text-gray-400">Duplicate Requests</td>
-                  <td className="px-4 py-3 text-right font-mono text-white">
-                    {raw.metrics.duplicateRequestCount}
-                  </td>
-                </tr>
-                <tr
-                  style={{
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.06)"
-                  }}
-                >
-                  <td className="px-4 py-3 text-gray-400">Total Page Weight</td>
-                  <td className="px-4 py-3 text-right font-mono text-white">
-                    {(raw.metrics.totalEncodedBodySize / 1024 / 1024).toFixed(2)} MB
-                  </td>
-                </tr>
-                <tr
-                  style={{
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.06)"
-                  }}
-                >
-                  <td className="px-4 py-3 text-gray-400">Third-party Requests</td>
-                  <td className="px-4 py-3 text-right font-mono text-white">
-                    {raw.metrics.thirdPartyRequestCount}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 text-gray-400">Images</td>
-                  <td className="px-4 py-3 text-right font-mono text-white">
-                    {raw.metrics.imageRequestCount}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <div className="pb-8 text-center">
-          <p className="text-xs text-gray-600">
-            Report generated by Metis • ward.studio/metis
-          </p>
+            <Copy size={15} />
+            Copy
+          </button>
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-[18px] px-6 py-3"
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.72)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 13,
+              fontWeight: 700
+            }}
+          >
+            <Download size={15} />
+            Export PDF (Plus)
+          </button>
         </div>
       </div>
     </div>

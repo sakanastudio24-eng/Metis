@@ -1,171 +1,206 @@
 /**
  * PanelLayout
- * Main panel component that integrates all Figma design components.
- * Shows score, cost insight, top issues, stack, and cost breakdown.
- * 
- * This is the main layout rendered in the extension panel (410px width).
- * 
- * INTEGRATION NOTES:
- * - Receives MetisSnapshot from PhaseOneShell (or parent)
- * - Queries multiPageSnapshots for multi-page mode indicator
- * - Pass onExpandReport to open FullReportLayout modal
- * - Cost calculations (sessionCost, monthlyProjection) currently stubbed
- *   - Will need real data from metrics + hosting provider rates + traffic data
- * - Stack badges are currently hardcoded demo data
- *   - Should be populated from detection features (React, Next.js, etc.)
+ * Zip-authoritative mini/full panel body bound to live Phase 4 data.
  */
-import { ChevronDown, Copy, Download, FileText } from "lucide-react";
-import type { MetisSnapshot, RawScanSnapshot, CostInsight } from "../../../shared/types/audit";
+import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
 import { TopIssuesList } from "./TopIssuesList";
 import { DetectedStackBadges } from "./DetectedStackBadges";
-import { CostBreakdown } from "./CostBreakdown";
 
 interface PanelLayoutProps {
-  snapshot: MetisSnapshot | null;
-  multiPageSnapshots?: RawScanSnapshot[];
-  isLoading?: boolean;
-  onExpandReport?: () => void;
-  onExportPDF?: () => void;
+  viewModel: MetisDesignViewModel | null;
+  compact?: boolean;
 }
 
-export function PanelLayout({
-  snapshot,
-  multiPageSnapshots = [],
-  isLoading = false,
-  onExpandReport,
-  onExportPDF
-}: PanelLayoutProps) {
-  if (!snapshot) {
+function RiskBadge({
+  label,
+  color,
+  background
+}: {
+  label: string;
+  color: string;
+  background: string;
+}) {
+  return (
+    <div
+      className="inline-flex items-center gap-2 rounded-full px-4 py-2"
+      style={{
+        background,
+        color,
+        fontFamily: "Inter, sans-serif",
+        fontSize: 12,
+        fontWeight: 600
+      }}
+    >
+      <div className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+      {label}
+    </div>
+  );
+}
+
+export function PanelLayout({ viewModel, compact = false }: PanelLayoutProps) {
+  if (!viewModel) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-400 text-sm">
-          {isLoading ? "Scanning..." : "No data available"}
-        </p>
+      <div
+        className="flex min-h-[220px] items-center justify-center rounded-[24px]"
+        style={{
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          color: "rgba(255,255,255,0.45)",
+          fontFamily: "Inter, sans-serif",
+          fontSize: 12
+        }}
+      >
+        Scanning this page…
       </div>
     );
   }
 
-  const { raw, issues, score, insight } = snapshot;
-  // TODO: Calculate these from actual data
-  // sessionCost: derive from raw.metrics and hosting provider rates
-  // monthlyProjection: multiply by traffic data from plusAnswers.monthlyVisits
-  const sessionCost = "$0.024"; 
-  const monthlyProjection = "~$240/month"; 
-  const pageCount = multiPageSnapshots.length || 1; // Single-page or multi-page mode
-
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="space-y-6 p-6 pb-8">
-        {/* Header: Score + Risk + Summary */}
-        <div className="space-y-4">
-          <ScoreVisualization score={score.score} label={score.label} size={140} />
-
-          {/* Summary insight line */}
-          {insight && (
-            <div className="text-center space-y-2">
-              <p className="text-gray-200 text-sm font-medium leading-relaxed">
-                {insight.summary}
-              </p>
-              <p className="text-gray-400 text-xs leading-relaxed">
-                {insight.supportingDetail}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Page info + Cost cards */}
-        <div className="space-y-3">
-          {/* Multi-page indicator */}
-          {pageCount > 1 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(59, 130, 246, 0.05)" }}>
-              <div className="w-2 h-2 rounded-full bg-blue-400" />
-              <span className="text-xs text-blue-400">
-                Live · Sampled {pageCount} pages · {raw.page.hostname}
-              </span>
-            </div>
-          )}
-
-          {/* Cost cards */}
-          <div className="grid gap-3">
-            <div
-              className="p-4 rounded-lg space-y-1"
-              style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.06)" }}
-            >
-              <p className="text-xs text-gray-400">
-                Current session cost ({pageCount} {pageCount === 1 ? "page" : "pages"})
-              </p>
-              <p className="text-2xl font-bold text-white">{sessionCost}</p>
-            </div>
-
-            <div
-              className="p-4 rounded-lg flex items-center justify-between"
-              style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.06)" }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-orange-500/20 border border-orange-500/40 flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                </div>
-                <span className="text-sm text-gray-300">At 10k users</span>
-              </div>
-              <span className="text-sm font-semibold text-orange-400">{monthlyProjection}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Issues */}
-        <TopIssuesList issues={issues} maxItems={5} />
-
-        {/* Detected Stack */}
-        <DetectedStackBadges
-          badges={[
-            { label: "React 18", type: "tech" },
-            { label: "Next.js 14", type: "tech" },
-            { label: "Vercel", type: "provider" },
-            { label: "OpenAI API", type: "tech" },
-            { label: "AI usage detected", type: "insight" }
-          ]}
-          pageInfo={{
-            mode: pageCount > 1 ? "multi" : "single",
-            pages: pageCount,
-            hostname: raw.page.hostname
-          }}
+    <div className="space-y-6">
+      <div className="flex flex-col items-center gap-4">
+        <ScoreVisualization
+          score={viewModel.score}
+          size={compact ? 128 : 150}
+          color={viewModel.riskColor}
+          trackColor="rgba(255,255,255,0.08)"
         />
 
-        {/* Expandable: What just happened? */}
-        <details className="group cursor-pointer">
-          <summary className="flex items-center justify-between p-4 rounded-lg hover:bg-white/5 transition-colors" style={{ background: "rgba(255, 255, 255, 0.03)" }}>
-            <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-              <div className="w-4 h-4 text-gray-500">⚡</div>
-              What just happened?
-            </span>
-            <ChevronDown className="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" />
-          </summary>
-          <div className="px-4 pb-4 text-xs text-gray-400 space-y-2">
-            <p>This page was analyzed for:</p>
-            <ul className="list-disc list-inside space-y-1 text-gray-500">
-              <li>Large unoptimized images</li>
-              <li>Duplicate network requests</li>
-              <li>Expensive third-party scripts</li>
-              <li>AI API usage patterns</li>
-              <li>Inefficient resource loading</li>
-            </ul>
+        <div className="text-center">
+          <div
+            style={{
+              color: "rgba(255,255,255,0.5)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: compact ? 16 : 18
+            }}
+          >
+            Cost Risk:{" "}
+            <span style={{ color: "white", fontWeight: 700 }}>{viewModel.score}</span>
           </div>
-        </details>
+        </div>
 
-        {/* Full Report Button */}
-        <button
-          onClick={onExpandReport}
-          className="w-full py-3 px-4 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
+        <RiskBadge
+          label={viewModel.riskLabel}
+          color={viewModel.riskColor}
+          background={viewModel.riskBg}
+        />
+
+        <div
+          className="w-full rounded-[24px] px-5 py-5"
           style={{
-            background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-            boxShadow: "0 8px 16px rgba(249, 115, 22, 0.3)"
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.07)"
           }}
         >
-          <FileText className="w-4 h-4" />
-          Full Report
-        </button>
+          <div
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: compact ? 13 : 14,
+              lineHeight: compact ? "20px" : "22px",
+              fontWeight: 500
+            }}
+          >
+            {viewModel.quickInsight}
+          </div>
+        </div>
       </div>
+
+      <div
+        className="overflow-hidden rounded-[28px]"
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.07)"
+        }}
+      >
+        <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
+            <div
+              style={{
+                color: "rgba(255,255,255,0.38)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 600
+              }}
+            >
+              {viewModel.pagesSampledLabel}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.65)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: compact ? 12 : 13,
+                  lineHeight: compact ? "18px" : "20px"
+                }}
+              >
+                Current session cost ({viewModel.scopeLabel.toLowerCase()})
+              </div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.38)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 11,
+                  marginTop: 4
+                }}
+              >
+                Counting as page loads · estimated
+              </div>
+            </div>
+            <div
+              style={{
+                color: "white",
+                fontFamily: "Jua, sans-serif",
+                fontSize: compact ? 20 : 22
+              }}
+            >
+              {viewModel.sessionCost}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="flex items-center gap-3 px-5 py-4"
+          style={{
+            background: "rgba(99,102,241,0.09)",
+            borderTop: "1px solid rgba(99,102,241,0.18)"
+          }}
+        >
+          <div style={{ color: "#a5b4fc", fontSize: 16 }}>⚡</div>
+          <div
+            style={{
+              color: "rgba(255,255,255,0.55)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 12
+            }}
+          >
+            At 10k users →
+          </div>
+          <div
+            style={{
+              color: "#aeb5ff",
+              fontFamily: "Jua, sans-serif",
+              fontSize: compact ? 18 : 20
+            }}
+          >
+            {viewModel.monthlyProjection}
+          </div>
+        </div>
+      </div>
+
+      <TopIssuesList
+        issues={compact ? viewModel.topIssues.slice(0, 3) : viewModel.topIssues}
+        summaryPills={viewModel.summaryPills}
+        compact={compact}
+      />
+
+      <DetectedStackBadges chips={viewModel.stackChips} compact={compact} />
     </div>
   );
 }

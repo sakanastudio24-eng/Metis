@@ -1,138 +1,154 @@
 /**
  * TopIssuesList
- * Displays detected issues with color-coded severity badges.
- * 
- * DESIGN SPECS:
- * - Issue cards stacked vertically with icon, title, detail, severity badge
- * - Summary badges at top showing count breakdown (2 Critical, 2 Moderate, 1 Low)
- * - Red (#dc2626) for high, orange (#f97316) for medium, yellow (#eab308) for low
- * - Optional "View all" link if issues exceed maxItems
- * 
- * USAGE:
- * - Pass issues array from detection pipeline
- * - Control visible count with maxItems prop (default 5)
- * - Empty state message if no issues detected
+ * Prototype issue rows and severity summary pills.
  */
-import { AlertCircle, AlertTriangle, Info } from "lucide-react";
-import type { DetectedIssue, Severity } from "../../../shared/types/audit";
+import type { DesignIssue, DesignSummaryPill } from "./liveAdapter";
 
-const SEVERITY_CONFIG: Record<Severity, { bg: string; text: string; icon: React.ComponentType<{ className?: string }> }> = {
-  high: {
-    bg: "bg-red-500/20",
-    text: "text-red-400",
-    icon: AlertCircle
-  },
-  medium: {
-    bg: "bg-orange-500/20",
-    text: "text-orange-400",
-    icon: AlertTriangle
-  },
-  low: {
-    bg: "bg-yellow-500/20",
-    text: "text-yellow-400",
-    icon: Info
+function summaryToneStyle(tone: DesignSummaryPill["tone"]) {
+  if (tone === "critical") {
+    return {
+      background: "rgba(239,68,68,0.16)",
+      color: "#ff5d55"
+    };
   }
-};
 
-interface TopIssuesListProps {
-  issues: DetectedIssue[];
-  maxItems?: number;
+  if (tone === "moderate") {
+    return {
+      background: "rgba(249,115,22,0.16)",
+      color: "#ff8b22"
+    };
+  }
+
+  return {
+    background: "rgba(234,179,8,0.16)",
+    color: "#facc15"
+  };
 }
 
-export function TopIssuesList({ issues, maxItems = 5 }: TopIssuesListProps) {
-  const displayed = issues.slice(0, maxItems);
-
-  if (displayed.length === 0) {
-    return (
-      <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-        <p className="text-sm text-green-400">No issues detected. Good job! ✨</p>
-      </div>
-    );
+function severityPillStyle(severity: DesignIssue["severityLabel"]) {
+  if (severity === "critical") {
+    return {
+      background: "rgba(239,68,68,0.14)",
+      color: "#ff5d55"
+    };
   }
 
-  // Pre-calculate severity counts for the summary badges
-  // This helps users quickly understand the issue distribution at a glance
-  const counts = {
-    high: issues.filter(i => i.severity === "high").length,
-    medium: issues.filter(i => i.severity === "medium").length,
-    low: issues.filter(i => i.severity === "low").length
-  };
+  if (severity === "moderate") {
+    return {
+      background: "rgba(249,115,22,0.14)",
+      color: "#ff8b22"
+    };
+  }
 
+  return {
+    background: "rgba(234,179,8,0.14)",
+    color: "#facc15"
+  };
+}
+
+interface TopIssuesListProps {
+  issues: DesignIssue[];
+  summaryPills?: DesignSummaryPill[];
+  compact?: boolean;
+  title?: string;
+}
+
+export function TopIssuesList({
+  issues,
+  summaryPills = [],
+  compact = false,
+  title = "Top Issues"
+}: TopIssuesListProps) {
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-        Top Issues
-      </h3>
+      <div
+        style={{
+          color: "rgba(255,255,255,0.3)",
+          fontFamily: "Inter, sans-serif",
+          fontSize: compact ? 11 : 12,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase"
+        }}
+      >
+        {title}
+      </div>
 
-      {/* Summary badges */}
-      {(counts.high > 0 || counts.medium > 0 || counts.low > 0) && (
-        <div className="flex gap-2 flex-wrap">
-          {counts.high > 0 && (
-            <div className="px-2.5 py-1 rounded-sm text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
-              <span className="font-bold">{counts.high}</span>{" "}
-              {counts.high === 1 ? "Critical" : "Critical"}
+      {summaryPills.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {summaryPills.map((pill) => (
+            <div
+              key={pill.label}
+              className="rounded-full px-4 py-2"
+              style={{
+                ...summaryToneStyle(pill.tone),
+                fontFamily: "Inter, sans-serif",
+                fontSize: compact ? 11 : 12,
+                fontWeight: 600
+              }}
+            >
+              {pill.label}
             </div>
-          )}
-          {counts.medium > 0 && (
-            <div className="px-2.5 py-1 rounded-sm text-xs font-medium bg-orange-500/20 text-orange-400 border border-orange-500/30">
-              <span className="font-bold">{counts.medium}</span> Moderate
-            </div>
-          )}
-          {counts.low > 0 && (
-            <div className="px-2.5 py-1 rounded-sm text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-              <span className="font-bold">{counts.low}</span> Low
-            </div>
-          )}
+          ))}
         </div>
       )}
 
-      {/* Issue list */}
-      <div className="space-y-2">
-        {displayed.map((issue) => {
-          const config = SEVERITY_CONFIG[issue.severity];
-          const Icon = config.icon;
-
-          return (
+      {issues.length === 0 ? (
+        <div
+          className="rounded-[22px] px-4 py-4"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            color: "rgba(255,255,255,0.6)",
+            fontFamily: "Inter, sans-serif",
+            fontSize: compact ? 11 : 12
+          }}
+        >
+          No major issues surfaced in the current scan.
+        </div>
+      ) : (
+        <div className="space-y-0">
+          {issues.map((issue, index) => (
             <div
               key={issue.id}
-              className="flex items-start justify-between p-3 rounded-lg gap-3"
+              className={`flex items-center justify-between gap-4 ${index < issues.length - 1 ? "border-b" : ""}`}
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.06)"
+                padding: compact ? "14px 0" : "16px 0",
+                borderColor: "rgba(255,255,255,0.08)"
               }}
             >
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <Icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${config.text}`} />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-200 break-words">
-                    {issue.title}
-                  </p>
-                  {issue.detail && (
-                    <p className="text-xs text-gray-400 mt-1 break-words">
-                      {issue.detail}
-                    </p>
-                  )}
+              <div className="flex min-w-0 items-center gap-4">
+                <div
+                  className="h-3 w-3 rounded-full"
+                  style={{ background: issue.color, flexShrink: 0 }}
+                />
+                <div
+                  className="truncate"
+                  style={{
+                    color: "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: compact ? 12 : 14,
+                    fontWeight: 500
+                  }}
+                >
+                  {issue.title}
                 </div>
               </div>
               <div
-                className={`px-2 py-1 rounded text-xs font-semibold flex-shrink-0 ${config.bg} ${config.text}`}
+                className="rounded-full px-4 py-1.5"
                 style={{
-                  background: config.bg,
-                  color: config.text,
-                  textTransform: "capitalize"
+                  ...severityPillStyle(issue.severityLabel),
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: compact ? 11 : 12,
+                  fontWeight: 500,
+                  textTransform: "lowercase"
                 }}
               >
-                {issue.severity}
+                {issue.severityLabel}
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {issues.length > maxItems && (
-        <button className="w-full py-2 text-xs text-orange-400 hover:text-orange-300 font-medium transition-colors">
-          View all {issues.length} issues →
-        </button>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -1,118 +1,105 @@
-// Render the injected Metis panel around scoring, deterministic Phase 4 insight
-// output, and the supporting diagnostics that help a page owner trust the result.
+/**
+ * PhaseOneShell
+ * Live MV3 shell rebuilt against the zip-backed Metis prototype hierarchy.
+ */
 import { useState } from "react";
-import type { ReactNode } from "react";
-import {
-  ChevronLeft,
-  CircleCheckBig,
-  Expand,
-  Minimize2,
-  Radar,
-  ScanSearch,
-  Sparkles,
-  TriangleAlert,
-  X
-} from "lucide-react";
+import { Copy, Expand, Minimize2, X } from "lucide-react";
 import { detectIssues } from "../../features/detection";
 import { buildInsight } from "../../features/insights";
+import { buildPlusOptimizationReport } from "../../features/refinement";
 import {
   PLUS_CORE_KEYS,
-  PLUS_IMPACT_LABELS,
   PLUS_QUESTION_DEFINITIONS
 } from "../../features/refinement/config";
-import { buildPlusOptimizationReport } from "../../features/refinement";
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
-  CostInsight,
-  DetectedIssue,
   PlusRefinementAnswers,
-  RawScanSnapshot,
-  ResourceAggregate,
-  ScoreBreakdown
+  RawScanSnapshot
 } from "../../shared/types/audit";
+import { PanelLayout } from "./figures/PanelLayout";
+import { FullReportLayout } from "./figures/FullReportLayout";
+import { buildMetisDesignViewModel } from "./figures/liveAdapter";
 
-const phaseStatus = [
-  {
-    phase: "Phase 1",
-    title: "Extension shell",
-    status: "Complete",
-    tone: "done"
-  },
-  {
-    phase: "Phase 2",
-    title: "Live page scan",
-    status: "Complete",
-    tone: "done"
-  },
-  {
-    phase: "Phase 3",
-    title: "Detection and scoring",
-    status: "Complete",
-    tone: "done"
-  },
-  {
-    phase: "Phase 4",
-    title: "Insight and polish",
-    status: "Active",
-    tone: "active"
+const HOST_BUTTON_STYLE = {
+  background: "#0c1623",
+  border: "1px solid rgba(255,255,255,0.1)"
+} as const;
+
+function buildCurrentSnapshot(
+  rawSnapshot: RawScanSnapshot | null,
+  visitedSnapshots: RawScanSnapshot[],
+  scanScope: ScanScope
+) {
+  if (!rawSnapshot) {
+    return null;
   }
-];
 
-const triggerButtonStyle = {
-  minWidth: "48px",
-  padding: "16px 16px",
-  borderTopLeftRadius: "16px",
-  borderBottomLeftRadius: "16px"
-} as const;
-
-const triggerBadgeStyle = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "12px",
-  fontSize: "16px",
-  lineHeight: "16px"
-} as const;
-
-const triggerTitleStyle = {
-  fontSize: "13px",
-  lineHeight: "16px"
-} as const;
-
-const triggerSubtitleStyle = {
-  fontSize: "11px",
-  lineHeight: "14px"
-} as const;
-
-const dashboardCardStyle = {
-  background:
-    "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)"
-} as const;
-
-const severityTone = {
-  high: {
-    badge: "bg-[#3a1d18] text-[#ffb48a]",
-    border: "border-[#f97316]/25",
-    accent: "text-[#f97316]"
-  },
-  medium: {
-    badge: "bg-[#352f14] text-[#facc15]",
-    border: "border-[#facc15]/20",
-    accent: "text-[#facc15]"
-  },
-  low: {
-    badge: "bg-[#173226] text-[#86efac]",
-    border: "border-[#22c55e]/20",
-    accent: "text-[#22c55e]"
+  if (scanScope === "multi") {
+    return buildMultipageSnapshot(rawSnapshot, visitedSnapshots);
   }
-} as const;
 
-function SectionLabel({ children }: { children: string }) {
+  return rawSnapshot;
+}
+
+function buildReportCopyText(
+  hostname: string,
+  viewModel: ReturnType<typeof buildMetisDesignViewModel>
+) {
+  return [
+    `Metis Cost Report — ${hostname}`,
+    `Risk Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
+    `Estimated waste: ${viewModel.estimateRange}`,
+    `Session cost: ${viewModel.sessionCost} · At 10k users: ${viewModel.monthlyProjection}`,
+    `Top issues: ${viewModel.topIssues.map((issue) => issue.title).join(", ") || "No major issues surfaced"}`,
+    `Quick insight: ${viewModel.quickInsight}`,
+    "— Scanned by Metis (ward.studio/metis)"
+  ].join("\n");
+}
+
+function LauncherButton({
+  onOpen
+}: {
+  onOpen: () => void;
+}) {
   return (
-    <div className="metis-overline mb-3 text-white/38">
-      {children}
+    <div className="fixed right-0 z-[2147483647]" style={{ bottom: "5rem" }}>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="group flex min-w-[44px] flex-col items-center gap-2 px-3 py-4 shadow-2xl"
+        style={{
+          ...HOST_BUTTON_STYLE,
+          borderRadius: "12px 0 0 12px",
+          borderRight: "none"
+        }}
+        title="Open Metis"
+      >
+        <div className="flex h-[18px] w-[18px] items-center justify-center">
+          <div
+            style={{
+              color: "white",
+              fontFamily: "Jua, sans-serif",
+              fontSize: 18,
+              lineHeight: 1
+            }}
+          >
+            M
+          </div>
+        </div>
+        <div
+          className="hidden text-center group-hover:block"
+          style={{
+            color: "rgba(255,255,255,0.35)",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 11,
+            lineHeight: "14px"
+          }}
+        >
+          Open
+        </div>
+      </button>
     </div>
   );
 }
@@ -120,1379 +107,147 @@ function SectionLabel({ children }: { children: string }) {
 function ShellHeader({
   title,
   subtitle,
-  trailing,
-  compact = false
+  onClose,
+  onExpand,
+  onMinimize,
+  isMini
 }: {
   title: string;
   subtitle: string;
-  trailing: ReactNode;
-  compact?: boolean;
+  onClose: () => void;
+  onExpand?: () => void;
+  onMinimize?: () => void;
+  isMini: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/10 px-6 py-5">
-      <div className="flex items-center gap-4">
+    <div
+      className="flex shrink-0 items-center justify-between border-b px-4 py-4"
+      style={{ borderColor: "rgba(255,255,255,0.08)" }}
+    >
+      <div className="flex items-center gap-3">
         <div
-          className={`metis-display flex items-center justify-center rounded-[18px] bg-[#ff7a1a] text-[#0d1b2a] ${
-            compact ? "h-[48px] w-[48px] text-[1.9rem]" : "h-[52px] w-[52px] text-[2rem]"
-          }`}
+          className="flex items-center justify-center rounded-[18px]"
+          style={{
+            width: isMini ? 48 : 52,
+            height: isMini ? 48 : 52,
+            background: "#dc5e5e",
+            color: "white",
+            fontFamily: "Jua, sans-serif",
+            fontSize: isMini ? 24 : 28
+          }}
         >
           M
         </div>
-        <div className="metis-body">
-          <div className={`${compact ? "text-[2rem]" : "text-[2.15rem]"} font-semibold text-white`}>
+        <div>
+          <div
+            style={{
+              color: "white",
+              fontFamily: "Jua, sans-serif",
+              fontSize: isMini ? 18 : 20
+            }}
+          >
             {title}
           </div>
-          <div className={`${compact ? "text-[1rem]" : "text-[1.05rem]"} text-white/50`}>
+          <div
+            style={{
+              color: "rgba(255,255,255,0.4)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: isMini ? 11 : 12
+            }}
+          >
             {subtitle}
           </div>
         </div>
       </div>
-      {trailing}
-    </div>
-  );
-}
 
-function SeverityPill({
-  label,
-  tone
-}: {
-  label: string;
-  tone: "critical" | "moderate" | "low" | "risk";
-}) {
-  const toneClass =
-    tone === "critical"
-      ? "bg-[#4a2527] text-[#ff5a50]"
-      : tone === "moderate"
-        ? "bg-[#4d3223] text-[#ff8c1a]"
-        : tone === "low"
-          ? "bg-[#3e381d] text-[#facc15]"
-          : "bg-[#4d3223] text-[#ff7a1a]";
-
-  return (
-    <div className={`metis-pill ${toneClass} px-5 py-2 text-[1rem] font-semibold`}>
-      {label}
-    </div>
-  );
-}
-
-function IssueRow({
-  issue
-}: {
-  issue: DetectedIssue;
-}) {
-  const dotClass =
-    issue.severity === "high"
-      ? "bg-[#ff5a50]"
-      : issue.severity === "medium"
-        ? "bg-[#ff8c1a]"
-        : "bg-[#facc15]";
-  const pillClass =
-    issue.severity === "high"
-      ? "bg-[#4a2527] text-[#ff5a50]"
-      : issue.severity === "medium"
-        ? "bg-[#4d3223] text-[#ff8c1a]"
-        : "bg-[#3e381d] text-[#facc15]";
-
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-4">
-      <div className="flex min-w-0 items-center gap-4">
-        <div className={`h-3.5 w-3.5 rounded-full ${dotClass}`} />
-        <div className="truncate text-[1.05rem] font-medium text-white">{issue.title}</div>
-      </div>
-      <div className={`metis-pill px-4 py-1.5 text-[0.95rem] font-medium ${pillClass}`}>
-        {issue.severity}
-      </div>
-    </div>
-  );
-}
-
-function SignalPill({
-  label,
-  tone = "neutral"
-}: {
-  label: string;
-  tone?: "neutral" | "green" | "violet" | "orange";
-}) {
-  const toneClass =
-    tone === "green"
-      ? "border-[#146c58] bg-[#103a34] text-[#18c59a]"
-      : tone === "violet"
-        ? "border-[#3f45b4] bg-[#20275a] text-[#aeb5ff]"
-        : tone === "orange"
-          ? "border-[#6f411b] bg-[#3b2617] text-[#ff9c48]"
-          : "border-white/10 bg-white/8 text-white/68";
-
-  return (
-    <div className={`metis-pill border px-4 py-2 text-[0.95rem] font-medium ${toneClass}`}>
-      {label}
-    </div>
-  );
-}
-
-function formatBytes(bytes: number) {
-  if (bytes >= 1_000_000) {
-    return `${(bytes / 1_000_000).toFixed(1)} MB`;
-  }
-
-  return `${Math.max(1, Math.round(bytes / 1_000))} KB`;
-}
-
-function formatNumberDelta(value: number) {
-  if (value === 0) {
-    return "no change";
-  }
-
-  return value > 0 ? `+${value}` : `${value}`;
-}
-
-function formatByteDelta(value: number) {
-  if (value === 0) {
-    return "no change";
-  }
-
-  const absoluteValue = formatBytes(Math.abs(value));
-  return value > 0 ? `+${absoluteValue}` : `-${absoluteValue}`;
-}
-
-function formatDisplayNumber(value: number) {
-  return Number.isInteger(value) ? value.toString() : value.toFixed(1);
-}
-
-function titleCase(value: string) {
-  return value.replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
-function hasUsableMetrics(snapshot: RawScanSnapshot | null): snapshot is RawScanSnapshot {
-  return Boolean(snapshot && typeof snapshot.metrics?.requestCount === "number");
-}
-
-function buildPanelAnalysis(
-  rawSnapshot: RawScanSnapshot | null,
-  scanScope: ScanScope,
-  visitedSnapshots: RawScanSnapshot[]
-) {
-  if (!rawSnapshot) {
-    return null;
-  }
-
-  const activeSnapshot =
-    scanScope === "multi" ? buildMultipageSnapshot(rawSnapshot, visitedSnapshots) : rawSnapshot;
-  const issues = detectIssues(activeSnapshot);
-  const score = scoreSnapshot(activeSnapshot, issues);
-  const insight = buildInsight(activeSnapshot, issues, score);
-
-  return {
-    activeSnapshot,
-    issues,
-    score,
-    insight,
-    metrics: activeSnapshot.metrics,
-    pagesVisited: Math.max(visitedSnapshots.length, 1)
-  };
-}
-
-function getScoreTone(score: ScoreBreakdown) {
-  if (score.label === "high risk") {
-    return {
-      border: "border-[#f97316]/25",
-      ring: "bg-[#2f1a13]",
-      icon: "text-[#f97316]",
-      text: "text-[#ffb48a]"
-    };
-  }
-
-  if (score.label === "watch") {
-    return {
-      border: "border-[#facc15]/20",
-      ring: "bg-[#2d2812]",
-      icon: "text-[#facc15]",
-      text: "text-[#fde68a]"
-    };
-  }
-
-  if (score.label === "warming up") {
-    return {
-      border: "border-white/10",
-      ring: "bg-[#10253a]",
-      icon: "text-white/60",
-      text: "text-white/80"
-    };
-  }
-
-  return {
-    border: "border-[#22c55e]/20",
-    ring: "bg-[#143026]",
-    icon: "text-[#22c55e]",
-    text: "text-[#bbf7d0]"
-  };
-}
-
-function buildSummaryLine(
-  score: ScoreBreakdown,
-  issues: DetectedIssue[],
-  scanScope: ScanScope
-) {
-  const scopeLabel = scanScope === "multi" ? "across the visited pages" : "on this page";
-
-  if (score.label === "warming up") {
-    return "Metis is still collecting enough network detail to score this page.";
-  }
-
-  if (issues.length === 0) {
-    return `No major cost-risk patterns surfaced ${scopeLabel}, so the current request profile looks controlled.`;
-  }
-
-  if (score.label === "high risk") {
-    return `${issues[0].title} ${scopeLabel}, and the current load pattern likely deserves active cleanup.`;
-  }
-
-  if (score.label === "watch") {
-    return `${issues[0].title} ${scopeLabel}, so the experience is worth tightening before it grows heavier.`;
-  }
-
-  return `Most signals look healthy ${scopeLabel}, but ${issues[0].title.toLowerCase()}.`;
-}
-
-function ScoreRing({
-  score,
-  size = 168
-}: {
-  score: number;
-  size?: number;
-}) {
-  const normalizedScore = Math.max(0, Math.min(100, score));
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = circumference - (normalizedScore / 100) * circumference;
-
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#ff7a1a"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={progress}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center">
-          <div className="metis-display text-[2.8rem] leading-none text-white">
-            {formatDisplayNumber(score)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function buildSeverityCount(issues: DetectedIssue[], severity: DetectedIssue["severity"]) {
-  return issues.filter((issue) => issue.severity === severity).length;
-}
-
-function buildContextSignals(snapshot: RawScanSnapshot, issues: DetectedIssue[]) {
-  const signals: Array<{ label: string; tone: "neutral" | "green" | "violet" | "orange" }> = [];
-
-  if (snapshot.metrics.apiRequestCount > 0) {
-    signals.push({ label: `${snapshot.metrics.apiRequestCount} API calls detected`, tone: "green" });
-  }
-
-  if (snapshot.metrics.thirdPartyDomainCount > 0) {
-    signals.push({
-      label: `${snapshot.metrics.thirdPartyDomainCount} third-party domains`,
-      tone: "violet"
-    });
-  }
-
-  if (issues.some((issue) => issue.category === "largeImages")) {
-    signals.push({ label: "Image load pressure", tone: "orange" });
-  }
-
-  if (issues.some((issue) => issue.category === "duplicateRequests")) {
-    signals.push({ label: "Duplicate request risk", tone: "neutral" });
-  }
-
-  return signals.slice(0, 4);
-}
-
-function ScanFootprintCard({
-  metrics,
-  hostname,
-  pagesVisited,
-  compact = false
-}: {
-  metrics: RawScanSnapshot["metrics"];
-  hostname: string;
-  pagesVisited: number;
-  compact?: boolean;
-}) {
-  return (
-    <div className="overflow-hidden rounded-[24px] border border-white/8 bg-[#182433]">
-      <div className="flex items-center gap-2 border-b border-white/8 px-5 py-3 text-sm text-white/42">
-        <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
-        <span>
-          Live · Sampled {pagesVisited} page{pagesVisited === 1 ? "" : "s"} · {hostname}
-        </span>
-      </div>
-      <div className="flex items-center justify-between gap-4 px-5 py-5">
-        <div>
-          <div className={`text-white/68 ${compact ? "text-sm" : "text-[1.05rem]"} font-medium`}>
-            Current scan footprint
-          </div>
-          <div className="mt-1 text-sm text-white/30">
-            Based on cleaned requests and transferred weight
-          </div>
-        </div>
-        <div
-          className={`metis-display ${compact ? "text-2xl" : "text-[2.25rem]"} leading-none text-white`}
-        >
-          {formatBytes(metrics.totalEncodedBodySize)}
-        </div>
-      </div>
-      <div className="flex items-center gap-3 bg-[#1b2340] px-5 py-3 text-sm text-[#aeb5ff]">
-        <span>⚡ {metrics.requestCount} requests</span>
-        <span>→ {metrics.thirdPartyDomainCount} 3P domains</span>
-      </div>
-    </div>
-  );
-}
-
-function IssueCard({ issue, compact = false }: { issue: DetectedIssue; compact?: boolean }) {
-  const tone = severityTone[issue.severity];
-
-  return (
-    <div
-      className={`rounded-2xl border ${tone.border} bg-[#10253a] px-4 py-4 ${
-        compact ? "" : "min-h-[132px]"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-white">{issue.title}</div>
-          <div className="mt-2 text-sm leading-6 text-white/58">{issue.detail}</div>
-        </div>
-        <div
-          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone.badge}`}
-        >
-          {issue.severity}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function OffenderList({
-  title,
-  items,
-  emptyLabel
-}: {
-  title: string;
-  items: ResourceAggregate[];
-  emptyLabel: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-        {title}
-      </div>
-      {items.length === 0 ? (
-        <div className="mt-2 text-sm text-white/50">{emptyLabel}</div>
-      ) : (
-        <div className="mt-3 space-y-2">
-          {items.map((item) => (
-            <div
-              key={`${title}-${item.normalizedUrl}`}
-              className="rounded-2xl bg-[#0d2234] px-4 py-3.5"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-white">
-                    {item.hostname}
-                  </div>
-                  <div className="truncate text-xs text-white/48">{item.normalizedUrl}</div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-sm font-semibold text-white">
-                    {formatBytes(item.totalEncodedBodySize)}
-                  </div>
-                  <div className="text-xs text-white/45">{item.requestCount} hits</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ScoreOverview({
-  score,
-  issues,
-  scanScope,
-  compact = false
-}: {
-  score: ScoreBreakdown;
-  issues: DetectedIssue[];
-  scanScope: ScanScope;
-  compact?: boolean;
-}) {
-  const tone = getScoreTone(score);
-  const summary = buildSummaryLine(score, issues, scanScope);
-
-  return (
-    <div className={`rounded-3xl border ${tone.border} bg-white/[0.04] p-5`}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
-            {compact ? "Phase 4 Score" : "Phase 4 Cost-Risk Score"}
-          </div>
-          <div className="mt-2 flex items-end gap-3">
-            <div className="text-[3rem] font-semibold leading-none text-white">
-              {formatDisplayNumber(score.score)}
-            </div>
-            <div className={`pb-1 text-sm font-semibold uppercase tracking-[0.16em] ${tone.text}`}>
-              {titleCase(score.label)}
-            </div>
-          </div>
-        </div>
-        <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${tone.ring}`}
-        >
-          {score.label === "high risk" ? (
-            <TriangleAlert size={18} className={tone.icon} />
-          ) : score.label === "watch" ? (
-            <Radar size={18} className={tone.icon} />
-          ) : (
-            <CircleCheckBig size={18} className={tone.icon} />
-          )}
-        </div>
-      </div>
-      <p className="mt-4 text-sm leading-6 text-white/62">{summary}</p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <div className="rounded-full bg-[#10253a] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/58">
-          {scanScope === "multi" ? "Multipage scope" : "Single page scope"}
-        </div>
-        <div className="rounded-full bg-[#10253a] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/58">
-          {issues.length} issue{issues.length === 1 ? "" : "s"} surfaced
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InsightCard({
-  insight,
-  compact = false
-}: {
-  insight: CostInsight;
-  compact?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-          Phase 4 Insight
-        </div>
-        <div className="rounded-full bg-[#10253a] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/58">
-          {insight.estimateLabel}
-        </div>
-      </div>
-      <div className="mt-3 text-sm font-semibold text-white">{insight.summary}</div>
-      {!compact && (
-        <>
-          <div className="mt-2 text-sm leading-6 text-white/58">{insight.supportingDetail}</div>
-          <div className="mt-4 rounded-2xl bg-[#0d2234] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">Next Step</div>
-            <div className="mt-1 text-sm leading-6 text-white/74">{insight.nextStep}</div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function QuestionOptionButton({
-  label,
-  isSelected,
-  onClick
-}: {
-  label: string;
-  isSelected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-        isSelected
-          ? "bg-[#f97316] text-[#0d1b2a]"
-          : "bg-[#10253a] text-white/60 hover:bg-white/10 hover:text-white"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function PlusRefinementCard({
-  analysis,
-  plusAnswers,
-  setPlusAnswers,
-  isPlusRefinementOpen,
-  setIsPlusRefinementOpen
-}: {
-  analysis: {
-    activeSnapshot: RawScanSnapshot;
-    issues: DetectedIssue[];
-    score: ScoreBreakdown;
-    insight: CostInsight;
-  };
-  plusAnswers: PlusRefinementAnswers;
-  setPlusAnswers: (value: PlusRefinementAnswers) => void;
-  isPlusRefinementOpen: boolean;
-  setIsPlusRefinementOpen: (value: boolean) => void;
-}) {
-  const report = buildPlusOptimizationReport(
-    analysis.insight,
-    analysis.activeSnapshot,
-    analysis.issues,
-    analysis.score,
-    plusAnswers
-  );
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
-  const questionCount = PLUS_QUESTION_DEFINITIONS.length;
-  const boundedQuestionIndex = Math.min(activeQuestionIndex, questionCount - 1);
-  const activeQuestion = PLUS_QUESTION_DEFINITIONS[boundedQuestionIndex];
-  const answeredCount = PLUS_QUESTION_DEFINITIONS.filter((question) =>
-    Boolean(plusAnswers[question.key])
-  ).length;
-  const remainingCoreCount = PLUS_CORE_KEYS.filter((key) => !plusAnswers[key]).length;
-  const questionProgress = `${boundedQuestionIndex + 1} / ${questionCount}`;
-
-  const updateAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
-    const nextValue = plusAnswers[key] === value ? undefined : value;
-    setPlusAnswers({
-      ...plusAnswers,
-      [key]: nextValue
-    });
-
-    if (nextValue && boundedQuestionIndex < questionCount - 1) {
-      setActiveQuestionIndex(boundedQuestionIndex + 1);
-    }
-  };
-
-  return (
-    <div className="overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
-      <div className="relative overflow-hidden rounded-[24px] border border-white/8 bg-[#101b27] p-5">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#f97316]/15 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-24 w-40 rounded-full bg-white/5 blur-3xl" />
-        <div className="relative flex items-start justify-between gap-4">
-          <div className="max-w-[320px]">
-            <SectionLabel>Plus Optimization</SectionLabel>
-            <div className="text-[1.75rem] font-semibold leading-none text-white">
-              Refine This Report
-            </div>
-            <p className="mt-3 text-sm leading-6 text-white/60">
-              Move through one question at a time and Metis will tighten stack context,
-              traffic weighting, and next-step guidance without turning the dashboard into a long form.
-            </p>
-          </div>
+      <div className="flex items-center gap-2">
+        {onExpand && (
           <button
             type="button"
-            onClick={() => setIsPlusRefinementOpen(!isPlusRefinementOpen)}
-            className="rounded-full bg-white/8 px-4 py-2 text-sm font-semibold text-white/78 transition hover:bg-white/12 hover:text-white"
+            onClick={onExpand}
+            className="rounded-full p-2"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+            title="Expand"
           >
-            {isPlusRefinementOpen ? "Collapse Flow" : "Improve Estimate Accuracy"}
+            <Expand size={16} />
           </button>
-        </div>
-
-        <div className="relative mt-5 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">Answered</div>
-            <div className="mt-1.5 text-2xl font-semibold leading-none text-white">
-              {answeredCount}
-            </div>
-          </div>
-          <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-              Core Left
-            </div>
-            <div className="mt-1.5 text-2xl font-semibold leading-none text-white">
-              {remainingCoreCount}
-            </div>
-          </div>
-          <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-              Current Focus
-            </div>
-            <div className="mt-1.5 text-sm font-semibold text-white">
-              {activeQuestion.required ? "Core question" : "Optional depth"}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {isPlusRefinementOpen && (
-        <div className="mt-5 rounded-[24px] border border-white/8 bg-black/20 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/38">
-                {activeQuestion.group} · Question {questionProgress}
-              </div>
-              <div className="mt-2 text-lg font-semibold text-white">{activeQuestion.label}</div>
-              <div className="mt-1 text-sm text-white/52">{activeQuestion.helper}</div>
-            </div>
-            <div
-              className={`rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                activeQuestion.required
-                  ? "bg-[#f97316]/15 text-[#ffb48a]"
-                  : "bg-white/8 text-white/62"
-              }`}
-            >
-              {activeQuestion.required ? "Most important" : "Optional"}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {activeQuestion.improves.map((item) => (
-              <div
-                key={`${activeQuestion.key}-${item}`}
-                className="rounded-full bg-[#10253a] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/58"
-              >
-                {PLUS_IMPACT_LABELS[item]}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 rounded-2xl bg-[#0d2234] px-4 py-3.5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-              Why It Matters
-            </div>
-            <div className="mt-1 text-sm leading-6 text-white/74">
-              {activeQuestion.whyItMatters}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {activeQuestion.options.map((option) => (
-              <QuestionOptionButton
-                key={`${activeQuestion.key}-${option.value}`}
-                label={option.label}
-                isSelected={plusAnswers[activeQuestion.key] === option.value}
-                onClick={() => updateAnswer(activeQuestion.key, option.value)}
-              />
-            ))}
-          </div>
-
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setActiveQuestionIndex(Math.max(0, boundedQuestionIndex - 1))}
-              disabled={boundedQuestionIndex === 0}
-              className="rounded-full bg-white/8 px-4 py-2 text-sm font-semibold text-white/72 transition hover:bg-white/12 hover:text-white disabled:cursor-default disabled:opacity-35"
-            >
-              Previous
-            </button>
-            <div className="text-xs text-white/44">
-              Answer once and Metis advances automatically.
-            </div>
-            <button
-              type="button"
-              onClick={() =>
-                setActiveQuestionIndex(Math.min(questionCount - 1, boundedQuestionIndex + 1))
-              }
-              disabled={boundedQuestionIndex === questionCount - 1}
-              className="rounded-full bg-[#f97316] px-4 py-2 text-sm font-semibold text-[#0d1b2a] transition hover:brightness-105 disabled:cursor-default disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
-
-      {report ? (
-        <div className="mt-5 rounded-[24px] border border-[#f97316]/20 bg-[#10253a] p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-              Refined Plus Report
-            </div>
-            <div className="rounded-full bg-[#0d2234] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
-              {report.priorityLabel}
-            </div>
-          </div>
-          <div className="mt-3 text-sm font-semibold text-white">{report.summary}</div>
-          <div className="mt-2 text-sm leading-6 text-white/58">{report.detail}</div>
-          <div className="mt-4 grid gap-3 grid-cols-2">
-            <div className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                Recommended Next Step
-              </div>
-              <div className="mt-1 text-sm leading-6 text-white/74">{report.nextStep}</div>
-            </div>
-            <div className="rounded-2xl bg-black/20 px-4 py-3.5">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                Accuracy Status
-              </div>
-              <div className="mt-1 text-sm leading-6 text-white/74">
-                {report.missingCoreQuestions.length > 0
-                  ? `${report.missingCoreQuestions.length} core question${
-                      report.missingCoreQuestions.length === 1 ? "" : "s"
-                    } still open.`
-                  : "All core questions are covered, so the guidance is fully calibrated."}
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/48">
-            <div className="rounded-full bg-black/20 px-3 py-1.5">
-              {report.answeredCount} answer{report.answeredCount === 1 ? "" : "s"} applied
-            </div>
-            {report.missingCoreQuestions.length > 0 && (
-              <div className="rounded-full bg-black/20 px-3 py-1.5">
-                Answer {report.missingCoreQuestions.length} more core question
-                {report.missingCoreQuestions.length === 1 ? "" : "s"} for a tighter estimate
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 px-4 py-4 text-sm leading-6 text-white/58">
-          Start with {PLUS_CORE_KEYS.length} core questions to tailor this report to your stack, traffic, and cost sensitivity.
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SnapshotSummary({
-  scanScope,
-  setScanScope,
-  rawSnapshot,
-  baselineSnapshot,
-  visitedSnapshots,
-  compact = false
-}: {
-  scanScope: ScanScope;
-  setScanScope: (scope: ScanScope) => void;
-  rawSnapshot: RawScanSnapshot | null;
-  baselineSnapshot: RawScanSnapshot | null;
-  visitedSnapshots: RawScanSnapshot[];
-  compact?: boolean;
-}) {
-  const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
-
-  if (!analysis) {
-    return (
-      <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-        <SectionLabel>Phase 4 Insight</SectionLabel>
-        <div className="text-base text-white/60">
-          Collecting enough signal to score the page and build an insight…
-        </div>
-      </div>
-    );
-  }
-
-  const { activeSnapshot, metrics: activeMetrics, issues, score, insight, pagesVisited } = analysis;
-  const visibleIssues = compact ? issues.slice(0, 2) : issues;
-
-  const stats = [
-    { label: "Requests", value: activeMetrics.requestCount },
-    { label: "Unique URLs", value: activeMetrics.uniqueRequestCount },
-    { label: "Duplicate Hits", value: activeMetrics.duplicateRequestCount },
-    { label: "3P Domains", value: activeMetrics.thirdPartyDomainCount }
-  ];
-
-  const qualityStats = [
-    { label: "Known Weight", value: formatBytes(activeMetrics.totalEncodedBodySize) },
-    { label: "Images >50KB", value: activeMetrics.meaningfulImageCount.toString() },
-    { label: "Pages Visited", value: scanScope === "multi" ? pagesVisited.toString() : "1" }
-  ];
-
-  const baselineStats = hasUsableMetrics(baselineSnapshot)
-    ? [
-        {
-          label: "Requests",
-          value: baselineSnapshot.metrics.requestCount.toString(),
-          delta: activeMetrics.requestCount - baselineSnapshot.metrics.requestCount,
-          kind: "number" as const
-        },
-        {
-          label: "Unique URLs",
-          value: baselineSnapshot.metrics.uniqueRequestCount.toString(),
-          delta: activeMetrics.uniqueRequestCount - baselineSnapshot.metrics.uniqueRequestCount,
-          kind: "number" as const
-        },
-        {
-          label: "Known Weight",
-          value: formatBytes(baselineSnapshot.metrics.totalEncodedBodySize),
-          delta:
-            activeMetrics.totalEncodedBodySize - baselineSnapshot.metrics.totalEncodedBodySize,
-          kind: "bytes" as const
-        },
-        {
-          label: "3P Domains",
-          value: baselineSnapshot.metrics.thirdPartyDomainCount.toString(),
-          delta:
-            activeMetrics.thirdPartyDomainCount - baselineSnapshot.metrics.thirdPartyDomainCount,
-          kind: "number" as const
-        }
-      ]
-    : [];
-
-  const baselinePath = hasUsableMetrics(baselineSnapshot) ? baselineSnapshot.page.pathname || "/" : "/";
-
-  return (
-    <div className="metis-card p-6">
-      <SectionLabel>Phase 4 Insight</SectionLabel>
-      <div className="flex items-center gap-3 text-white">
-        <Radar size={16} className="text-[#f97316]" />
-        <div className="text-[1.5rem] font-semibold">{activeSnapshot.page.hostname}</div>
-      </div>
-      <div className="mt-2 text-[1rem] text-white/48">
-        {activeSnapshot.page.pathname || "/"} · {new Date(activeSnapshot.scannedAt).toLocaleTimeString()}
-      </div>
-
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setScanScope("single")}
-          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-            scanScope === "single"
-              ? "bg-[#f97316] text-[#0d1b2a]"
-              : "bg-[#10253a] text-white/68"
-          }`}
-        >
-          Single Page
-        </button>
-        <button
-          type="button"
-          onClick={() => setScanScope("multi")}
-          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-            scanScope === "multi"
-              ? "bg-[#f97316] text-[#0d1b2a]"
-              : "bg-[#10253a] text-white/68"
-          }`}
-        >
-          Multipage
-        </button>
-      </div>
-
-      <div className="mt-5">
-        <ScoreOverview score={score} issues={issues} scanScope={scanScope} compact={compact} />
-      </div>
-
-      <div className="mt-5">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-          Surfaced Issues
-        </div>
-        {visibleIssues.length === 0 ? (
-          <div className="mt-3 rounded-2xl border border-[#22c55e]/20 bg-[#10253a] px-4 py-4 text-sm leading-6 text-white/62">
-            No major cost-risk patterns surfaced from the current normalized request set.
-          </div>
-        ) : (
-          <div className="mt-4 space-y-3">
-            {visibleIssues.map((issue) => {
-              if (compact) {
-                return <IssueRow key={issue.id} issue={issue} />;
-              }
-
-              return <IssueCard key={issue.id} issue={issue} compact={compact} />;
-            })}
-          </div>
         )}
-      </div>
-
-      <div className="mt-5">
-        <InsightCard insight={insight} compact={compact} />
-      </div>
-
-      {!compact && (
-        <>
-          <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-              Score Breakdown
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {qualityStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
-                  <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                    {stat.label}
-                  </div>
-                  <div className="mt-1.5 text-xl font-semibold leading-none text-white">
-                    {stat.value}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 text-sm text-white/48">
-              Normalized from {activeMetrics.rawRequestCount} raw entries. Filtered out{" "}
-              {activeMetrics.droppedZeroTransferCount + activeMetrics.droppedTinyCount} noisy requests.
-            </div>
-            <div className="mt-4 grid grid-cols-4 gap-2">
-              {stats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
-                  <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                    {stat.label}
-                  </div>
-                  <div className="mt-1.5 text-2xl font-semibold leading-none text-white">
-                    {stat.value}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 space-y-2">
-              {score.deductions.length === 0 ? (
-                <div className="rounded-2xl bg-[#0d2234] px-4 py-3.5 text-sm text-white/58">
-                  No deductions were applied from the current issue set, so the insight is based on a controlled scan profile.
-                </div>
-              ) : (
-                score.deductions.map((deduction) => (
-                  <div
-                    key={deduction.reason}
-                    className="flex items-center justify-between rounded-2xl bg-[#0d2234] px-4 py-3.5"
-                  >
-                    <div className="text-sm text-white/74">{deduction.reason}</div>
-                    <div className="text-sm font-semibold text-[#f97316]">
-                      -{formatDisplayNumber(deduction.points)}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-3 grid-cols-2">
-            <OffenderList
-              title="Top Offenders"
-              items={activeMetrics.topOffenders}
-              emptyLabel="No large offenders surfaced from the cleaned request set yet."
-            />
-            <OffenderList
-              title="Large Images"
-              items={activeMetrics.topMeaningfulImages}
-              emptyLabel="No meaningful image weight was detected above the 50 KB threshold."
-            />
-          </div>
-
-          {hasUsableMetrics(baselineSnapshot) && (
-            <div className="mt-5 rounded-2xl border border-white/8 bg-black/15 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-                Original vs Current
-              </div>
-              <div className="mt-2 text-sm text-white/52">
-                Original baseline: {baselinePath}
-              </div>
-              <div className="mt-4 grid grid-cols-4 gap-2">
-                {baselineStats.map((stat) => (
-                  <div key={stat.label} className="rounded-2xl bg-[#0d2234] px-4 py-3.5">
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                      {stat.label}
-                    </div>
-                    <div className="mt-1 text-base font-semibold text-white/82">
-                      {stat.value} baseline
-                    </div>
-                    <div
-                      className={`mt-1 text-sm font-semibold ${
-                        stat.delta > 0
-                          ? "text-[#f97316]"
-                          : stat.delta < 0
-                            ? "text-[#22c55e]"
-                            : "text-white/50"
-                      }`}
-                    >
-                      {stat.kind === "bytes"
-                        ? formatByteDelta(stat.delta)
-                        : formatNumberDelta(stat.delta)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-function MiniPanel({
-  setPanelMode,
-  scanScope,
-  setScanScope,
-  rawSnapshot,
-  baselineSnapshot,
-  visitedSnapshots
-}: {
-  setPanelMode: (mode: PanelMode) => void;
-  scanScope: ScanScope;
-  setScanScope: (scope: ScanScope) => void;
-  rawSnapshot: RawScanSnapshot | null;
-  baselineSnapshot: RawScanSnapshot | null;
-  visitedSnapshots: RawScanSnapshot[];
-}) {
-  const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
-  const contextSignals = analysis
-    ? buildContextSignals(analysis.activeSnapshot, analysis.issues)
-    : [];
-  const compactSubtitle = analysis
-    ? `${analysis.activeSnapshot.page.hostname} · ${new Date(
-        analysis.activeSnapshot.scannedAt
-      ).toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit"
-      })}`
-    : "Phase 4 live insight";
-
-  return (
-    <div className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[340px] flex-col border-l border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
-      <ShellHeader
-        title="Metis"
-        subtitle={compactSubtitle}
-        compact
-        trailing={
-          <div className="flex items-center gap-2">
-            <div className="metis-pill flex h-[46px] w-[46px] items-center justify-center border border-white/12 bg-white/10 text-[1.15rem] font-semibold text-white">
-              JD
-            </div>
-            <button
-              type="button"
-              onClick={() => setPanelMode("full")}
-              className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-              title="Open full panel"
-            >
-              <Expand size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPanelMode("idle")}
-              className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-              title="Close"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        }
-      />
-
-      <div className="flex-1 overflow-y-auto px-5 py-5">
-        {analysis ? (
-          <div className="space-y-5">
-            <div className="rounded-[34px] border border-white/10 bg-white/[0.04] px-6 py-7">
-              <div className="flex justify-center">
-                <ScoreRing score={analysis.score.score} size={160} />
-              </div>
-              <div className="mt-5 text-center">
-                <div className="text-[1rem] text-white/48">
-                  Cost Risk:{" "}
-                  <span className="font-semibold text-white">
-                    {formatDisplayNumber(analysis.score.score)}
-                  </span>
-                </div>
-                <div className="mt-4 inline-flex">
-                  <SeverityPill label={titleCase(analysis.score.label)} tone="risk" />
-                </div>
-              </div>
-              <div className="mt-6 rounded-[24px] border border-white/10 bg-white/[0.04] px-5 py-5 text-lg leading-8 text-white/72">
-                {analysis.insight.summary}
-              </div>
-              <div className="mt-6">
-                <ScanFootprintCard
-                  metrics={analysis.metrics}
-                  hostname={analysis.activeSnapshot.page.hostname}
-                  pagesVisited={analysis.pagesVisited}
-                  compact
-                />
-              </div>
-            </div>
-
-            <div className="rounded-[30px] border border-white/10 bg-white/[0.03] p-5">
-              <div className="metis-overline text-white/36">
-                Top Issues
-              </div>
-              <div className="mt-4 space-y-3">
-                {analysis.issues.slice(0, 3).map((issue) => (
-                  <IssueRow key={issue.id} issue={issue} />
-                ))}
-              </div>
-            </div>
-
-            {contextSignals.length > 0 && (
-              <div className="rounded-[30px] border border-white/10 bg-white/[0.03] p-5">
-                <div className="metis-overline text-white/36">Detected Context</div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {contextSignals.map((signal) => (
-                    <SignalPill key={signal.label} label={signal.label} tone={signal.tone} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="rounded-[34px] border border-white/10 bg-white/[0.04] p-6">
-            <div className="mb-3 flex items-center gap-2 text-[#f97316]">
-              <ScanSearch size={16} />
-              <span className="text-sm font-semibold uppercase tracking-[0.16em]">
-                Phase 4
-              </span>
-            </div>
-            <div className="text-[2rem] font-semibold leading-none">Insight Is Now Live</div>
-            <p className="mt-3 text-base leading-7 text-white/62">
-              Metis is collecting enough signal to build the score-first mini dashboard.
-            </p>
-          </div>
+        {onMinimize && (
+          <button
+            type="button"
+            onClick={onMinimize}
+            className="rounded-full p-2"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+            title="Minimize"
+          >
+            <Minimize2 size={16} />
+          </button>
         )}
-      </div>
-
-      <div className="border-t border-white/10 px-5 py-5">
         <button
           type="button"
-          onClick={() => setPanelMode("full")}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#f97316] px-4 py-3.5 text-base font-semibold text-[#0d1b2a] transition hover:brightness-105"
+          onClick={onClose}
+          className="rounded-full p-2"
+          style={{ color: "rgba(255,255,255,0.4)" }}
+          title="Close"
         >
-          Open Full Panel
-          <ChevronLeft size={14} className="rotate-180" />
+          <X size={18} />
         </button>
       </div>
     </div>
   );
 }
 
-function FullPanel({
-  setPanelMode,
-  scanScope,
-  setScanScope,
-  rawSnapshot,
-  baselineSnapshot,
-  visitedSnapshots,
-  plusAnswers,
-  setPlusAnswers,
-  isPlusRefinementOpen,
-  setIsPlusRefinementOpen
+function PanelFooter({
+  primaryLabel,
+  onPrimary,
+  onCopy
 }: {
-  setPanelMode: (mode: PanelMode) => void;
-  scanScope: ScanScope;
-  setScanScope: (scope: ScanScope) => void;
-  rawSnapshot: RawScanSnapshot | null;
-  baselineSnapshot: RawScanSnapshot | null;
-  visitedSnapshots: RawScanSnapshot[];
-  plusAnswers: PlusRefinementAnswers;
-  setPlusAnswers: (value: PlusRefinementAnswers) => void;
-  isPlusRefinementOpen: boolean;
-  setIsPlusRefinementOpen: (value: boolean) => void;
+  primaryLabel: string;
+  onPrimary: () => void;
+  onCopy: () => void;
 }) {
-  const analysis = buildPanelAnalysis(rawSnapshot, scanScope, visitedSnapshots);
-  const activeSnapshot = analysis?.activeSnapshot ?? rawSnapshot;
-  const snapshotTimestamp = activeSnapshot
-    ? new Date(activeSnapshot.scannedAt).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
-      })
-    : null;
-
   return (
-    <>
-      <div
-        className="fixed inset-0 z-[2147483646] bg-black/60 backdrop-blur-[14px]"
-        onClick={() => setPanelMode("idle")}
-      />
-      <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
-        <div className="pointer-events-auto flex max-h-[92vh] w-full max-w-[1040px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1b2a] text-white shadow-2xl">
-          <div className="relative overflow-hidden">
-            <div className="pointer-events-none absolute left-1/2 top-0 h-16 w-56 -translate-x-1/2 rounded-full bg-[#f97316]/18 blur-2xl" />
-            <ShellHeader
-              title="Metis Full Report"
-              subtitle={
-                activeSnapshot
-                  ? `${activeSnapshot.page.hostname} · ${snapshotTimestamp}`
-                  : "Phase 4 insight and polish"
-              }
-              trailing={
-                <div className="flex items-center gap-2">
-                  <div className="metis-pill border border-[#6f411b] bg-[#2a211c] px-4 py-2 text-[0.95rem] font-semibold uppercase tracking-[0.18em] text-[#ff9c48]">
-                    Phase 4
-                  </div>
-                  {analysis && (
-                    <div className="metis-pill border border-white/10 bg-white/5 px-4 py-2 text-[0.95rem] font-semibold uppercase tracking-[0.18em] text-white/60">
-                      {titleCase(analysis.score.label)}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setPanelMode("mini")}
-                    className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-                    title="Minimize"
-                  >
-                    <Minimize2 size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPanelMode("idle")}
-                    className="rounded-full p-2 text-white/55 transition hover:bg-white/8 hover:text-white"
-                    title="Close"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              }
-            />
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-6 py-6">
-            {analysis ? (
-              <div className="rounded-[28px] border border-white/8 bg-[#0f1824] px-7 py-8">
-                <div className="grid gap-8 md:grid-cols-[220px_1fr]">
-                  <div className="flex justify-center md:justify-start">
-                    <ScoreRing score={analysis.score.score} size={210} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-[5rem] font-semibold leading-none text-white">
-                        {formatDisplayNumber(analysis.score.score)}
-                      </div>
-                      <div className="rounded-full bg-[#4d3223] px-5 py-2 text-[1.1rem] font-semibold text-[#ff7a1a]">
-                        {titleCase(analysis.score.label)}
-                      </div>
-                    </div>
-                    <div className="mt-5 text-[2rem] font-semibold text-white">
-                      Cost Risk Score
-                    </div>
-                    <div className="mt-5 inline-block rounded-[26px] bg-white/[0.05] px-8 py-6">
-                      <div className="text-[2rem] font-semibold leading-tight text-white">
-                        {analysis.insight.estimateLabel}
-                      </div>
-                      <div className="mt-2 text-[1.1rem] text-white/46">
-                        Driven by requests, transfer size, and third-party pressure
-                      </div>
-                    </div>
-                    <div className="mt-6 max-w-[760px]">
-                      <ScanFootprintCard
-                        metrics={analysis.metrics}
-                        hostname={analysis.activeSnapshot.page.hostname}
-                        pagesVisited={analysis.pagesVisited}
-                      />
-                    </div>
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      {buildSeverityCount(analysis.issues, "high") > 0 && (
-                        <div className="rounded-full bg-[#4a2527] px-5 py-3 text-[1rem] font-semibold text-[#ff5a50]">
-                          {buildSeverityCount(analysis.issues, "high")} Critical
-                        </div>
-                      )}
-                      {buildSeverityCount(analysis.issues, "medium") > 0 && (
-                        <div className="rounded-full bg-[#4d3223] px-5 py-3 text-[1rem] font-semibold text-[#ff8c1a]">
-                          {buildSeverityCount(analysis.issues, "medium")} Moderate
-                        </div>
-                      )}
-                      {buildSeverityCount(analysis.issues, "low") > 0 && (
-                        <div className="rounded-full bg-[#3e381d] px-5 py-3 text-[1rem] font-semibold text-[#facc15]">
-                          {buildSeverityCount(analysis.issues, "low")} Low
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="relative overflow-hidden rounded-[28px] p-6" style={dashboardCardStyle}>
-                <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#f97316]/12 blur-3xl" />
-                <div className="pointer-events-none absolute left-0 top-16 h-28 w-48 rounded-full bg-white/5 blur-3xl" />
-                <div className="relative">
-                  <SectionLabel>Current State</SectionLabel>
-                  <div className="text-[2.8rem] font-semibold leading-none">Phase 4 Active</div>
-                  <p className="mt-4 max-w-[560px] text-base leading-7 text-white/64">
-                    Metis is collecting the scan signal needed to build the score-first report layout.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-5">
-              <SnapshotSummary
-                scanScope={scanScope}
-                setScanScope={setScanScope}
-                rawSnapshot={rawSnapshot}
-                baselineSnapshot={baselineSnapshot}
-                visitedSnapshots={visitedSnapshots}
-              />
-            </div>
-
-            {analysis && (
-              <div className="mt-5">
-                <PlusRefinementCard
-                  analysis={analysis}
-                  plusAnswers={plusAnswers}
-                  setPlusAnswers={setPlusAnswers}
-                  isPlusRefinementOpen={isPlusRefinementOpen}
-                  setIsPlusRefinementOpen={setIsPlusRefinementOpen}
-                />
-              </div>
-            )}
-
-            <div className="mt-5 rounded-[28px] p-6" style={dashboardCardStyle}>
-              <SectionLabel>Roadmap Status</SectionLabel>
-              <div className="grid gap-3 md:grid-cols-2">
-                {phaseStatus.map((item) => (
-                  <div
-                    key={item.phase}
-                    className="flex items-start justify-between gap-3 rounded-2xl bg-[#10253a] px-4 py-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      {item.tone === "done" ? (
-                        <CircleCheckBig size={18} className="mt-0.5 shrink-0 text-[#22c55e]" />
-                      ) : item.tone === "active" ? (
-                        <Sparkles size={18} className="mt-0.5 shrink-0 text-[#f97316]" />
-                      ) : (
-                        <TriangleAlert size={18} className="mt-0.5 shrink-0 text-[#facc15]" />
-                      )}
-                      <div>
-                        <div className="text-base font-semibold text-white">
-                          {item.phase} · {item.title}
-                        </div>
-                        <div className="mt-1 text-sm text-white/58">{item.status}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between border-t border-white/10 px-6 py-5">
-            <div className="text-[1rem] text-white/30">ward.studio/metis</div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="metis-pill border border-white/10 bg-white/5 px-6 py-4 text-[1rem] font-semibold text-white/72 transition hover:bg-white/8 hover:text-white"
-              >
-                Copy
-              </button>
-              <button
-                type="button"
-                className="metis-pill border border-white/10 bg-white/8 px-6 py-4 text-[1rem] font-semibold text-white/72 transition hover:bg-white/12 hover:text-white"
-              >
-                Export PDF (Plus)
-              </button>
-            </div>
-          </div>
-        </div>
+    <div
+      className="shrink-0 border-t px-4 pb-4 pt-3"
+      style={{ borderColor: "rgba(255,255,255,0.08)" }}
+    >
+      <div className="mb-3">
+        <button
+          type="button"
+          className="w-full rounded-[24px] px-5 py-4"
+          onClick={onPrimary}
+          style={{
+            background: "#dc5e5e",
+            color: "white",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 14,
+            fontWeight: 700,
+            boxShadow: "0 8px 24px rgba(220,94,94,0.35)"
+          }}
+        >
+          {primaryLabel}
+        </button>
       </div>
-    </>
+
+      <div className="flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={onCopy}
+          className="flex items-center gap-2 rounded-[18px] px-4 py-3"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "rgba(255,255,255,0.7)",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 12,
+            fontWeight: 700
+          }}
+        >
+          <Copy size={14} />
+          Copy
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -1521,58 +276,163 @@ export function PhaseOneShell({
   isPlusRefinementOpen: boolean;
   setIsPlusRefinementOpen: (value: boolean) => void;
 }) {
+  const [showReport, setShowReport] = useState(false);
+  const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
+  const issues = activeSnapshot ? detectIssues(activeSnapshot) : [];
+  const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
+  const insight =
+    activeSnapshot && score ? buildInsight(activeSnapshot, issues, score) : null;
+  const plusReport =
+    activeSnapshot && score && insight
+      ? buildPlusOptimizationReport(insight, activeSnapshot, issues, score, plusAnswers)
+      : null;
+  const pageCount = scanScope === "multi" ? Math.max(visitedSnapshots.length, 1) : 1;
+  const viewModel =
+    activeSnapshot && score
+      ? buildMetisDesignViewModel({
+          snapshot: activeSnapshot,
+          issues,
+          score,
+          insight,
+          scope: scanScope,
+          pageCount,
+          answers: plusAnswers,
+          plusReport,
+          requiredQuestionCount: PLUS_CORE_KEYS.length
+        })
+      : null;
+
+  const currentQuestion =
+    PLUS_QUESTION_DEFINITIONS.filter((definition) => {
+      if (!definition.dependsOn) {
+        return true;
+      }
+
+      return plusAnswers[definition.dependsOn.key] === definition.dependsOn.value;
+    }).find((definition) => plusAnswers[definition.key] === undefined) ?? null;
+
+  const handleAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
+    setPlusAnswers({
+      ...plusAnswers,
+      [key]: value
+    });
+  };
+
+  const handleCopyReport = async () => {
+    if (!viewModel) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(
+      buildReportCopyText(activeSnapshot?.page.hostname ?? "current-page", viewModel)
+    );
+  };
+
+  void baselineSnapshot;
+
   return (
     <>
-      {panelMode === "idle" && (
-        <div className="fixed bottom-20 right-0 z-[2147483647]">
-          <button
-            type="button"
-            onClick={() => setPanelMode("mini")}
-            className="group flex min-w-12 items-center gap-3 rounded-l-2xl border border-r-0 border-white/10 bg-[#0d1b2a] px-4 py-4 text-white shadow-2xl transition hover:-translate-x-1"
-            title="Open Metis"
-            style={triggerButtonStyle}
-          >
-            <div
-              className="flex items-center justify-center bg-[#f97316] font-bold text-[#0d1b2a]"
-              style={triggerBadgeStyle}
-            >
-              M
-            </div>
-            <div className="hidden pr-1 text-left group-hover:block">
-              <div className="font-semibold" style={triggerTitleStyle}>
-                Metis
-              </div>
-              <div className="text-white/45" style={triggerSubtitleStyle}>
-                Open cost-risk panel
-              </div>
-            </div>
-          </button>
+      {panelMode === "idle" && <LauncherButton onOpen={() => setPanelMode("mini")} />}
+
+      {panelMode === "mini" && (
+        <div
+          className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[288px] flex-col overflow-hidden shadow-2xl"
+          style={{
+            background: "#111d2b",
+            borderLeft: "1px solid rgba(255,255,255,0.06)"
+          }}
+        >
+          <ShellHeader
+            title="Metis"
+            subtitle="Phase 4 live insight"
+            onClose={() => setPanelMode("idle")}
+            onExpand={() => setPanelMode("full")}
+            isMini
+          />
+          <div className="metis-scroll flex-1 overflow-y-auto px-4 py-4">
+            <PanelLayout viewModel={viewModel} compact />
+          </div>
+          <PanelFooter
+            primaryLabel="Open Full Panel"
+            onPrimary={() => setPanelMode("full")}
+            onCopy={() => {
+              void handleCopyReport();
+            }}
+          />
         </div>
       )}
 
-      {panelMode === "mini" && (
-        <MiniPanel
-          setPanelMode={setPanelMode}
-          scanScope={scanScope}
-          setScanScope={setScanScope}
-          rawSnapshot={rawSnapshot}
-          baselineSnapshot={baselineSnapshot}
-          visitedSnapshots={visitedSnapshots}
-        />
-      )}
       {panelMode === "full" && (
-        <FullPanel
-          setPanelMode={setPanelMode}
-          scanScope={scanScope}
-          setScanScope={setScanScope}
-          rawSnapshot={rawSnapshot}
-          baselineSnapshot={baselineSnapshot}
-          visitedSnapshots={visitedSnapshots}
-          plusAnswers={plusAnswers}
-          setPlusAnswers={setPlusAnswers}
-          isPlusRefinementOpen={isPlusRefinementOpen}
-          setIsPlusRefinementOpen={setIsPlusRefinementOpen}
-        />
+        <>
+          <div
+            className="fixed inset-0 z-[2147483646]"
+            style={{
+              background: "rgba(0,0,0,0.2)",
+              backdropFilter: "blur(3px)"
+            }}
+            onClick={() => setPanelMode("idle")}
+          />
+          <div
+            className="fixed bottom-5 right-5 top-5 z-[2147483647] flex w-[410px] flex-col overflow-hidden rounded-[22px] shadow-2xl"
+            style={{
+              background: "#111d2b",
+              border: "1px solid rgba(255,255,255,0.07)"
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <ShellHeader
+              title="Metis Full Report"
+              subtitle={viewModel ? `${viewModel.hostname} · ${viewModel.scannedAt}` : "Scanning current page"}
+              onClose={() => setPanelMode("idle")}
+              onMinimize={() => setPanelMode("mini")}
+              isMini={false}
+            />
+            <div className="metis-scroll flex-1 overflow-y-auto px-5 py-5">
+              <PanelLayout viewModel={viewModel} />
+            </div>
+            <PanelFooter
+              primaryLabel="Open Full Report"
+              onPrimary={() => setShowReport(true)}
+              onCopy={() => {
+                void handleCopyReport();
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {showReport && (
+        <>
+          <div
+            className="fixed inset-0 z-[2147483647]"
+            style={{
+              background: "rgba(0,0,0,0.72)",
+              backdropFilter: "blur(16px)"
+            }}
+            onClick={() => setShowReport(false)}
+          />
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-6 pointer-events-none">
+            <div
+              className="pointer-events-auto h-[92vh] w-full max-w-[672px]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <FullReportLayout
+                viewModel={viewModel}
+                scanScope={scanScope}
+                onSetScanScope={setScanScope}
+                currentQuestion={currentQuestion}
+                plusAnswers={plusAnswers}
+                isRefinementOpen={isPlusRefinementOpen}
+                setIsRefinementOpen={setIsPlusRefinementOpen}
+                onAnswer={handleAnswer}
+                onCopyReport={() => {
+                  void handleCopyReport();
+                }}
+                onClose={() => setShowReport(false)}
+              />
+            </div>
+          </div>
+        </>
       )}
     </>
   );

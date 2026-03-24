@@ -1,109 +1,132 @@
 /**
  * DetectedStackBadges
- * Shows detected technology stack and site insights.
- * 
- * DESIGN SPECS:
- * - Blue tags for tech (React 18, Next.js 14)
- * - Purple tags for hosting provider (Vercel, Netlify)
- * - Green tags for insights (AI usage detected)
- * - Page info indicator (single vs multi-page mode)
- * 
- * DATA INTEGRATION:
- * - Currently receives hardcoded demo badges
- * - Should be populated from detection/scan features:
- *   - Frameworks from DOM analysis
- *   - Providers from headers and known CDN IPs
- *   - Insights from scoring heuristics (AI, third-party, etc.)
+ * Prototype chips plus grouped stack/context blocks.
  */
-import { X } from "lucide-react";
+import type { DesignStackChip, DesignStackGroup } from "./liveAdapter";
 
-interface StackBadge {
-  label: string;
-  type: "tech" | "insight" | "provider" | "warning";
-  icon?: React.ComponentType<{ className?: string }>;
+function chipStyle(tone: DesignStackChip["tone"]) {
+  switch (tone) {
+    case "provider":
+      return {
+        background: "rgba(99,102,241,0.12)",
+        border: "1px solid rgba(99,102,241,0.25)",
+        color: "#aeb5ff"
+      };
+    case "ai":
+      return {
+        background: "rgba(16,163,127,0.15)",
+        border: "1px solid rgba(16,163,127,0.3)",
+        color: "#18c59a"
+      };
+    case "warning":
+      return {
+        background: "rgba(249,115,22,0.12)",
+        border: "1px solid rgba(249,115,22,0.25)",
+        color: "#ff9c48"
+      };
+    case "tech":
+      return {
+        background: "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        color: "rgba(255,255,255,0.72)"
+      };
+    default:
+      return {
+        background: "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        color: "rgba(255,255,255,0.68)"
+      };
+  }
 }
 
 interface DetectedStackBadgesProps {
-  badges: StackBadge[];
-  pageInfo?: {
-    mode: "single" | "multi";
-    pages?: number;
-    hostname: string;
-  };
+  chips: DesignStackChip[];
+  groups?: DesignStackGroup[];
+  compact?: boolean;
 }
 
-const TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  tech: {
-    bg: "bg-blue-500/10",
-    text: "text-blue-400",
-    border: "border-blue-500/30"
-  },
-  provider: {
-    bg: "bg-purple-500/10",
-    text: "text-purple-400",
-    border: "border-purple-500/30"
-  },
-  insight: {
-    bg: "bg-green-500/10",
-    text: "text-green-400",
-    border: "border-green-500/30"
-  },
-  warning: {
-    bg: "bg-orange-500/10",
-    text: "text-orange-400",
-    border: "border-orange-500/30"
-  }
-};
-
 export function DetectedStackBadges({
-  badges,
-  pageInfo
+  chips,
+  groups = [],
+  compact = false
 }: DetectedStackBadgesProps) {
   return (
     <div className="space-y-4">
-      {/* Page context: shows whether scanning single or multiple pages */}
-      {pageInfo && (
-        <div className="p-3 rounded-lg" style={{ background: "rgba(59, 130, 246, 0.05)" }}>
-          <div className="flex items-center gap-2 text-xs text-blue-400">
-            <div className="w-2 h-2 rounded-full bg-blue-400" />
-            <span>
-              {pageInfo.mode === "multi" && `Sampled ${pageInfo.pages} pages · `}
-              {pageInfo.hostname}
-            </span>
+      <div
+        style={{
+          color: "rgba(255,255,255,0.3)",
+          fontFamily: "Inter, sans-serif",
+          fontSize: compact ? 11 : 12,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase"
+        }}
+      >
+        {compact ? "Detected Stack" : "Known Stack"}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <div
+            key={`${chip.label}-${chip.tone}`}
+            className="rounded-full px-4 py-2"
+            style={{
+              ...chipStyle(chip.tone),
+              fontFamily: "Inter, sans-serif",
+              fontSize: compact ? 11 : 12,
+              fontWeight: 500
+            }}
+          >
+            {chip.label}
           </div>
+        ))}
+      </div>
+
+      {!compact && groups.length > 0 && (
+        <div className="grid gap-3">
+          {groups.map((group) => (
+            <div
+              key={group.label}
+              className="rounded-[22px] px-4 py-4"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)"
+              }}
+            >
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.28)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  marginBottom: 10
+                }}
+              >
+                {group.label}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {group.items.map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-full px-4 py-2"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      color: "rgba(255,255,255,0.7)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
+                      fontWeight: 500
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
-
-      {/* Technology stack and detected insights - helps user understand what was analyzed */}
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          Detected Stack
-        </h3>
-
-        {/* Badges colored by type: tech (blue), provider (purple), insight (green) */}
-        <div className="flex flex-wrap gap-2">
-          {badges.map((badge, idx) => {
-            const colors = TYPE_COLORS[badge.type];
-            const Icon = badge.icon;
-
-            return (
-              <div
-                key={idx}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
-              >
-                {Icon && <Icon className="w-3 h-3" />}
-                {badge.label}
-              </div>
-            );
-          })}
-
-          {badges.length === 0 && (
-            <p className="text-xs text-gray-500 italic">
-              Stack detection still running...
-            </p>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

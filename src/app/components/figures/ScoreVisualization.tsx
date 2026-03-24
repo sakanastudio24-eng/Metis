@@ -1,141 +1,104 @@
 /**
  * ScoreVisualization
- * Displays the cost risk score with animated circular progress ring and risk label.
- * 
- * DESIGN SPECS:
- * - Large SVG circle with animated stroke-dasharray (0-100%)
- * - Orange ring (#f97316) for "watch" state matches Figma design
- * - Center text shows numeric score and "Cost Risk" label
- * - Risk badge below (Warming up / Healthy / Moderate Risk / High Risk)
- * 
- * ANIMATION:
- * - Animates from old score to new score over 750ms
- * - Uses cubic ease-out for smooth natural motion
- * - Re-animates whenever score prop changes
+ * Prototype-faithful score ring used across the mini panel and full report.
  */
-import { useMemo, useRef, useEffect, useState, useCallback } from "react";
-import type { ScoreLabel } from "../../../shared/types/audit";
-
-// Color mapping for each risk level - used for both SVG ring and badge styling
-const RISK_COLORS: Record<ScoreLabel, string> = {
-  "warming up": "#6b7280",    // Gray - still gathering data
-  healthy: "#22c55e",           // Green - excellent performance
-  watch: "#f97316",             // Orange - moderate issues detected
-  "high risk": "#dc2626"        // Red - critical issues requiring attention
-};
-
-// Display labels that match the Figma design labels
-const RISK_LABELS: Record<ScoreLabel, string> = {
-  "warming up": "Warming up",
-  healthy: "Healthy",
-  watch: "Moderate Risk",
-  "high risk": "High Risk"
-};
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ScoreVisualizationProps {
   score: number;
-  label: ScoreLabel;
   size?: number;
+  color: string;
+  trackColor?: string;
 }
 
 export function ScoreVisualization({
   score,
-  label,
-  size = 160
+  size = 140,
+  color,
+  trackColor = "rgba(255,255,255,0.08)"
 }: ScoreVisualizationProps) {
-  const [displayedScore, setDisplayedScore] = useState(score);
+  const [displayed, setDisplayed] = useState(score);
   const rafRef = useRef<number | null>(null);
 
-  // Animates score from current value to new value using requestAnimationFrame
-  // Provides smooth visual feedback when score changes
-  const animateTo = useCallback((to: number) => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    const from = displayedScore;
-    if (from === to) return; // Skip animation if value hasn't changed
-
-    const duration = 750; // Animation duration in milliseconds
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - startTime) / duration);
-      const eased = 1 - Math.pow(1 - t, 3); // Cubic ease-out easing function for natural motion
-      const val = Math.round(from + (to - from) * eased);
-      setDisplayedScore(val);
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(tick);
+  const animateTo = useCallback(
+    (target: number) => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
       }
-    };
 
-    rafRef.current = requestAnimationFrame(tick);
-  }, [displayedScore]);
+      const from = displayed;
+      if (from === target) {
+        return;
+      }
+
+      const start = performance.now();
+      const duration = 750;
+
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setDisplayed(Math.round(from + (target - from) * eased));
+
+        if (progress < 1) {
+          rafRef.current = requestAnimationFrame(tick);
+        }
+      };
+
+      rafRef.current = requestAnimationFrame(tick);
+    },
+    [displayed]
+  );
 
   useEffect(() => {
     animateTo(score);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [score, animateTo]);
 
-  // Calculate SVG stroke properties for the animated ring
-  const ringColor = RISK_COLORS[label];
-  const circumference = 2 * Math.PI * (size / 2 - 12); // SVG circle circumference
-  const strokeDashoffset = circumference * (1 - displayedScore / 100); // Progress as dash offset
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [animateTo, score]);
+
+  const radius = size / 2 - 8;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference - (displayed / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {/* Score Ring */}
-      <div className="relative inline-flex items-center justify-center">
-        <svg
-          width={size}
-          height={size}
-          className="transform -rotate-90"
-          style={{ filter: "drop-shadow(0 0 20px rgba(249, 115, 22, 0.2))" }}
-        >
-          {/* Background ring */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={size / 2 - 12}
-            fill="none"
-            stroke="rgba(255, 255, 255, 0.08)"
-            strokeWidth="10"
-          />
-          {/* Progress ring */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={size / 2 - 12}
-            fill="none"
-            stroke={ringColor}
-            strokeWidth="10"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            style={{ transition: "stroke-dashoffset 0.05s linear" }}
-          />
-        </svg>
-
-        {/* Center text */}
-        <div className="absolute flex flex-col items-center gap-1">
-          <div className="text-4xl font-bold text-white">{displayedScore}</div>
-          <div className="text-xs text-gray-400">Cost Risk</div>
-        </div>
-      </div>
-
-      {/* Risk Label Badge */}
-      <div
-        className="px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2"
-        style={{
-          backgroundColor: `${ringColor}25`,
-          color: ringColor,
-          border: `1px solid ${ringColor}40`
-        }}
-      >
-        <div
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: ringColor }}
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={trackColor}
+          strokeWidth="8"
         />
-        {RISK_LABELS[label]}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          style={{ transition: "stroke-dashoffset 40ms linear" }}
+        />
+      </svg>
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div
+          style={{
+            color: "white",
+            fontFamily: "Jua, sans-serif",
+            fontSize: size >= 120 ? 36 : 28,
+            lineHeight: 1
+          }}
+        >
+          {displayed}
+        </div>
       </div>
     </div>
   );
