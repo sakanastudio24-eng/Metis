@@ -14,7 +14,11 @@ import {
 } from "lucide-react";
 import { detectIssues } from "../../features/detection";
 import { buildInsight } from "../../features/insights";
-import { PLUS_CORE_KEYS, PLUS_QUESTION_DEFINITIONS } from "../../features/refinement/config";
+import {
+  PLUS_CORE_KEYS,
+  PLUS_IMPACT_LABELS,
+  PLUS_QUESTION_DEFINITIONS
+} from "../../features/refinement/config";
 import { buildPlusOptimizationReport } from "../../features/refinement";
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
@@ -540,7 +544,7 @@ function PlusRefinementCard({
                 key={`${activeQuestion.key}-${item}`}
                 className="rounded-full bg-[#10253a] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/58"
               >
-                {item}
+                {PLUS_IMPACT_LABELS[item]}
               </div>
             ))}
           </div>

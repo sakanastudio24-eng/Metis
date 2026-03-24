@@ -62,7 +62,7 @@ function buildPriorityLabel(
     priorityScore += 1;
   }
 
-  if (answers.paidApis === "yes") {
+  if (answers.paidApiUsage === "yes") {
     priorityScore += 1;
   }
 
@@ -107,7 +107,7 @@ function buildCostSensitivityNote(
 ) {
   const notes: string[] = [];
 
-  if (answers.paidApis === "yes" && primaryCategory === "duplicateRequests") {
+  if (answers.paidApiUsage === "yes" && primaryCategory === "duplicateRequests") {
     notes.push("Repeated requests matter more here because they may be hitting paid endpoints.");
   }
 

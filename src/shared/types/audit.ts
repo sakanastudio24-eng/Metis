@@ -148,7 +148,7 @@ export interface PlusRefinementAnswers {
   monthlyVisits?: MonthlyVisitsBand;
   appType?: AppType;
   pageDynamics?: PageDynamics;
-  paidApis?: PaidApiUsage;
+  paidApiUsage?: PaidApiUsage;
   aiUsage?: AiUsage;
   mediaImportance?: MediaImportance;
   highTrafficRoute?: HighTrafficRoute;
