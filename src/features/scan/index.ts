@@ -2,6 +2,7 @@
 // It also reshapes multiple visited pages into one aggregate snapshot for multipage scoring
 // and exposes a small debug summary for console-only runtime verification.
 import type { RawScanSnapshot } from "../../shared/types/audit";
+import { collectDomStackSignals } from "../stack";
 import { inspectDomSurface } from "./dom";
 import { buildResourceMetrics, collectResourceSummaries } from "./performance";
 import { parsePageContext } from "./url";
@@ -9,12 +10,13 @@ import { parsePageContext } from "./url";
 export function collectRawScanSnapshot(): RawScanSnapshot {
   const page = parsePageContext(window.location.href);
   const { resources, stackSignals, metrics } = collectResourceSummaries(page);
+  const domStackSignals = collectDomStackSignals(page.href);
 
   return {
     scannedAt: new Date().toISOString(),
     page,
     resources,
-    stackSignals,
+    stackSignals: [...stackSignals, ...domStackSignals],
     dom: inspectDomSurface(),
     metrics
   };

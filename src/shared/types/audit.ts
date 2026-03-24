@@ -8,7 +8,10 @@ export type IssueCategory =
   | "duplicateRequests"
   | "pageWeight"
   | "largeImages"
-  | "thirdPartySprawl";
+  | "thirdPartySprawl"
+  | "aiSpendSurface"
+  | "analyticsAdsRumSurface"
+  | "hostingCdnSpendSurface";
 export type HostingProvider =
   | "vercel"
   | "netlify"
@@ -44,7 +47,17 @@ export type StackCdnProvider =
   | "none"
   | "other";
 export type StackAiProvider = "openai" | "anthropic" | "google" | "none" | "other";
-export type StackAnalytics = "ga4" | "plausible" | "segment" | "mixpanel" | "none" | "other";
+export type StackAnalytics =
+  | "ga4"
+  | "gtm"
+  | "amazonAdvertising"
+  | "cloudwatchRum"
+  | "metaPixel"
+  | "plausible"
+  | "segment"
+  | "mixpanel"
+  | "none"
+  | "other";
 export type StackPayment = "stripe" | "shopify" | "paddle" | "none" | "other";
 export type ResourceCategory =
   | "image"
@@ -76,10 +89,44 @@ export interface ResourceSummary {
   isMeaningfulImage: boolean;
 }
 
+export type StackSignalSource = "resource" | "element" | "dom";
+
 export interface StackSignal {
   name: string;
   hostname: string;
   pathname: string;
+  source?: StackSignalSource;
+}
+
+export type MoneyStackGroup =
+  | "hostingCdn"
+  | "aiProviders"
+  | "analyticsAdsRum"
+  | "framework"
+  | "payment";
+
+export type MoneyStackVendorSource = StackSignalSource | "answer" | "mixed";
+export type MoneyStackConfidence = "low" | "medium" | "high";
+
+export interface DetectedStackVendor {
+  id: string;
+  label: string;
+  group: MoneyStackGroup;
+  brandColor?: string;
+  source: MoneyStackVendorSource;
+  confidence: MoneyStackConfidence;
+}
+
+export interface DetectedStackGroup {
+  id: MoneyStackGroup;
+  label: string;
+  vendors: DetectedStackVendor[];
+}
+
+export interface MoneyStackDetection {
+  groups: DetectedStackGroup[];
+  missingCostGroups: Array<"hostingCdn" | "aiProviders" | "analyticsAdsRum">;
+  directCostGroups: Array<"hostingCdn" | "aiProviders" | "analyticsAdsRum">;
 }
 
 export interface ResourceAggregate {

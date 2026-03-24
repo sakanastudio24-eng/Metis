@@ -209,7 +209,8 @@ export function collectResourceSummaries(page: PageContext): {
       stackSignals.push({
         name: entry.name,
         hostname: url.hostname,
-        pathname: url.pathname
+        pathname: url.pathname,
+        source: "resource"
       });
     }
 
