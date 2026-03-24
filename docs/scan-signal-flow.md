@@ -26,3 +26,6 @@ This is the completed Phase 2 signal pipeline.
 ## Phase 3 Rule
 
 Detection must work from the normalized metrics, not from raw noisy browser entries.
+
+See [normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
+for the full cleanup path that feeds Phase 3 and Phase 4.
