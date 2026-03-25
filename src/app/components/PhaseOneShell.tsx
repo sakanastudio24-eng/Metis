@@ -19,9 +19,7 @@ import {
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
 import {
-  buildPageScanSnapshot,
   getPageScanStoreSummary,
-  savePageScan
 } from "../../shared/lib/pageScanHistory";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
@@ -488,23 +486,22 @@ export function PhaseOneShell({
     });
   };
 
-  const handleCaptureSample = async () => {
-    if (!activeSnapshot || !viewModel) {
+  const answeredQuestions = useMemo(
+    () =>
+      questionDefinitions.filter((definition) => plusAnswers[definition.key] !== undefined),
+    [plusAnswers, questionDefinitions]
+  );
+
+  const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
+
+  const handleBackQuestion = () => {
+    if (!previousQuestion) {
       return;
     }
 
-    const summary = await savePageScan(buildPageScanSnapshot(activeSnapshot), {
-      markAsLatestCaptured: true
-    });
-    setSavedPageCount(summary.savedPageCount);
-
-    const savedPagesLabel =
-      summary.savedPageCount === 1
-        ? "Sampled 1 page"
-        : `Sampled ${summary.savedPageCount} pages`;
-
-    toast.success("Page captured", {
-      description: `${savedPagesLabel} saved for ${viewModel.hostname} and set as the latest compare target.`
+    setPlusAnswers({
+      ...plusAnswers,
+      [previousQuestion.key]: undefined
     });
   };
 
@@ -599,9 +596,6 @@ export function PhaseOneShell({
                     viewModel={viewModel}
                     compact
                     refreshTick={refreshTick}
-                    onCapture={() => {
-                      void handleCaptureSample();
-                    }}
                   />
                 </motion.div>
               )}
@@ -699,11 +693,10 @@ export function PhaseOneShell({
                         isRefinementOpen={isPlusRefinementOpen}
                         setIsRefinementOpen={setIsPlusRefinementOpen}
                         onAnswer={handleAnswer}
+                        onBackQuestion={handleBackQuestion}
+                        canGoBack={previousQuestion !== null}
                         onCopyReport={() => {
                           void handleCopyReport();
-                        }}
-                        onCapture={() => {
-                          void handleCaptureSample();
                         }}
                         onUpgrade={() => handleOpenPlusModal("full")}
                         isPlusUser={isPlusUser}

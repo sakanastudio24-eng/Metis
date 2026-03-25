@@ -5,7 +5,7 @@
  * meaningful sections above the fold.
  */
 import type { ReactNode } from "react";
-import { Bot, Camera, Copy, Download, Target, X } from "lucide-react";
+import { ArrowLeft, Bot, Check, Copy, Download, Target, X } from "lucide-react";
 import { motion } from "motion/react";
 import type { ScanScope } from "../../useMetisState";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
@@ -391,8 +391,9 @@ interface FullReportLayoutProps {
   isRefinementOpen: boolean;
   setIsRefinementOpen: (value: boolean) => void;
   onAnswer: (key: keyof PlusRefinementAnswers, value: string) => void;
+  onBackQuestion: () => void;
+  canGoBack: boolean;
   onCopyReport: () => void;
-  onCapture?: () => void;
   onUpgrade?: () => void;
   isPlusUser?: boolean;
   headerAccessory?: ReactNode;
@@ -409,8 +410,9 @@ export function FullReportLayout({
   isRefinementOpen,
   setIsRefinementOpen,
   onAnswer,
+  onBackQuestion,
+  canGoBack,
   onCopyReport,
-  onCapture,
   onUpgrade,
   isPlusUser = false,
   headerAccessory,
@@ -702,9 +704,7 @@ export function FullReportLayout({
                       >
                         {viewModel.pagesSampledLabel}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => onCapture?.()}
+                      <div
                         className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
                         style={{
                           background: "rgba(255,255,255,0.06)",
@@ -715,9 +715,9 @@ export function FullReportLayout({
                           fontWeight: 700
                         }}
                       >
-                        <Camera size={12} />
-                        Capture
-                      </button>
+                        <Check size={12} />
+                        Page saved
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -937,6 +937,24 @@ export function FullReportLayout({
                   >
                     {currentQuestion.group}
                   </div>
+                  {canGoBack && (
+                    <button
+                      type="button"
+                      onClick={onBackQuestion}
+                      className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2"
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: "rgba(255,255,255,0.72)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 12,
+                        fontWeight: 700
+                      }}
+                    >
+                      <ArrowLeft size={12} />
+                      Back
+                    </button>
+                  )}
                   <div
                     style={{
                       color: "white",

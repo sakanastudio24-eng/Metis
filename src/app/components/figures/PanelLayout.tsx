@@ -2,7 +2,7 @@
  * PanelLayout
  * Zip-authoritative mini/full panel body bound to live Phase 4 data.
  */
-import { Camera } from "lucide-react";
+import { Check } from "lucide-react";
 import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
@@ -13,7 +13,6 @@ interface PanelLayoutProps {
   viewModel: MetisDesignViewModel | null;
   compact?: boolean;
   refreshTick?: number;
-  onCapture?: () => void;
 }
 
 function RiskBadge({
@@ -45,8 +44,7 @@ function RiskBadge({
 export function PanelLayout({
   viewModel,
   compact = false,
-  refreshTick = 0,
-  onCapture
+  refreshTick = 0
 }: PanelLayoutProps) {
   if (!viewModel) {
     return (
@@ -166,9 +164,7 @@ export function PanelLayout({
               >
                 {viewModel.pagesSampledLabel}
               </div>
-              <button
-                type="button"
-                onClick={() => onCapture?.()}
+              <div
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
                 style={{
                   background: "rgba(255,255,255,0.06)",
@@ -178,11 +174,10 @@ export function PanelLayout({
                   fontSize: compact ? 10 : 11,
                   fontWeight: 700
                 }}
-                title="Capture current page sample"
               >
-                <Camera size={compact ? 10 : 11} />
-                Capture
-              </button>
+                <Check size={compact ? 10 : 11} />
+                Page saved
+              </div>
             </div>
           </div>
         </div>
