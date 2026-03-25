@@ -529,7 +529,7 @@ export function FullReportLayout({
         </div>
       </div>
 
-      <div className="metis-scroll flex-1 overflow-y-auto px-8 py-7">
+      <div className="metis-scroll flex-1 overflow-y-auto overflow-x-hidden px-8 py-7">
         <div className="space-y-6">
           <motion.div
             className="rounded-[28px] p-6"
@@ -541,7 +541,7 @@ export function FullReportLayout({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.04, ease: "easeOut" }}
           >
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_328px]">
+            <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_328px]">
               <div className="space-y-4">
                 <SplitScoreSummary viewModel={viewModel} pulseKey={refreshTick} />
                 <div
@@ -897,7 +897,7 @@ export function FullReportLayout({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
+            <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
               {isRefinementOpen && currentQuestion && (
                 <div
                   className="rounded-[24px] px-5 py-5"
