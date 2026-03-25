@@ -280,6 +280,28 @@ export interface PricingContext {
   providerMultiplier: number;
 }
 
+export type ControlLabel = "Controlled" | "Mixed" | "Uncontrolled";
+
+export interface ControlCredit {
+  id: string;
+  points: number;
+  reason: string;
+}
+
+export interface ControlPenalty {
+  id: string;
+  points: number;
+  reason: string;
+}
+
+export interface ControlAssessment {
+  score: number;
+  label: ControlLabel;
+  reasons: string[];
+  credits: ControlCredit[];
+  penalties: ControlPenalty[];
+}
+
 export interface ResourceAggregate {
   normalizedUrl: string;
   sampleUrl: string;
