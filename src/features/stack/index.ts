@@ -1,107 +1,30 @@
-// stack/index.ts detects only cost-relevant technology signals from the current page.
-// It combines DOM markers, resource timing hints, element URLs, and user answers into
-// one grouped money-stack model that can drive score, report copy, and fallback questions.
+// stack/index.ts normalizes raw route clues into weighted evidence, then resolves
+// cost-relevant technologies through a fingerprint registry instead of one-off rules.
+import { TECHNOLOGY_FINGERPRINTS } from "./fingerprints";
 import type {
   DetectedStackGroup,
   DetectedStackVendor,
-  HostingProviderKind,
   MoneyStackConfidence,
   MoneyStackDetection,
   MoneyStackGroup,
-  MoneyStackVendorSource,
   PlusRefinementAnswers,
   RawScanSnapshot,
-  StackSignal
+  ResolvedTechnology,
+  StackSignal,
+  TechnologyEvidence,
+  TechnologyEvidenceSource,
+  TechnologyFingerprint
 } from "../../shared/types/audit";
 
-const STACK_BRAND_COLORS = {
-  react: "#61dafb",
-  nextjs: "#9ca3af",
-  vue: "#41b883",
-  svelte: "#ff6d3b",
-  vercel: "#6366f1",
-  cloudflare: "#f6821f",
-  cloudfront: "#f59e0b",
-  aws: "#f59e0b",
-  openai: "#10a37f",
-  anthropic: "#d97706",
-  googleAi: "#60a5fa",
-  ga4: "#f9a825",
-  gtm: "#f59e0b",
-  cloudflareBrowserInsights: "#f6821f",
-  amazonAds: "#ff9900",
-  cloudwatchRum: "#22c55e",
-  metaPixel: "#60a5fa",
-  segment: "#6ee7ff",
-  plausible: "#a78bfa",
-  mixpanel: "#8b5cf6",
-  stripe: "#6772e5",
-  shopify: "#7ab55c",
-  paddle: "#6d5efc"
-} as const;
-
-type CostGroup = "hostingCdn" | "aiProviders" | "analyticsAdsRum";
-type SignalBucket = {
-  names: string[];
-  hostnames: string[];
-  pathnames: string[];
-  sources: StackSignal["source"][];
+const GROUP_LABELS: Record<MoneyStackGroup, string> = {
+  hostingCdn: "Hosting / CDN",
+  aiProviders: "AI Providers",
+  analyticsAdsRum: "Analytics / Ads / RUM",
+  framework: "Framework",
+  payment: "Payment"
 };
 
-type VendorSpec = {
-  id: string;
-  label: string;
-  group: MoneyStackGroup;
-  brandColor?: string;
-  providerKind?: HostingProviderKind;
-  sources: Array<{
-    kind: "name" | "host" | "path";
-    patterns: string[];
-  }>;
-  domMarkers?: string[];
-  answerMatches?: Array<keyof PlusRefinementAnswers>;
-  answerValues?: string[];
-};
-
-function isAwsHost(hostname: string) {
-  const host = hostname.toLowerCase();
-
-  return (
-    host === "amazonaws.com" ||
-    host.endsWith(".amazonaws.com") ||
-    host === "cloudfront.net" ||
-    host.endsWith(".cloudfront.net")
-  );
-}
-
-function classifyAwsHost(hostname: string): HostingProviderKind | null {
-  const host = hostname.toLowerCase();
-
-  if (host === "cloudfront.net" || host.endsWith(".cloudfront.net")) {
-    return "cloudfront";
-  }
-
-  if (host.endsWith(".s3.amazonaws.com") || host.includes(".s3.") || host.startsWith("s3.")) {
-    return "s3";
-  }
-
-  if (host.includes("execute-api.") && host.endsWith(".amazonaws.com")) {
-    return "api-gateway";
-  }
-
-  if (isAwsHost(host)) {
-    return "aws-generic";
-  }
-
-  return null;
-}
-
-function normalizeSignal(signal: StackSignal): StackSignal {
-  return {
-    ...signal,
-    source: signal.source ?? "resource"
-  };
-}
+const COST_GROUP_IDS = ["hostingCdn", "aiProviders", "analyticsAdsRum"] as const;
 
 function addSignal(
   signals: StackSignal[],
@@ -133,8 +56,6 @@ export function collectDomStackSignals(pageHref: string): StackSignal[] {
   const signals: StackSignal[] = [];
   const w = window as unknown as Record<string, unknown>;
 
-  // Start with globals because they are the strongest, cheapest hints and help
-  // avoid turning every detection into a URL-pattern guess.
   if ("__NEXT_DATA__" in w) {
     addSignal(signals, "global:nextjs", "dom", pageHref);
   }
@@ -179,16 +100,33 @@ export function collectDomStackSignals(pageHref: string): StackSignal[] {
       addSignal(signals, url, "element", pageHref);
     });
 
-  // Keep the page URL itself as a weak supporting signal because platform-owned
-  // routes sometimes reveal hosted products that the resource list misses.
+  const metaGenerator = document
+    .querySelector<HTMLMetaElement>('meta[name="generator"]')
+    ?.content?.trim();
+
+  if (metaGenerator) {
+    addSignal(signals, `meta:generator:${metaGenerator}`, "dom", pageHref);
+  }
+
   addSignal(signals, pageHref, "dom", pageHref);
   return signals;
 }
 
-function buildSignalBucket(snapshot: RawScanSnapshot): SignalBucket {
-  // The stack bucket is intentionally broader than the scored resource list.
-  // It answers "which vendors are here?" rather than "which requests counted?"
-  const signals = [
+function normalizeAnswerEvidence(answers: PlusRefinementAnswers): TechnologyEvidence[] {
+  return Object.entries(answers)
+    .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+    .map(([key, value]) => ({
+      key: `answer:${key}:${value}`.toLowerCase(),
+      source: "answer" as const,
+      value,
+      weight: 2,
+      original: `${key}:${value}`
+    }));
+}
+
+function normalizeStackSignalEvidence(snapshot: RawScanSnapshot): TechnologyEvidence[] {
+  const seen = new Set<string>();
+  const rawSignals = [
     ...(snapshot.stackSignals ?? []),
     ...snapshot.resources.map((resource) => ({
       name: resource.name,
@@ -196,487 +134,235 @@ function buildSignalBucket(snapshot: RawScanSnapshot): SignalBucket {
       pathname: resource.pathname,
       source: "resource" as const
     }))
-  ].map(normalizeSignal);
+  ];
 
-  return {
-    names: signals.map((signal) => signal.name.toLowerCase()),
-    hostnames: signals.map((signal) => signal.hostname.toLowerCase()),
-    pathnames: signals.map((signal) => signal.pathname.toLowerCase()),
-    sources: signals.map((signal) => signal.source)
-  };
+  const evidence: TechnologyEvidence[] = [];
+
+  for (const signal of rawSignals) {
+    const source = signal.source ?? "resource";
+    const hostKey = `host:${signal.hostname.toLowerCase()}`;
+    const pathKey = `path:${signal.pathname.toLowerCase()}`;
+    const nameKey = signal.name.toLowerCase();
+
+    const normalizedItems: Array<{
+      dedupe: string;
+      key: string;
+      source: TechnologyEvidenceSource;
+      weight: number;
+    }> = [
+      {
+        dedupe: `${source}:${hostKey}`,
+        key: hostKey,
+        source: "host",
+        weight: source === "resource" ? 4 : source === "element" ? 3 : 2
+      },
+      {
+        dedupe: `${source}:${pathKey}`,
+        key: pathKey,
+        source: "path",
+        weight: source === "resource" ? 4 : source === "element" ? 3 : 2
+      },
+      {
+        dedupe: `${source}:${nameKey}`,
+        key: nameKey,
+        source: source === "dom" && nameKey.startsWith("global:") ? "global" : source,
+        weight:
+          source === "dom" && nameKey.startsWith("global:")
+            ? 5
+            : source === "resource"
+              ? 3
+              : source === "element"
+                ? 2
+                : 2
+      }
+    ];
+
+    for (const item of normalizedItems) {
+      if (seen.has(item.dedupe)) {
+        continue;
+      }
+
+      seen.add(item.dedupe);
+      evidence.push({
+        key: item.key,
+        source: item.source,
+        weight: item.weight,
+        original: signal.name
+      });
+    }
+  }
+
+  return evidence;
 }
 
-function hasPattern(values: string[], patterns: string[]) {
-  return patterns.some((pattern) => values.some((value) => value.includes(pattern)));
+export function collectTechnologyEvidence(
+  snapshot: RawScanSnapshot,
+  answers: PlusRefinementAnswers = {}
+): TechnologyEvidence[] {
+  return [
+    ...normalizeStackSignalEvidence(snapshot),
+    ...normalizeAnswerEvidence(answers)
+  ];
 }
 
-function resolveSource(sources: Set<MoneyStackVendorSource>): MoneyStackVendorSource {
-  if (sources.size === 0) {
+function matchesPattern(
+  evidence: TechnologyEvidence,
+  fingerprint: TechnologyFingerprint
+) {
+  return fingerprint.patterns.some((pattern) => {
+    if (pattern.source !== evidence.source) {
+      return false;
+    }
+    if (pattern.minWeight && evidence.weight < pattern.minWeight) {
+      return false;
+    }
+    if (pattern.keyIncludes && !pattern.keyIncludes.some((item) => evidence.key.includes(item.toLowerCase()))) {
+      return false;
+    }
+    if (
+      pattern.valueIncludes &&
+      !pattern.valueIncludes.some((item) =>
+        String(evidence.value ?? "").toLowerCase().includes(item.toLowerCase())
+      )
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function confidenceFromScore(score: number, minScore: number): MoneyStackConfidence {
+  if (score >= minScore + 4) {
+    return "high";
+  }
+  if (score >= minScore + 1) {
+    return "medium";
+  }
+  return "low";
+}
+
+function sourceFromEvidence(evidence: TechnologyEvidence[]): TechnologyEvidenceSource {
+  const uniqueSources = [...new Set(evidence.map((item) => item.source))];
+  if (uniqueSources.length === 0) {
     return "resource";
   }
-  if (sources.size === 1) {
-    return Array.from(sources)[0] ?? "resource";
+  if (uniqueSources.length === 1) {
+    return uniqueSources[0] ?? "resource";
   }
   return "mixed";
 }
 
-function resolveConfidence(source: MoneyStackVendorSource, hitCount: number): MoneyStackConfidence {
-  if (source === "mixed" || source === "dom") {
-    return "high";
+function scoreFingerprints(evidence: TechnologyEvidence[]) {
+  const resolved = new Map<string, ResolvedTechnology>();
+
+  for (const fingerprint of TECHNOLOGY_FINGERPRINTS) {
+    const hits = evidence.filter((entry) => matchesPattern(entry, fingerprint));
+    const score = hits.reduce((total, entry) => total + entry.weight, 0);
+
+    if (score < fingerprint.minScore) {
+      continue;
+    }
+
+    resolved.set(fingerprint.id, {
+      vendor: {
+        id: fingerprint.id,
+        label: fingerprint.label,
+        group: fingerprint.group,
+        brandColor: fingerprint.brandColor,
+        source: sourceFromEvidence(hits),
+        confidence: confidenceFromScore(score, fingerprint.minScore),
+        providerKind: fingerprint.providerKind,
+        score
+      },
+      evidence: hits
+    });
   }
-  if (source === "answer") {
-    return "medium";
+
+  for (const fingerprint of TECHNOLOGY_FINGERPRINTS) {
+    if (!fingerprint.implies || !resolved.has(fingerprint.id)) {
+      continue;
+    }
+
+    for (const impliedId of fingerprint.implies) {
+      if (resolved.has(impliedId)) {
+        continue;
+      }
+
+      const impliedFingerprint = TECHNOLOGY_FINGERPRINTS.find((item) => item.id === impliedId);
+      if (!impliedFingerprint) {
+        continue;
+      }
+
+      resolved.set(impliedId, {
+        vendor: {
+          id: impliedFingerprint.id,
+          label: impliedFingerprint.label,
+          group: impliedFingerprint.group,
+          brandColor: impliedFingerprint.brandColor,
+          source: "mixed",
+          confidence: "medium",
+          providerKind: impliedFingerprint.providerKind,
+          score: impliedFingerprint.minScore
+        },
+        evidence: resolved.get(fingerprint.id)?.evidence ?? []
+      });
+    }
   }
-  return hitCount >= 1 ? "medium" : "low";
+
+  return [...resolved.values()];
 }
 
-const VENDOR_SPECS: VendorSpec[] = [
-  {
-    id: "react",
-    label: "React 18",
-    group: "framework",
-    brandColor: STACK_BRAND_COLORS.react,
-    sources: [
-      { kind: "name", patterns: ["global:react", "react-dom", "react.production", "react.development"] }
-    ],
-    domMarkers: ["global:react"],
-    answerMatches: ["stackFramework"],
-    answerValues: ["react"]
-  },
-  {
-    id: "nextjs",
-    label: "Next.js 14",
-    group: "framework",
-    brandColor: STACK_BRAND_COLORS.nextjs,
-    sources: [
-      { kind: "name", patterns: ["global:nextjs", "/_next/", "__next"] },
-      { kind: "path", patterns: ["/_next/"] }
-    ],
-    domMarkers: ["global:nextjs"],
-    answerMatches: ["stackFramework"],
-    answerValues: ["nextjs"]
-  },
-  {
-    id: "vue",
-    label: "Vue",
-    group: "framework",
-    brandColor: STACK_BRAND_COLORS.vue,
-    sources: [{ kind: "name", patterns: ["global:vue", "vue.runtime", "vue.global"] }],
-    domMarkers: ["global:vue"],
-    answerMatches: ["stackFramework"],
-    answerValues: ["vue"]
-  },
-  {
-    id: "svelte",
-    label: "Svelte",
-    group: "framework",
-    brandColor: STACK_BRAND_COLORS.svelte,
-    sources: [{ kind: "name", patterns: ["svelte"] }],
-    answerMatches: ["stackFramework"],
-    answerValues: ["svelte"]
-  },
-  {
-    id: "vercel",
-    label: "Vercel",
-    group: "hostingCdn",
-    brandColor: STACK_BRAND_COLORS.vercel,
-    sources: [
-      { kind: "host", patterns: ["vercel.live", "vercel-insights.com", "vercel-scripts.com"] },
-      { kind: "path", patterns: ["/_vercel/"] }
-    ],
-    answerMatches: ["hostingProvider", "stackCdnProvider"],
-    answerValues: ["vercel", "vercelEdge"]
-  },
-  {
-    id: "cloudflare",
-    label: "Cloudflare CDN",
-    group: "hostingCdn",
-    brandColor: STACK_BRAND_COLORS.cloudflare,
-    sources: [
-      {
-        kind: "host",
-        patterns: ["challenges.cloudflare.com", "workers.dev", "pages.dev", "cdnjs.cloudflare.com"]
-      },
-      { kind: "path", patterns: ["/cdn-cgi/"] }
-    ],
-    answerMatches: ["hostingProvider", "stackCdnProvider"],
-    answerValues: ["cloudflare"]
-  },
-  {
-    id: "cloudfront",
-    label: "CloudFront",
-    group: "hostingCdn",
-    brandColor: STACK_BRAND_COLORS.cloudfront,
-    providerKind: "cloudfront",
-    sources: [
-      { kind: "host", patterns: ["cloudfront.net"] },
-      { kind: "name", patterns: ["x-amz-cf"] }
-    ],
-    answerMatches: ["stackCdnProvider"],
-    answerValues: ["cloudfront"]
-  },
-  {
-    id: "aws-s3",
-    label: "AWS S3",
-    group: "hostingCdn",
-    brandColor: STACK_BRAND_COLORS.aws,
-    providerKind: "s3",
-    sources: [
-      { kind: "host", patterns: [".s3.amazonaws.com", ".s3.", "s3.amazonaws.com"] }
-    ]
-  },
-  {
-    id: "aws-api-gateway",
-    label: "AWS API Gateway",
-    group: "hostingCdn",
-    brandColor: STACK_BRAND_COLORS.aws,
-    providerKind: "api-gateway",
-    sources: [{ kind: "host", patterns: ["execute-api."] }]
-  },
-  {
-    id: "aws",
-    label: "AWS",
-    group: "hostingCdn",
-    brandColor: STACK_BRAND_COLORS.aws,
-    providerKind: "aws-generic",
-    sources: [
-      {
-        kind: "host",
-        patterns: [
-          "amazonaws.com",
-          "awsstatic.com",
-          "amazoncognito.com",
-          "amplifyapp.com",
-          "appsync-api.",
-          "execute-api.",
-          ".on.aws",
-          "awswaf.com",
-          "amazontrust.com"
-        ]
-      },
-      { kind: "name", patterns: ["x-amz-", "x-amz-cf", "amz-credential"] }
-    ],
-    answerMatches: ["hostingProvider"],
-    answerValues: ["aws"]
-  },
-  {
-    id: "openai",
-    label: "OpenAI GPT-4",
-    group: "aiProviders",
-    brandColor: STACK_BRAND_COLORS.openai,
-    sources: [
-      { kind: "host", patterns: ["openai.com", "oaistatic.com"] }
-    ],
-    answerMatches: ["stackAiProvider"],
-    answerValues: ["openai"]
-  },
-  {
-    id: "anthropic",
-    label: "Anthropic Claude",
-    group: "aiProviders",
-    brandColor: STACK_BRAND_COLORS.anthropic,
-    sources: [{ kind: "host", patterns: ["anthropic.com"] }],
-    answerMatches: ["stackAiProvider"],
-    answerValues: ["anthropic"]
-  },
-  {
-    id: "google-ai",
-    label: "Google AI",
-    group: "aiProviders",
-    brandColor: STACK_BRAND_COLORS.googleAi,
-    sources: [{ kind: "host", patterns: ["generativelanguage.googleapis.com", "vertexai", "ai.google.dev"] }],
-    answerMatches: ["stackAiProvider"],
-    answerValues: ["google"]
-  },
-  {
-    id: "ga4",
-    label: "Google Analytics 4",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.ga4,
-    sources: [
-      { kind: "host", patterns: ["google-analytics.com"] },
-      { kind: "name", patterns: ["global:datalayer"] }
-    ],
-    domMarkers: ["global:datalayer"],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["ga4"]
-  },
-  {
-    id: "gtm",
-    label: "Google Tag Manager",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.gtm,
-    sources: [{ kind: "host", patterns: ["googletagmanager.com"] }],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["gtm"]
-  },
-  {
-    id: "cloudflare-browser-insights",
-    label: "Cloudflare Browser Insights",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.cloudflareBrowserInsights,
-    sources: [
-      { kind: "host", patterns: ["cloudflareinsights.com"] },
-      { kind: "path", patterns: ["/beacon.min.js"] }
-    ]
-  },
-  {
-    id: "amazon-ads",
-    label: "Amazon Advertising",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.amazonAds,
-    sources: [{ kind: "host", patterns: ["amazon-adsystem.com"] }],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["amazonAdvertising"]
-  },
-  {
-    id: "cloudwatch-rum",
-    label: "CloudWatch RUM",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.cloudwatchRum,
-    sources: [
-      { kind: "host", patterns: ["client.rum.us-east-1.amazonaws.com", "cwr", "rum"] },
-      { kind: "name", patterns: ["cloudwatchrum", "cloudwatch-rum"] }
-    ],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["cloudwatchRum"]
-  },
-  {
-    id: "meta-pixel",
-    label: "Meta Pixel",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.metaPixel,
-    sources: [
-      { kind: "host", patterns: ["connect.facebook.net"] },
-      { kind: "name", patterns: ["global:meta-pixel", "fbevents.js"] }
-    ],
-    domMarkers: ["global:meta-pixel"],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["metaPixel"]
-  },
-  {
-    id: "segment",
-    label: "Segment",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.segment,
-    sources: [{ kind: "host", patterns: ["segment.com", "cdn.segment.com"] }],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["segment"]
-  },
-  {
-    id: "plausible",
-    label: "Plausible",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.plausible,
-    sources: [
-      { kind: "host", patterns: ["plausible.io"] },
-      { kind: "name", patterns: ["global:plausible"] }
-    ],
-    domMarkers: ["global:plausible"],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["plausible"]
-  },
-  {
-    id: "mixpanel",
-    label: "Mixpanel",
-    group: "analyticsAdsRum",
-    brandColor: STACK_BRAND_COLORS.mixpanel,
-    sources: [
-      { kind: "host", patterns: ["mixpanel.com", "api-js.mixpanel.com", "cdn.mxpnl.com"] },
-      { kind: "name", patterns: ["global:mixpanel"] }
-    ],
-    domMarkers: ["global:mixpanel"],
-    answerMatches: ["stackAnalytics"],
-    answerValues: ["mixpanel"]
-  },
-  {
-    id: "stripe",
-    label: "Stripe v3",
-    group: "payment",
-    brandColor: STACK_BRAND_COLORS.stripe,
-    sources: [
-      { kind: "host", patterns: ["js.stripe.com"] },
-      { kind: "name", patterns: ["global:stripe"] }
-    ],
-    domMarkers: ["global:stripe"],
-    answerMatches: ["stackPayment"],
-    answerValues: ["stripe"]
-  },
-  {
-    id: "shopify",
-    label: "Shopify",
-    group: "payment",
-    brandColor: STACK_BRAND_COLORS.shopify,
-    sources: [{ kind: "host", patterns: ["shopify", "shopifycdn.com"] }],
-    answerMatches: ["stackPayment"],
-    answerValues: ["shopify"]
-  },
-  {
-    id: "paddle",
-    label: "Paddle",
-    group: "payment",
-    brandColor: STACK_BRAND_COLORS.paddle,
-    sources: [{ kind: "host", patterns: ["paddle.com", "cdn.paddle.com"] }],
-    answerMatches: ["stackPayment"],
-    answerValues: ["paddle"]
-  }
-];
+function sortVendors(left: DetectedStackVendor, right: DetectedStackVendor) {
+  const confidenceRank = {
+    high: 3,
+    medium: 2,
+    low: 1
+  };
 
-function maybeAddVendor(
-  vendors: Map<string, { spec: VendorSpec; sources: Set<MoneyStackVendorSource>; hits: number }>,
-  spec: VendorSpec,
-  source: MoneyStackVendorSource
-) {
-  const existing = vendors.get(spec.id);
-  if (existing) {
-    existing.sources.add(source);
-    existing.hits += 1;
-    return;
+  const confidenceDiff =
+    confidenceRank[right.confidence] - confidenceRank[left.confidence];
+
+  if (confidenceDiff !== 0) {
+    return confidenceDiff;
   }
 
-  vendors.set(spec.id, {
-    spec,
-    sources: new Set([source]),
-    hits: 1
-  });
-}
-
-function inferVendor(
-  vendors: Map<string, { spec: VendorSpec; sources: Set<MoneyStackVendorSource>; hits: number }>,
-  vendorId: string,
-  source: MoneyStackVendorSource
-) {
-  const spec = VENDOR_SPECS.find((entry) => entry.id === vendorId);
-
-  if (!spec) {
-    return;
-  }
-
-  maybeAddVendor(vendors, spec, source);
+  return (right.score ?? 0) - (left.score ?? 0) || left.label.localeCompare(right.label);
 }
 
 export function detectMoneyStack(
   snapshot: RawScanSnapshot,
   answers: PlusRefinementAnswers = {}
 ): MoneyStackDetection {
-  const bucket = buildSignalBucket(snapshot);
-  const vendors = new Map<string, { spec: VendorSpec; sources: Set<MoneyStackVendorSource>; hits: number }>();
+  const resolved = scoreFingerprints(collectTechnologyEvidence(snapshot, answers));
+  const groups = new Map<MoneyStackGroup, DetectedStackVendor[]>();
 
-  // Match direct vendor signatures first. Answer hints and light inference only
-  // exist to fill obvious gaps, not to replace real page evidence.
-  for (const spec of VENDOR_SPECS) {
-    let matched = false;
-
-    for (const sourceGroup of spec.sources) {
-      const haystack =
-        sourceGroup.kind === "host"
-          ? bucket.hostnames
-          : sourceGroup.kind === "path"
-            ? bucket.pathnames
-            : bucket.names;
-
-      if (hasPattern(haystack, sourceGroup.patterns)) {
-        maybeAddVendor(vendors, spec, sourceGroup.kind === "name" && sourceGroup.patterns.some((pattern) => pattern.startsWith("global:")) ? "dom" : "resource");
-        matched = true;
-      }
-    }
-
-    if (spec.answerMatches && spec.answerValues) {
-      const answerMatched = spec.answerMatches.some((key) => {
-        const answerValue = answers[key];
-        return typeof answerValue === "string" && spec.answerValues?.includes(answerValue);
-      });
-
-      if (answerMatched) {
-        maybeAddVendor(vendors, spec, "answer");
-        matched = true;
-      }
-    }
-
-    if (!matched && spec.domMarkers && hasPattern(bucket.names, spec.domMarkers)) {
-      maybeAddVendor(vendors, spec, "dom");
-    }
+  for (const item of resolved) {
+    const current = groups.get(item.vendor.group) ?? [];
+    current.push(item.vendor);
+    groups.set(item.vendor.group, current);
   }
 
-  for (const hostname of new Set(bucket.hostnames)) {
-    const awsKind = classifyAwsHost(hostname);
-
-    if (awsKind === "cloudfront") {
-      inferVendor(vendors, "cloudfront", "resource");
-      inferVendor(vendors, "aws", "mixed");
-      continue;
-    }
-
-    if (awsKind === "s3") {
-      inferVendor(vendors, "aws-s3", "resource");
-      inferVendor(vendors, "aws", "mixed");
-      continue;
-    }
-
-    if (awsKind === "api-gateway") {
-      inferVendor(vendors, "aws-api-gateway", "resource");
-      inferVendor(vendors, "aws", "mixed");
-      continue;
-    }
-
-    if (awsKind === "aws-generic") {
-      inferVendor(vendors, "aws", "resource");
-    }
-  }
-
-  // Some vendors imply a broader paid platform behind them even when the page
-  // only exposes the edge product directly.
-  if (vendors.has("cloudfront") || vendors.has("cloudwatch-rum")) {
-    inferVendor(vendors, "aws", "mixed");
-  }
-
-  if (vendors.has("cloudflare-browser-insights")) {
-    inferVendor(vendors, "cloudflare", "mixed");
-  }
-
-  // Empty groups are dropped so the report stays cost-focused and the fallback
-  // question layer can ask only for what is still unknown.
-  const groups: DetectedStackGroup[] = [
-    { id: "framework", label: "Framework", vendors: [] },
-    { id: "hostingCdn", label: "Hosting / CDN", vendors: [] },
-    { id: "aiProviders", label: "AI Providers", vendors: [] },
-    { id: "analyticsAdsRum", label: "Analytics / Ads / RUM", vendors: [] },
-    { id: "payment", label: "Payment", vendors: [] }
-  ];
-
-  for (const { spec, sources, hits } of vendors.values()) {
-    const source = resolveSource(sources);
-    const confidence = resolveConfidence(source, hits);
-    const vendor: DetectedStackVendor = {
-      id: spec.id,
-      label: spec.label,
-      group: spec.group,
-      brandColor: spec.brandColor,
-      source,
-      confidence,
-      providerKind: spec.providerKind
-    };
-    groups.find((group) => group.id === spec.group)?.vendors.push(vendor);
-  }
-
-  const filteredGroups = groups
-    .map((group) => ({
-      ...group,
-      vendors: group.vendors.sort((left, right) => left.label.localeCompare(right.label))
+  const finalGroups: DetectedStackGroup[] = [...groups.entries()]
+    .map(([groupId, vendors]) => ({
+      id: groupId,
+      label: GROUP_LABELS[groupId],
+      vendors: [...vendors].sort(sortVendors)
     }))
-    .filter((group) => group.vendors.length > 0);
+    .sort((left, right) => left.label.localeCompare(right.label));
 
-  const missingCostGroups = (["hostingCdn", "aiProviders", "analyticsAdsRum"] as const).filter(
-    (group) => !filteredGroups.some((entry) => entry.id === group)
+  const directCostGroups = finalGroups
+    .filter((group) =>
+      COST_GROUP_IDS.includes(group.id as (typeof COST_GROUP_IDS)[number]) && group.vendors.length > 0
+    )
+    .map((group) => group.id as (typeof COST_GROUP_IDS)[number]);
+
+  const missingCostGroups = COST_GROUP_IDS.filter(
+    (groupId) => !directCostGroups.includes(groupId)
   );
 
-  const directCostGroups = filteredGroups
-    .filter((group) => group.id === "hostingCdn" || group.id === "aiProviders" || group.id === "analyticsAdsRum")
-    .map((group) => group.id as CostGroup);
-
   return {
-    groups: filteredGroups,
-    missingCostGroups,
-    directCostGroups
+    groups: finalGroups,
+    directCostGroups: [...directCostGroups],
+    missingCostGroups: [...missingCostGroups]
   };
 }
