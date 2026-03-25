@@ -17,6 +17,7 @@ import {
   getLatestCapturedPageScan,
   getPageScanComparisonContext,
   getPageScanKey,
+  getPageScanStoreSummary,
   savePageScan
 } from "../src/shared/lib/pageScanHistory";
 import type {
@@ -809,6 +810,8 @@ test("latest captured snapshot carries across pages without being overwritten by
     await savePageScan(pageASnapshot, { markAsLatestCaptured: true });
     const latestCaptured = await getLatestCapturedPageScan();
     assert.equal(latestCaptured?.pageKey, pageASnapshot.pageKey);
+    const afterFirstCapture = await getPageScanStoreSummary();
+    assert.equal(afterFirstCapture.savedPageCount, 1);
 
     const comparisonContext = await getPageScanComparisonContext(pageBSnapshot);
     assert.equal(comparisonContext.latestCapturedSnapshot?.pageKey, pageASnapshot.pageKey);
@@ -817,6 +820,8 @@ test("latest captured snapshot carries across pages without being overwritten by
     await savePageScan(pageBSnapshot);
     const latestCapturedAfterAutoSave = await getLatestCapturedPageScan();
     assert.equal(latestCapturedAfterAutoSave?.pageKey, pageASnapshot.pageKey);
+    const afterSecondPage = await getPageScanStoreSummary();
+    assert.equal(afterSecondPage.savedPageCount, 2);
   } finally {
     if (previousChrome === undefined) {
       delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
