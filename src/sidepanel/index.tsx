@@ -1,0 +1,14 @@
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "../styles/tailwind.css";
+import App from "../app/App";
+
+const root = document.getElementById("metis-react-root");
+
+if (root) {
+  createRoot(root).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+}

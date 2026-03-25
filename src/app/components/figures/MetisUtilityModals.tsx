@@ -215,13 +215,7 @@ export function LocalSettingsModal({
               </section>
 
               <section className="space-y-3">
-                <div className="metis-overline text-white/35">Layout</div>
-                <ToggleRow
-                  title="Attach report to the side panel"
-                  detail="Keep the large report anchored to the right edge so it feels like the same Metis surface."
-                  active={settings.attachedReport}
-                  onClick={() => onChange({ ...settings, attachedReport: !settings.attachedReport })}
-                />
+                <div className="metis-overline text-white/35">Panel</div>
                 <ToggleRow
                   title="Show sampled-page progress"
                   detail="Keep the saved page count visible in the panel and full report."
