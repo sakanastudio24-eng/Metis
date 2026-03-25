@@ -203,6 +203,8 @@ function aiWeight(answers: PlusRefinementAnswers) {
 
 function deriveMonthlyWaste(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
   const { metrics } = snapshot;
+  // This is a product-facing estimate, not a billing engine. Keep it stable,
+  // coarse, and easy to reason about rather than fake-precise.
   const baseWaste =
     metrics.totalEncodedBodySize / 1_000_000 * 1.1 +
     metrics.requestCount * 0.05 +
@@ -375,6 +377,8 @@ function buildStackChips(
 ) {
   const chips = [...detected.chips];
 
+  // Chips are intentionally compact context. The full grouped stack lives lower
+  // in the report, so this strip should stay quick to scan.
   if (snapshot.metrics.thirdPartyDomainCount >= 4) {
     chips.push({
       label: `${snapshot.metrics.thirdPartyDomainCount} third-party domains`,
@@ -565,6 +569,8 @@ export function buildMetisDesignViewModel({
   const detectedStack = detectStack(snapshot, answers);
   const sampledPagesLabel = scope === "multi" ? `Sampled ${pageCount} pages` : "Sampled 1 page";
 
+  // This adapter is the one place where product logic is translated into
+  // presentation language. Keep the components below mostly display-only.
   return {
     routeKey: snapshot.page.href,
     snapshotKey: `${snapshot.page.href}::${snapshot.scannedAt}`,

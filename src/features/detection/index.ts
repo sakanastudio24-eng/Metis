@@ -64,6 +64,8 @@ export function detectIssues(
   const issues: DetectedIssue[] = [];
   const moneyStack = detectMoneyStack(snapshot, answers);
 
+  // Resource-shape issues stay primary because they explain what the route is
+  // doing, not just which vendors happen to be present.
   if (metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.high) {
     issues.push({
       id: "high-request-count",
@@ -278,6 +280,8 @@ export function detectIssues(
     });
   }
 
+  // Money-stack issues are lighter score modifiers. They add provider-aware cost
+  // context without drowning out the core request and payload signals.
   const analyticsVendors =
     moneyStack.groups.find((group) => group.id === "analyticsAdsRum")?.vendors ?? [];
   if (analyticsVendors.length >= DETECTION_THRESHOLDS.analyticsAdsRumSurface.high) {
@@ -408,5 +412,6 @@ export function detectIssues(
     });
   }
 
+  // Keep the surfaced issue list short so the panel and report stay readable.
   return sortIssues(issues).slice(0, 5);
 }

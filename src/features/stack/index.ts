@@ -98,6 +98,8 @@ export function collectDomStackSignals(pageHref: string): StackSignal[] {
   const signals: StackSignal[] = [];
   const w = window as unknown as Record<string, unknown>;
 
+  // Start with globals because they are the strongest, cheapest hints and help
+  // avoid turning every detection into a URL-pattern guess.
   if ("__NEXT_DATA__" in w) {
     addSignal(signals, "global:nextjs", "dom", pageHref);
   }
@@ -142,11 +144,15 @@ export function collectDomStackSignals(pageHref: string): StackSignal[] {
       addSignal(signals, url, "element", pageHref);
     });
 
+  // Keep the page URL itself as a weak supporting signal because platform-owned
+  // routes sometimes reveal hosted products that the resource list misses.
   addSignal(signals, pageHref, "dom", pageHref);
   return signals;
 }
 
 function buildSignalBucket(snapshot: RawScanSnapshot): SignalBucket {
+  // The stack bucket is intentionally broader than the scored resource list.
+  // It answers "which vendors are here?" rather than "which requests counted?"
   const signals = [
     ...(snapshot.stackSignals ?? []),
     ...snapshot.resources.map((resource) => ({
@@ -501,6 +507,8 @@ export function detectMoneyStack(
   const bucket = buildSignalBucket(snapshot);
   const vendors = new Map<string, { spec: VendorSpec; sources: Set<MoneyStackVendorSource>; hits: number }>();
 
+  // Match direct vendor signatures first. Answer hints and light inference only
+  // exist to fill obvious gaps, not to replace real page evidence.
   for (const spec of VENDOR_SPECS) {
     let matched = false;
 
@@ -545,6 +553,8 @@ export function detectMoneyStack(
     inferVendor(vendors, "cloudflare", "mixed");
   }
 
+  // Empty groups are dropped so the report stays cost-focused and the fallback
+  // question layer can ask only for what is still unknown.
   const groups: DetectedStackGroup[] = [
     { id: "framework", label: "Framework", vendors: [] },
     { id: "hostingCdn", label: "Hosting / CDN", vendors: [] },

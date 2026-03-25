@@ -41,6 +41,8 @@ function getStrongestIssue(
   issues: DetectedIssue[],
   deductions: ScoreDeduction[]
 ) {
+  // Insight order should track the same logic the score used, otherwise the
+  // headline can feel disconnected from the numeric result.
   return [...issues].sort((left, right) => {
     const severityDifference = severityRank[right.severity] - severityRank[left.severity];
 
@@ -61,6 +63,7 @@ function getStrongestIssue(
 }
 
 function buildSupportingDetail(issue: DetectedIssue) {
+  // This line exists to prove why the issue fired, not to restate the title.
   switch (issue.category) {
     case "requestCount":
       return `${issue.metric?.requestCount ?? 0} retained requests cleared cleanup against a threshold of ${
@@ -138,6 +141,8 @@ export function buildInsight(
 
   const strongestIssue = getStrongestIssue(issues, score.deductions);
   const primaryCategory: IssueCategory = strongestIssue.category;
+  // Summary text stays template-based so the same input always yields the same
+  // headline. That keeps Phase 4 deterministic and easier to test.
   const summaryTemplate =
     INSIGHT_SUMMARY_TEMPLATES[primaryCategory]?.[score.label] ??
     INSIGHT_SUMMARY_TEMPLATES.default[score.label];

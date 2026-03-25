@@ -54,6 +54,8 @@ function optionStyle(
   option: { brandColor?: string },
   selected: boolean
 ) {
+  // Manual stack answers should look like the detected stack pills so the
+  // refinement flow feels like part of one design system.
   if (!option.brandColor) {
     return {
       background: selected ? "#dc5e5e" : "rgba(255,255,255,0.08)",
@@ -121,6 +123,8 @@ function ScaleSimulationSection({
       </div>
 
       {aiCostPerRequestEstimate && (
+        // Only show this card when the adapter has a concrete AI estimate hint.
+        // Omitting it is cleaner than rendering a vague empty state.
         <div
           className="mt-4 rounded-[18px] px-4 py-4"
           style={{
@@ -274,6 +278,8 @@ function FixRecommendationsSection({
 
       <div className="mt-5 space-y-4">
         {cards.map((card, index) => (
+          // Missing fields are omitted on purpose so recommendation cards stay
+          // compact instead of filling up with empty labels.
           <div
             key={card.title}
             className="rounded-[22px] px-5 py-5"
