@@ -115,6 +115,7 @@ If you want the shortest path through the repo:
 4. read [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
 5. read [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
 6. read [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
+7. read [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
 
 ## Setup
 
