@@ -10,6 +10,7 @@ import type {
 interface StoredPageScans {
   scans: Record<string, PageScanSnapshot>;
   latestScanUrl?: string;
+  latestCapturedSnapshot?: PageScanSnapshot | null;
 }
 
 const STORAGE_KEY = "metis:page-scans";
@@ -204,7 +205,10 @@ async function getStoredPageScans(): Promise<StoredPageScans> {
           {
             scans,
             latestScanUrl:
-              typeof stored.latestScanUrl === "string" ? stored.latestScanUrl : undefined
+              typeof stored.latestScanUrl === "string" ? stored.latestScanUrl : undefined,
+            latestCapturedSnapshot: isValidPageScanSnapshot(stored.latestCapturedSnapshot)
+              ? stored.latestCapturedSnapshot
+              : null
           }
         );
       });
@@ -237,14 +241,46 @@ export async function getPreviousPageScan(url: string): Promise<PageScanSnapshot
   return stored.scans[getPageScanKey(url)] ?? null;
 }
 
-export async function savePageScan(snapshot: PageScanSnapshot): Promise<void> {
+export async function getLatestCapturedPageScan(): Promise<PageScanSnapshot | null> {
+  const stored = await getStoredPageScans();
+  return stored.latestCapturedSnapshot ?? null;
+}
+
+export async function getPageScanComparisonContext(snapshot: PageScanSnapshot): Promise<{
+  previous: PageScanSnapshot | null;
+  comparison: PageScanComparison | null;
+  latestCapturedSnapshot: PageScanSnapshot | null;
+  latestCapturedComparison: PageScanComparison | null;
+}> {
+  const stored = await getStoredPageScans();
+  const previous = stored.scans[snapshot.pageKey] ?? null;
+  const latestCapturedSnapshot = stored.latestCapturedSnapshot ?? null;
+
+  return {
+    previous,
+    comparison: previous ? comparePageScans(previous, snapshot) : null,
+    latestCapturedSnapshot,
+    latestCapturedComparison:
+      latestCapturedSnapshot && latestCapturedSnapshot.pageKey !== snapshot.pageKey
+        ? comparePageScans(latestCapturedSnapshot, snapshot)
+        : null
+  };
+}
+
+export async function savePageScan(
+  snapshot: PageScanSnapshot,
+  options: { markAsLatestCaptured?: boolean } = {}
+): Promise<void> {
   const stored = await getStoredPageScans();
   const next: StoredPageScans = {
     scans: {
       ...stored.scans,
       [snapshot.pageKey]: snapshot
     },
-    latestScanUrl: snapshot.pageKey
+    latestScanUrl: snapshot.pageKey,
+    latestCapturedSnapshot: options.markAsLatestCaptured
+      ? snapshot
+      : stored.latestCapturedSnapshot ?? null
   };
 
   await setStoredPageScans(next);
@@ -253,12 +289,16 @@ export async function savePageScan(snapshot: PageScanSnapshot): Promise<void> {
 export async function savePageScanAndCompare(snapshot: PageScanSnapshot): Promise<{
   previous: PageScanSnapshot | null;
   comparison: PageScanComparison | null;
+  latestCapturedSnapshot: PageScanSnapshot | null;
+  latestCapturedComparison: PageScanComparison | null;
 }> {
-  const previous = await getPreviousPageScan(snapshot.url);
+  const context = await getPageScanComparisonContext(snapshot);
   await savePageScan(snapshot);
 
   return {
-    previous,
-    comparison: previous ? comparePageScans(previous, snapshot) : null
+    previous: context.previous,
+    comparison: context.comparison,
+    latestCapturedSnapshot: context.latestCapturedSnapshot,
+    latestCapturedComparison: context.latestCapturedComparison
   };
 }

@@ -148,6 +148,20 @@ export default function App() {
         if (pageScanHistory.comparison) {
           console.info("[Metis] page scan comparison", pageScanHistory.comparison);
         }
+
+        if (pageScanHistory.latestCapturedSnapshot) {
+          console.info(
+            "[Metis] latest captured page snapshot",
+            pageScanHistory.latestCapturedSnapshot
+          );
+        }
+
+        if (pageScanHistory.latestCapturedComparison) {
+          console.info(
+            "[Metis] latest captured page comparison",
+            pageScanHistory.latestCapturedComparison
+          );
+        }
       } catch (error) {
         if (isExtensionContextInvalidated(error)) {
           console.info("[Metis] extension context invalidated, stopping scan loop");

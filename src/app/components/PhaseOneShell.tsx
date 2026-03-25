@@ -472,9 +472,11 @@ export function PhaseOneShell({
       return;
     }
 
-    await savePageScan(buildPageScanSnapshot(activeSnapshot));
+    await savePageScan(buildPageScanSnapshot(activeSnapshot), {
+      markAsLatestCaptured: true
+    });
     toast.success("Page captured", {
-      description: `${viewModel.pagesSampledLabel} saved for ${viewModel.hostname}.`
+      description: `${viewModel.pagesSampledLabel} saved for ${viewModel.hostname} and set as the latest compare target.`
     });
   };
 
