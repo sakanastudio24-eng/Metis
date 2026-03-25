@@ -2,6 +2,7 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
+import { AcronymText } from "./AcronymTooltipText";
 
 interface SplitScoreSummaryProps {
   viewModel: MetisDesignViewModel;
@@ -59,7 +60,7 @@ function SummaryCard({
             }}
           >
             <Icon size={compact ? 11 : 12} style={{ color }} />
-            {title}
+            <AcronymText text={title} />
           </div>
           <div className="mt-3 flex items-end gap-3">
             <div
@@ -95,7 +96,7 @@ function SummaryCard({
             fontWeight: 700
           }}
         >
-          {label}
+          <AcronymText text={label} />
         </div>
       </div>
 
@@ -108,7 +109,7 @@ function SummaryCard({
           marginTop: compact ? 10 : 12
         }}
       >
-        {summary}
+        <AcronymText text={summary} />
       </div>
 
       {!compact && reasons.length > 0 && (
@@ -126,7 +127,7 @@ function SummaryCard({
                 lineHeight: "17px"
               }}
             >
-              {reason}
+              <AcronymText text={reason} />
             </div>
           ))}
         </div>
@@ -184,7 +185,7 @@ export function SplitScoreSummary({
                 textTransform: "uppercase"
               }}
             >
-              Combined Score
+              <AcronymText text="Combined Score" />
             </div>
             <div
               className="metis-display"
@@ -208,7 +209,7 @@ export function SplitScoreSummary({
                   fontWeight: 700
                 }}
               >
-                Cost Risk {viewModel.combinedBreakdown.costRisk}/100
+                <AcronymText text={`Cost Risk ${viewModel.combinedBreakdown.costRisk}/100`} />
               </div>
               <div
                 className="rounded-full px-3 py-1.5"
@@ -220,7 +221,7 @@ export function SplitScoreSummary({
                   fontWeight: 700
                 }}
               >
-                Control {viewModel.combinedBreakdown.control}/100
+                <AcronymText text={`Control ${viewModel.combinedBreakdown.control}/100`} />
               </div>
             </div>
           </div>

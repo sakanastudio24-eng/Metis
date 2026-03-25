@@ -5,6 +5,7 @@
 import { motion } from "motion/react";
 import { Brain, HardDrive, Zap } from "lucide-react";
 import type { DesignCostRow } from "./liveAdapter";
+import { AcronymText } from "./AcronymTooltipText";
 
 const iconMap = {
   Bandwidth: HardDrive,
@@ -35,7 +36,7 @@ export function CostBreakdown({ rows }: CostBreakdownProps) {
           textTransform: "uppercase"
         }}
       >
-        Cost Breakdown
+        <AcronymText text="Cost Breakdown" />
       </div>
 
       <div
@@ -46,7 +47,7 @@ export function CostBreakdown({ rows }: CostBreakdownProps) {
           lineHeight: "18px"
         }}
       >
-        Where your estimated waste is coming from
+        <AcronymText text="Where your estimated waste is coming from" />
       </div>
 
       <div className="space-y-3">
@@ -75,7 +76,7 @@ export function CostBreakdown({ rows }: CostBreakdownProps) {
                     fontWeight: 500
                   }}
                 >
-                  {row.label}
+                  <AcronymText text={row.label} />
                 </div>
               </div>
               <div

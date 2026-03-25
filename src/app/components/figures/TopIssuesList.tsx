@@ -4,6 +4,7 @@
  */
 import { motion } from "motion/react";
 import type { DesignIssue, DesignSummaryPill } from "./liveAdapter";
+import { AcronymText } from "./AcronymTooltipText";
 
 function summaryToneStyle(tone: DesignSummaryPill["tone"]) {
   if (tone === "critical") {
@@ -98,7 +99,7 @@ export function TopIssuesList({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.22, delay: index * 0.04, ease: "easeOut" }}
             >
-              {pill.label}
+              <AcronymText text={pill.label} />
             </motion.div>
           ))}
         </div>
@@ -115,7 +116,7 @@ export function TopIssuesList({
             fontSize: compact ? 11 : 12
           }}
         >
-          No major issues surfaced in the current scan.
+          <AcronymText text="No major issues surfaced in the current scan." />
         </div>
       ) : (
         <div className="space-y-0">
@@ -147,7 +148,7 @@ export function TopIssuesList({
                         fontWeight: 500
                       }}
                     >
-                      {issue.title}
+                      <AcronymText text={issue.title} />
                     </div>
                   </div>
                   {!compact && (
@@ -161,7 +162,7 @@ export function TopIssuesList({
                         marginTop: 8
                       }}
                     >
-                      {issue.detail}
+                      <AcronymText text={issue.detail} />
                     </div>
                   )}
                 </div>

@@ -15,6 +15,7 @@ import { TopIssuesList } from "./TopIssuesList";
 import { CostBreakdown } from "./CostBreakdown";
 import { DetectedStackBadges } from "./DetectedStackBadges";
 import { SplitScoreSummary } from "./SplitScoreSummary";
+import { AcronymText } from "./AcronymTooltipText";
 
 function alpha(color: string, suffix: string) {
   if (!color.startsWith("#")) {
@@ -81,7 +82,7 @@ function ScaleSimulationSection({
             textTransform: "uppercase"
           }}
         >
-          Scale Simulation · Plus
+          <AcronymText text="Scale Simulation · Plus" />
         </div>
       </div>
       <div
@@ -116,7 +117,7 @@ function ScaleSimulationSection({
                 fontWeight: 600
               }}
             >
-              AI cost per request (est.)
+              <AcronymText text="AI cost per request (est.)" />
             </div>
           </div>
           <div
@@ -127,7 +128,7 @@ function ScaleSimulationSection({
               marginTop: 6
             }}
           >
-            Based on detected AI-style usage.
+            <AcronymText text="Based on detected AI-style usage." />
           </div>
           <div
             className="metis-display"
@@ -235,7 +236,7 @@ function FixRecommendationsSection({
               textTransform: "uppercase"
             }}
           >
-            Fix Recommendations · Metis+
+            <AcronymText text="Fix Recommendations · Metis+" />
           </div>
           <div
             style={{
@@ -618,7 +619,7 @@ export function FullReportLayout({
                             fontWeight: 700
                           }}
                         >
-                          {viewModel.pagesSampledLabel}
+                          <AcronymText text={viewModel.pagesSampledLabel} />
                         </div>
                       )}
                       <div
@@ -633,7 +634,7 @@ export function FullReportLayout({
                         }}
                       >
                         <Check size={12} />
-                        Saved locally
+                        <AcronymText text="Saved locally" />
                       </div>
                     </div>
                   </div>
@@ -647,7 +648,7 @@ export function FullReportLayout({
                         fontSize: 12
                       }}
                     >
-                      Current session cost ({viewModel.scopeLabel.toLowerCase()})
+                      <AcronymText text={`Current session cost (${viewModel.scopeLabel.toLowerCase()})`} />
                     </div>
                     <div
                       style={{
@@ -685,7 +686,7 @@ export function FullReportLayout({
                       fontSize: 13
                     }}
                   >
-                    At 10k users →
+                    <AcronymText text="At 10k users →" />
                   </div>
                   <div
                     className="metis-display"
@@ -776,7 +777,7 @@ export function FullReportLayout({
                     textTransform: "uppercase"
                   }}
                 >
-                  Improve Accuracy
+                  <AcronymText text="Improve Accuracy" />
                 </div>
                 <div
                   style={{
@@ -786,7 +787,7 @@ export function FullReportLayout({
                     marginTop: 12
                   }}
                 >
-                  Improve Accuracy
+                  <AcronymText text="Improve Accuracy" />
                 </div>
                 <div
                   style={{
@@ -828,7 +829,7 @@ export function FullReportLayout({
                 whileHover={{ scale: 1.03, boxShadow: "0 10px 28px rgba(220,94,94,0.28)" }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isRefinementOpen ? "Hide questions" : "Refine This Report"}
+                <AcronymText text={isRefinementOpen ? "Hide questions" : "Refine This Report"} />
               </motion.button>
             </div>
 
@@ -851,7 +852,7 @@ export function FullReportLayout({
                       textTransform: "uppercase"
                     }}
                   >
-                    {currentQuestion.group}
+                    <AcronymText text={currentQuestion.group} />
                   </div>
                   {canGoBack && (
                     <button
@@ -879,7 +880,7 @@ export function FullReportLayout({
                       marginTop: 10
                     }}
                   >
-                    {currentQuestion.label}
+                    <AcronymText text={currentQuestion.label} />
                   </div>
                   <div
                     style={{
@@ -889,7 +890,7 @@ export function FullReportLayout({
                       marginTop: 10
                     }}
                   >
-                    {currentQuestion.helper}
+                    <AcronymText text={currentQuestion.helper} />
                   </div>
                   <div
                     style={{
@@ -899,7 +900,7 @@ export function FullReportLayout({
                       marginTop: 12
                     }}
                   >
-                    {currentQuestion.whyItMatters}
+                    <AcronymText text={currentQuestion.whyItMatters} />
                   </div>
 
                   <div
@@ -973,7 +974,7 @@ export function FullReportLayout({
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        {option.label}
+                        <AcronymText text={option.label} />
                       </motion.button>
                     ))}
                   </div>
@@ -996,7 +997,7 @@ export function FullReportLayout({
                         fontSize: 18
                       }}
                     >
-                      {viewModel.questionState.summary ?? "Plus refinement ready"}
+                      <AcronymText text={viewModel.questionState.summary ?? "Plus refinement ready"} />
                     </div>
                     {viewModel.questionState.priorityLabel && (
                       <div
@@ -1011,7 +1012,7 @@ export function FullReportLayout({
                           textTransform: "uppercase"
                         }}
                       >
-                        {viewModel.questionState.priorityLabel}
+                        <AcronymText text={viewModel.questionState.priorityLabel} />
                       </div>
                     )}
                   </div>
@@ -1025,7 +1026,7 @@ export function FullReportLayout({
                         marginTop: 12
                       }}
                     >
-                      {viewModel.questionState.detail}
+                      <AcronymText text={viewModel.questionState.detail} />
                     </div>
                   )}
                   {viewModel.questionState.nextStep && (
@@ -1040,7 +1041,7 @@ export function FullReportLayout({
                         lineHeight: "18px"
                       }}
                     >
-                      {viewModel.questionState.nextStep}
+                      <AcronymText text={viewModel.questionState.nextStep} />
                     </div>
                   )}
                 </div>
@@ -1089,7 +1090,7 @@ export function FullReportLayout({
             whileTap={{ scale: 0.98 }}
           >
             <Copy size={15} />
-            Copy
+            <AcronymText text="Copy" />
           </motion.button>
           <motion.button
             type="button"
@@ -1107,7 +1108,7 @@ export function FullReportLayout({
             whileTap={{ scale: 0.98 }}
           >
             <Download size={15} />
-            Export
+            <AcronymText text="Export" />
           </motion.button>
         </div>
       </div>

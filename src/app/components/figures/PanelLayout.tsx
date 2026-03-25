@@ -8,6 +8,7 @@ import type { MetisDesignViewModel } from "./liveAdapter";
 import { SplitScoreSummary } from "./SplitScoreSummary";
 import { TopIssuesList } from "./TopIssuesList";
 import { DetectedStackBadges } from "./DetectedStackBadges";
+import { AcronymText } from "./AcronymTooltipText";
 
 interface PanelLayoutProps {
   viewModel: MetisDesignViewModel | null;
@@ -73,7 +74,7 @@ export function PanelLayout({
               fontWeight: 500
             }}
           >
-            {viewModel.quickInsight}
+            <AcronymText text={viewModel.quickInsight} />
           </div>
         </motion.div>
       </motion.div>
@@ -114,7 +115,7 @@ export function PanelLayout({
                     fontWeight: 700
                   }}
                 >
-                  {viewModel.pagesSampledLabel}
+                  <AcronymText text={viewModel.pagesSampledLabel} />
                 </div>
               )}
               <div
@@ -129,7 +130,7 @@ export function PanelLayout({
                 }}
               >
                 <Check size={compact ? 10 : 11} />
-                Saved locally
+                <AcronymText text="Saved locally" />
               </div>
             </div>
           </div>
@@ -146,7 +147,7 @@ export function PanelLayout({
                   lineHeight: compact ? "16px" : "20px"
                 }}
               >
-                Current session cost ({viewModel.scopeLabel.toLowerCase()})
+                <AcronymText text={`Current session cost (${viewModel.scopeLabel.toLowerCase()})`} />
               </div>
               <div
                 style={{
@@ -156,7 +157,7 @@ export function PanelLayout({
                   marginTop: 4
                 }}
               >
-                Counting as page loads · estimated
+                <AcronymText text="Counting as page loads · estimated" />
               </div>
             </div>
             <div
@@ -186,7 +187,7 @@ export function PanelLayout({
               fontSize: 12
             }}
           >
-            At 10k users →
+            <AcronymText text="At 10k users →" />
           </div>
           <div
             style={{

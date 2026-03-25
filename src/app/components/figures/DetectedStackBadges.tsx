@@ -4,6 +4,7 @@
  */
 import { motion } from "motion/react";
 import type { DesignStackChip, DesignStackGroup } from "./liveAdapter";
+import { AcronymText } from "./AcronymTooltipText";
 
 function chipStyle(tone: DesignStackChip["tone"]) {
   switch (tone) {
@@ -83,7 +84,7 @@ export function DetectedStackBadges({
           textTransform: "uppercase"
         }}
       >
-        {compact ? "Detected Stack" : "Known Stack"}
+        <AcronymText text={compact ? "Detected Stack" : "Known Stack"} />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -101,7 +102,7 @@ export function DetectedStackBadges({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2, delay: index * 0.04, ease: "easeOut" }}
           >
-            {chip.label}
+            <AcronymText text={chip.label} />
           </motion.div>
         ))}
       </div>
@@ -131,7 +132,7 @@ export function DetectedStackBadges({
                   marginBottom: 10
                 }}
               >
-                {group.label}
+                <AcronymText text={group.label} />
               </div>
               <div className="flex flex-wrap gap-2">
                 {group.items.map((item) => (
@@ -150,7 +151,7 @@ export function DetectedStackBadges({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
                     >
-                      {item.label}
+                      <AcronymText text={item.label} />
                     </motion.div>
                   ))}
                 </div>
@@ -165,7 +166,7 @@ export function DetectedStackBadges({
               paddingTop: 2
             }}
           >
-            Auto-detected from network and DOM signals.
+            <AcronymText text="Auto-detected from network and DOM signals." />
           </div>
         </div>
       )}

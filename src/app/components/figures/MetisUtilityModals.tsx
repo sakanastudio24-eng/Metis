@@ -13,6 +13,7 @@ import type {
   MetisLocalSettings
 } from "../../../shared/types/audit";
 import type { PageScanStoreSummary } from "../../../shared/lib/pageScanHistory";
+import { AcronymText } from "./AcronymTooltipText";
 
 function modalBackdrop(onClose: () => void) {
   return (
@@ -50,7 +51,7 @@ function PillButton({
         fontWeight: 700
       }}
     >
-      {children}
+      <AcronymText text={children} />
     </button>
   );
 }
@@ -85,7 +86,7 @@ function ToggleRow({
             fontWeight: 700
           }}
         >
-          {title}
+          <AcronymText text={title} />
         </div>
         <div
           style={{
@@ -96,7 +97,7 @@ function ToggleRow({
             marginTop: 4
           }}
         >
-          {detail}
+          <AcronymText text={detail} />
         </div>
       </div>
       <div
@@ -153,10 +154,10 @@ export function LocalSettingsModal({
               <Settings2 size={16} className="text-white/45" />
               <div>
                 <div className="text-white" style={{ fontFamily: "Jua, sans-serif", fontSize: 20 }}>
-                  Local Settings
+                  <AcronymText text="Local Settings" />
                 </div>
                 <div style={{ color: "rgba(255,255,255,0.42)", fontFamily: "Inter, sans-serif", fontSize: 12 }}>
-                  Preferences and saved analysis stay on this device.
+                  <AcronymText text="Preferences and saved analysis stay on this device." />
                 </div>
               </div>
             </div>
@@ -237,7 +238,7 @@ export function LocalSettingsModal({
                   <div className="rounded-[20px] px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                     <div className="inline-flex items-center gap-2 text-white/35" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
                       <FolderArchive size={12} />
-                      Saved page snapshots
+                      <AcronymText text="Saved page snapshots" />
                     </div>
                     <div className="mt-3 metis-display text-white" style={{ fontSize: 22 }}>
                       {scanSummary.savedPageCount}
@@ -249,7 +250,7 @@ export function LocalSettingsModal({
                   <div className="rounded-[20px] px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                     <div className="inline-flex items-center gap-2 text-white/35" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
                       <LayoutPanelTop size={12} />
-                      Current-site progress
+                      <AcronymText text="Current-site progress" />
                     </div>
                     <div className="mt-3 metis-display text-white" style={{ fontSize: 22 }}>
                       {currentSitePages}
@@ -332,10 +333,10 @@ export function ExportArchitectureModal({
               <Download size={16} className="text-white/45" />
               <div>
                 <div className="text-white" style={{ fontFamily: "Jua, sans-serif", fontSize: 20 }}>
-                  Export Report
+                  <AcronymText text="Export Report" />
                 </div>
                 <div style={{ color: "rgba(255,255,255,0.42)", fontFamily: "Inter, sans-serif", fontSize: 12 }}>
-                  The PDF pipeline is being shaped around a real report document, not a screenshot.
+                  <AcronymText text="The PDF pipeline is being shaped around a real report document, not a screenshot." />
                 </div>
               </div>
             </div>
@@ -348,10 +349,10 @@ export function ExportArchitectureModal({
             <div className="rounded-[20px] px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div className="metis-overline text-white/35">Export shape</div>
               <div className="mt-3 text-white" style={{ fontFamily: "Jua, sans-serif", fontSize: 22 }}>
-                {document.title}
+                <AcronymText text={document.title} />
               </div>
               <div style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", fontSize: 12, marginTop: 8 }}>
-                Generated from the live report model so future PDF export can stay deterministic.
+                <AcronymText text="Generated from the live report model so future PDF export can stay deterministic." />
               </div>
             </div>
 
@@ -366,7 +367,7 @@ export function ExportArchitectureModal({
                   }}
                 >
                   <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 700 }}>
-                    {section.title}
+                    <AcronymText text={section.title} />
                   </div>
                   <div className="mt-3 space-y-2">
                     {section.lines.map((line) => (
@@ -379,7 +380,7 @@ export function ExportArchitectureModal({
                           lineHeight: "18px"
                         }}
                       >
-                        {line}
+                        <AcronymText text={line} />
                       </div>
                     ))}
                   </div>
@@ -402,7 +403,7 @@ export function ExportArchitectureModal({
                 }}
               >
                 <Download size={12} />
-                Copy export outline
+                <AcronymText text="Copy export outline" />
               </button>
             </div>
           </div>
