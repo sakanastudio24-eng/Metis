@@ -42,6 +42,113 @@ function RiskBadge({
   );
 }
 
+function ControlCard({
+  score,
+  label,
+  color,
+  background,
+  reasons
+}: {
+  score: number;
+  label: string;
+  color: string;
+  background: string;
+  reasons: string[];
+}) {
+  return (
+    <div
+      className="rounded-[22px] px-5 py-4"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)"
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div
+            style={{
+              color: "rgba(255,255,255,0.32)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase"
+            }}
+          >
+            Control
+          </div>
+          <div
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 13,
+              lineHeight: "20px",
+              marginTop: 8
+            }}
+          >
+            This is the judgment layer: whether the weight on this route looks justified.
+          </div>
+        </div>
+        <div
+          className="rounded-full px-4 py-2"
+          style={{
+            background,
+            color,
+            fontFamily: "Inter, sans-serif",
+            fontSize: 12,
+            fontWeight: 700
+          }}
+        >
+          {label}
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-end gap-3">
+        <div
+          className="metis-display"
+          style={{
+            color: "white",
+            fontSize: 18
+          }}
+        >
+          {score}/100
+        </div>
+        <div
+          style={{
+            color: "rgba(255,255,255,0.42)",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 12,
+            marginBottom: 3
+          }}
+        >
+          Control score
+        </div>
+      </div>
+
+      {reasons.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {reasons.slice(0, 3).map((reason) => (
+            <div
+              key={reason}
+              className="rounded-[16px] px-4 py-3"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.05)",
+                color: "rgba(255,255,255,0.68)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                lineHeight: "18px"
+              }}
+            >
+              {reason}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function alpha(color: string, suffix: string) {
   if (!color.startsWith("#")) {
     return color;
@@ -638,6 +745,14 @@ export function FullReportLayout({
                     </div>
                   )}
                 </div>
+
+                <ControlCard
+                  score={viewModel.controlScore}
+                  label={viewModel.controlLabel}
+                  color={viewModel.controlColor}
+                  background={viewModel.controlBg}
+                  reasons={viewModel.controlReasons}
+                />
 
                 <div
                   className="rounded-[22px] px-5 py-4"

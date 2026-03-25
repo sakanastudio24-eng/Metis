@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChevronRight, FileText, Maximize2, X } from "lucide-react";
 import { toast } from "sonner";
 import { detectIssues } from "../../features/detection";
+import { assessControl } from "../../features/control/control";
 import { buildInsight } from "../../features/insights";
 import { buildPlusOptimizationReport } from "../../features/refinement";
 import {
@@ -73,11 +74,15 @@ function buildReportCopyText(
   return [
     `Metis Cost Report — ${hostname}`,
     `Risk Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
+    `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
     `Estimated waste: ${viewModel.estimateRange}`,
     viewModel.estimateSourceNote ?? null,
     `Session cost: ${viewModel.sessionCost} · At 10k users: ${viewModel.monthlyProjection}`,
     `Top issues: ${viewModel.topIssues.map((issue) => issue.title).join(", ") || "No major issues surfaced"}`,
     `Quick insight: ${viewModel.quickInsight}`,
+    viewModel.controlReasons.length > 0
+      ? `Control reasons: ${viewModel.controlReasons.join(" | ")}`
+      : null,
     "— Scanned by Metis (ward.studio/metis)"
   ]
     .filter((line): line is string => typeof line === "string" && line.length > 0)
@@ -333,6 +338,7 @@ export function PhaseOneShell({
 
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
   const issues = activeSnapshot ? detectIssues(activeSnapshot, plusAnswers) : [];
+  const control = activeSnapshot ? assessControl(activeSnapshot, issues, plusAnswers) : null;
   const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
   const insight =
     activeSnapshot && score ? buildInsight(activeSnapshot, issues, score) : null;
@@ -342,10 +348,11 @@ export function PhaseOneShell({
       : null;
   const pageCount = scanScope === "multi" ? Math.max(visitedSnapshots.length, 1) : 1;
   const viewModel =
-    activeSnapshot && score
+    activeSnapshot && score && control
       ? buildMetisDesignViewModel({
           snapshot: activeSnapshot,
           issues,
+          control,
           score,
           insight,
           scope: scanScope,

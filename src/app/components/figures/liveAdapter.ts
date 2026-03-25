@@ -10,6 +10,7 @@ import { resolvePricingContext } from "../../../features/pricing";
 import { detectMoneyStack } from "../../../features/stack";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type {
+  ControlAssessment,
   DetectedIssue,
   IssueCategory,
   PlusOptimizationReport,
@@ -94,6 +95,11 @@ export interface MetisDesignViewModel {
   riskLabel: string;
   riskColor: string;
   riskBg: string;
+  controlScore: number;
+  controlLabel: string;
+  controlColor: string;
+  controlBg: string;
+  controlReasons: string[];
   estimateRange: string;
   quickInsight: string;
   supportingDetail: string;
@@ -173,6 +179,30 @@ function scoreToRiskTone(score: ScoreBreakdown) {
         label: "Warming up",
         color: "rgba(255,255,255,0.4)",
         bg: "rgba(255,255,255,0.08)"
+      };
+  }
+}
+
+function controlToTone(control: ControlAssessment) {
+  switch (control.label) {
+    case "Controlled":
+      return {
+        label: "Controlled",
+        color: "#22c55e",
+        bg: "rgba(34,197,94,0.16)"
+      };
+    case "Mixed":
+      return {
+        label: "Mixed",
+        color: "#f59e0b",
+        bg: "rgba(245,158,11,0.16)"
+      };
+    case "Uncontrolled":
+    default:
+      return {
+        label: "Uncontrolled",
+        color: "#ef4444",
+        bg: "rgba(239,68,68,0.16)"
       };
   }
 }
@@ -544,6 +574,7 @@ function buildFixRecommendationCards(issues: DetectedIssue[]): DesignFixRecommen
 export function buildMetisDesignViewModel({
   snapshot,
   issues,
+  control,
   score,
   insight,
   scope,
@@ -555,6 +586,7 @@ export function buildMetisDesignViewModel({
 }: {
   snapshot: RawScanSnapshot;
   issues: DetectedIssue[];
+  control: ControlAssessment;
   score: ScoreBreakdown;
   insight: { summary: string; supportingDetail: string } | null;
   scope: ScanScope;
@@ -565,6 +597,7 @@ export function buildMetisDesignViewModel({
   savedPageCount?: number;
 }): MetisDesignViewModel {
   const riskTone = scoreToRiskTone(score);
+  const controlTone = controlToTone(control);
   const detectedStack = detectStack(snapshot, answers);
   const pricingContext = resolvePricingContext(snapshot, detectedStack.detection, answers);
   const monthlyWaste = deriveMonthlyWaste(snapshot, answers) * pricingContext.providerMultiplier;
@@ -593,6 +626,11 @@ export function buildMetisDesignViewModel({
     riskLabel: riskTone.label,
     riskColor: riskTone.color,
     riskBg: riskTone.bg,
+    controlScore: Math.round(control.score),
+    controlLabel: controlTone.label,
+    controlColor: controlTone.color,
+    controlBg: controlTone.bg,
+    controlReasons: control.reasons,
     estimateRange: `~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
     quickInsight:
       plusReport?.summary ?? insight?.summary ?? "Metis is still building a clean read of this page.",

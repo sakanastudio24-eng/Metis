@@ -104,6 +104,23 @@ export function PanelLayout({
           background={viewModel.riskBg}
         />
 
+        <div
+          className="inline-flex items-center gap-2 rounded-full px-4 py-2"
+          style={{
+            background: viewModel.controlBg,
+            color: viewModel.controlColor,
+            fontFamily: "Inter, sans-serif",
+            fontSize: 12,
+            fontWeight: 600
+          }}
+        >
+          <div
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ background: viewModel.controlColor }}
+          />
+          Control: {viewModel.controlLabel}
+        </div>
+
         <motion.div
           className="w-full rounded-[24px] px-5 py-5"
           style={{
