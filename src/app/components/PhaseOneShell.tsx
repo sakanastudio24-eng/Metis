@@ -768,7 +768,9 @@ export function PhaseOneShell({
 
             <div
               className={`pointer-events-none fixed inset-0 z-[2147483647] flex ${
-                settings.attachedReport ? "items-stretch justify-end pl-5 pr-0 py-3" : "items-center justify-center p-5"
+                settings.attachedReport
+                  ? "items-stretch justify-center px-5 py-3"
+                  : "items-center justify-center p-5"
               }`}
             >
               {/* The attached report mode makes fullscreen feel like the panel
