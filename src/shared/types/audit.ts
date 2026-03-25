@@ -90,12 +90,47 @@ export interface ResourceSummary {
 }
 
 export type StackSignalSource = "resource" | "element" | "dom";
+export type TechnologyEvidenceSource =
+  | StackSignalSource
+  | "global"
+  | "meta"
+  | "answer"
+  | "mixed"
+  | "host"
+  | "path";
 
 export interface StackSignal {
   name: string;
   hostname: string;
   pathname: string;
   source?: StackSignalSource;
+}
+
+export interface TechnologyEvidence {
+  key: string;
+  source: TechnologyEvidenceSource;
+  value?: string | boolean;
+  weight: number;
+  original: string;
+}
+
+export interface FingerprintPattern {
+  source: TechnologyEvidenceSource;
+  keyIncludes?: string[];
+  valueIncludes?: string[];
+  minWeight?: number;
+}
+
+export interface TechnologyFingerprint {
+  id: string;
+  group: MoneyStackGroup;
+  label: string;
+  minScore: number;
+  brandColor?: string;
+  providerKind?: HostingProviderKind;
+  costRelevant?: boolean;
+  implies?: string[];
+  patterns: FingerprintPattern[];
 }
 
 export type MoneyStackGroup =
@@ -105,13 +140,18 @@ export type MoneyStackGroup =
   | "framework"
   | "payment";
 
-export type MoneyStackVendorSource = StackSignalSource | "answer" | "mixed";
+export type MoneyStackVendorSource = TechnologyEvidenceSource;
 export type MoneyStackConfidence = "low" | "medium" | "high";
 export type HostingProviderKind =
   | "cloudfront"
   | "s3"
   | "api-gateway"
-  | "aws-generic";
+  | "aws-generic"
+  | "shared-hosting"
+  | "vps"
+  | "app-platform"
+  | "container"
+  | "cluster";
 
 export interface DetectedStackVendor {
   id: string;
@@ -121,6 +161,7 @@ export interface DetectedStackVendor {
   source: MoneyStackVendorSource;
   confidence: MoneyStackConfidence;
   providerKind?: HostingProviderKind;
+  score?: number;
 }
 
 export interface DetectedStackGroup {
@@ -133,6 +174,110 @@ export interface MoneyStackDetection {
   groups: DetectedStackGroup[];
   missingCostGroups: Array<"hostingCdn" | "aiProviders" | "analyticsAdsRum">;
   directCostGroups: Array<"hostingCdn" | "aiProviders" | "analyticsAdsRum">;
+}
+
+export interface ResolvedTechnology {
+  vendor: DetectedStackVendor;
+  evidence: TechnologyEvidence[];
+}
+
+export type PricingProviderId =
+  | "hostinger"
+  | "bluehost"
+  | "ionos"
+  | "dreamhost"
+  | "siteground"
+  | "hostgator"
+  | "godaddy"
+  | "a2"
+  | "inmotion"
+  | "digitalocean"
+  | "linode"
+  | "vultr"
+  | "aws"
+  | "gcp"
+  | "azure"
+  | "heroku"
+  | "vercel"
+  | "netlify"
+  | "cloudflare"
+  | "supabase"
+  | "openai"
+  | "anthropic"
+  | "shopify";
+
+export type PricingProviderAlias =
+  | PricingProviderId
+  | HostingProvider
+  | "cloudfront"
+  | "aws-s3"
+  | "aws-api-gateway"
+  | "cloudflare-cdn"
+  | "vercel-edge";
+
+export type PricingPlanTier =
+  | "entry"
+  | "shared"
+  | "sharedPlus"
+  | "cloud"
+  | "managed"
+  | "vpsSmall"
+  | "vpsMedium"
+  | "vpsLarge"
+  | "appPlatform"
+  | "container"
+  | "cluster"
+  | "usage"
+  | "subscription";
+
+export type PricingMetricType =
+  | "bandwidth"
+  | "compute"
+  | "requests"
+  | "storage"
+  | "buildMinutes"
+  | "workers"
+  | "database"
+  | "authUsers"
+  | "inputTokens"
+  | "outputTokens"
+  | "subscription"
+  | "transactionFees";
+
+export interface PricingEntry {
+  providerId: PricingProviderId;
+  displayName: string;
+  rawPlanLabel: string;
+  normalizedTier: PricingPlanTier;
+  monthlyVisitBaseline: number;
+  paidApiBaseline: PaidApiUsage;
+  aiUsageBaseline: AiUsage;
+  highTrafficRouteBaseline: string;
+  appTypeBaseline: string;
+  metrics: PricingMetricType[];
+  approximateRate: string;
+  sourceUrl: string;
+  lastVerifiedAt: string;
+}
+
+export interface ResolvedPricingProvider {
+  providerId: PricingProviderId;
+  displayName: string;
+  rawPlanLabel: string;
+  normalizedTier: PricingPlanTier;
+  approximateRate: string;
+  sourceUrl: string;
+  lastVerifiedAt: string;
+  confidence: MoneyStackConfidence;
+}
+
+export interface PricingContext {
+  primaryProvider: ResolvedPricingProvider | null;
+  matchedProviders: ResolvedPricingProvider[];
+  estimateSourceNote: string | null;
+  heuristicFallback: boolean;
+  monthlyVisitBaseline: number | null;
+  providerMultiplier: number;
 }
 
 export interface ResourceAggregate {
