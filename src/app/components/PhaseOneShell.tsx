@@ -74,11 +74,14 @@ function buildReportCopyText(
     `Metis Cost Report — ${hostname}`,
     `Risk Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
     `Estimated waste: ${viewModel.estimateRange}`,
+    viewModel.estimateSourceNote ?? null,
     `Session cost: ${viewModel.sessionCost} · At 10k users: ${viewModel.monthlyProjection}`,
     `Top issues: ${viewModel.topIssues.map((issue) => issue.title).join(", ") || "No major issues surfaced"}`,
     `Quick insight: ${viewModel.quickInsight}`,
     "— Scanned by Metis (ward.studio/metis)"
-  ].join("\n");
+  ]
+    .filter((line): line is string => typeof line === "string" && line.length > 0)
+    .join("\n");
 }
 
 function LauncherButton({

@@ -6,6 +6,7 @@
 import {
   buildStackFallbackQuestionDefinitions
 } from "../../../features/refinement/config";
+import { resolvePricingContext } from "../../../features/pricing";
 import { detectMoneyStack } from "../../../features/stack";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type {
@@ -107,6 +108,7 @@ export interface MetisDesignViewModel {
   questionState: DesignQuestionState;
   scaleSimulationRows: DesignScaleSimulationRow[];
   aiCostPerRequestEstimate: string | null;
+  estimateSourceNote: string | null;
   fixRecommendationCards: DesignFixRecommendationCard[];
   stackQuestionDefinitions: PlusQuestionDefinition[];
   stackDetectionState: {
@@ -329,8 +331,8 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
 }
 
 function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
-  const detection = detectMoneyStack(snapshot, answers);
-  const groups = detection.groups.map((group) => ({
+  const moneyStackDetection = detectMoneyStack(snapshot, answers);
+  const groups = moneyStackDetection.groups.map((group) => ({
     label: group.label,
     items: group.vendors.map((vendor) => ({
       label: vendor.label,
@@ -338,7 +340,7 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
     }))
   }));
 
-  const chips: DesignStackChip[] = detection.groups.flatMap((group) =>
+  const chips: DesignStackChip[] = moneyStackDetection.groups.flatMap((group) =>
     group.vendors.slice(0, group.id === "framework" ? 2 : group.id === "hostingCdn" ? 2 : 1).map((vendor) => ({
       label: vendor.label,
       tone:
@@ -353,7 +355,7 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
     }))
   );
 
-  const missingGroups = detection.missingCostGroups.map((group) => {
+  const missingGroups = moneyStackDetection.missingCostGroups.map((group) => {
     switch (group) {
       case "hostingCdn":
         return "hostingCdn" as const;
@@ -365,7 +367,7 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
     }
   });
 
-  return { chips, groups, missingGroups };
+  return { chips, groups, missingGroups, detection: moneyStackDetection };
 }
 
 function buildStackChips(
@@ -437,7 +439,7 @@ function buildScaleSimulationRows(monthlyWaste: number): DesignScaleSimulationRo
   return cases.map((entry) => ({
     trafficLabel: entry.label,
     scenario: entry.scenario,
-    amount: `${formatMonthly(monthlyWaste * entry.factor)}${entry.factor < 10 ? "/mo" : "/mo"}`
+    amount: `~${formatMonthly(monthlyWaste * entry.factor)}/mo`
   }));
 }
 
@@ -563,12 +565,13 @@ export function buildMetisDesignViewModel({
   savedPageCount?: number;
 }): MetisDesignViewModel {
   const riskTone = scoreToRiskTone(score);
-  const monthlyWaste = deriveMonthlyWaste(snapshot, answers);
-  const visitCount = visitEstimate(answers);
+  const detectedStack = detectStack(snapshot, answers);
+  const pricingContext = resolvePricingContext(snapshot, detectedStack.detection, answers);
+  const monthlyWaste = deriveMonthlyWaste(snapshot, answers) * pricingContext.providerMultiplier;
+  const visitCount = pricingContext.monthlyVisitBaseline ?? visitEstimate(answers);
   const sessionCostValue = monthlyWaste / Math.max(250, visitCount / 4);
   const monthlyProjection = sessionCostValue * 10_000;
   const issuesForDisplay = issues.map(issueToDesignIssue);
-  const detectedStack = detectStack(snapshot, answers);
   const displayPageCount = Math.max(savedPageCount ?? 0, pageCount, 1);
   const sampledPagesLabel =
     displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
@@ -595,7 +598,7 @@ export function buildMetisDesignViewModel({
       plusReport?.detail ??
       insight?.supportingDetail ??
       "Interact with the page once to help Metis refine the session profile.",
-    sessionCost: formatCurrency(sessionCostValue),
+    sessionCost: `~${formatCurrency(sessionCostValue)}`,
     monthlyProjection: `~${formatMonthly(monthlyProjection)}/month`,
     summaryPills: buildSummaryPills(issuesForDisplay),
     issues: issuesForDisplay,
@@ -607,6 +610,7 @@ export function buildMetisDesignViewModel({
     scaleSimulationRows: buildScaleSimulationRows(monthlyWaste),
     aiCostPerRequestEstimate:
       answers.aiUsage && answers.aiUsage !== "no" ? "~$0.0001" : null,
+    estimateSourceNote: pricingContext.estimateSourceNote,
     fixRecommendationCards: buildFixRecommendationCards(issues),
     stackQuestionDefinitions: buildStackFallbackQuestionDefinitions(detectedStack.missingGroups),
     stackDetectionState: {

@@ -624,6 +624,19 @@ export function FullReportLayout({
                   >
                     Driven by bandwidth, requests, and API usage.
                   </div>
+                  {viewModel.estimateSourceNote && (
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.34)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 11,
+                        lineHeight: "16px",
+                        marginTop: 8
+                      }}
+                    >
+                      {viewModel.estimateSourceNote}
+                    </div>
+                  )}
                 </div>
 
                 <div
