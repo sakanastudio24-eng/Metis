@@ -141,6 +141,7 @@ export function PanelLayout({
         <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div
+              className="min-w-0 truncate"
               style={{
                 color: "rgba(255,255,255,0.38)",
                 fontFamily: "Inter, sans-serif",
@@ -150,9 +151,9 @@ export function PanelLayout({
             >
               {viewModel.hostname}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <div
-                className="rounded-full px-3 py-1.5"
+                className="whitespace-nowrap rounded-full px-3 py-1.5"
                 style={{
                   background: "rgba(255,255,255,0.06)",
                   border: "1px solid rgba(255,255,255,0.08)",
@@ -165,7 +166,7 @@ export function PanelLayout({
                 {viewModel.pagesSampledLabel}
               </div>
               <div
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                className="inline-flex whitespace-nowrap items-center gap-1.5 rounded-full px-3 py-1.5"
                 style={{
                   background: "rgba(255,255,255,0.06)",
                   border: "1px solid rgba(255,255,255,0.08)",

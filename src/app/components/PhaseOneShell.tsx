@@ -565,7 +565,7 @@ export function PhaseOneShell({
         {panelMode === "mini" && (
           <motion.div
             key="mini-panel"
-            className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[288px] flex-col overflow-hidden shadow-2xl"
+            className="fixed right-0 top-0 z-[2147483647] flex h-screen w-[316px] flex-col overflow-hidden shadow-2xl"
             style={{
               background: PANEL_BG,
               borderLeft: "1px solid rgba(255,255,255,0.06)"
