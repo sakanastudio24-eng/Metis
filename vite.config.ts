@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
-const contentEntry = fileURLToPath(new URL("./src/content/index.tsx", import.meta.url));
 const backgroundEntry = fileURLToPath(
   new URL("./src/background/index.ts", import.meta.url)
 );
@@ -25,7 +24,6 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        content: contentEntry,
         background: backgroundEntry,
         sidepanel: sidePanelEntry
       },
