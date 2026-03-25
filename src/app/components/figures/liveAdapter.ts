@@ -546,6 +546,7 @@ export function buildMetisDesignViewModel({
   insight,
   scope,
   pageCount,
+  savedPageCount,
   answers,
   plusReport,
   requiredQuestionCount
@@ -559,6 +560,7 @@ export function buildMetisDesignViewModel({
   answers: PlusRefinementAnswers;
   plusReport: PlusOptimizationReport | null;
   requiredQuestionCount: number;
+  savedPageCount?: number;
 }): MetisDesignViewModel {
   const riskTone = scoreToRiskTone(score);
   const monthlyWaste = deriveMonthlyWaste(snapshot, answers);
@@ -567,7 +569,9 @@ export function buildMetisDesignViewModel({
   const monthlyProjection = sessionCostValue * 10_000;
   const issuesForDisplay = issues.map(issueToDesignIssue);
   const detectedStack = detectStack(snapshot, answers);
-  const sampledPagesLabel = scope === "multi" ? `Sampled ${pageCount} pages` : "Sampled 1 page";
+  const displayPageCount = Math.max(savedPageCount ?? 0, pageCount, 1);
+  const sampledPagesLabel =
+    displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
 
   // This adapter is the one place where product logic is translated into
   // presentation language. Keep the components below mostly display-only.
@@ -579,7 +583,7 @@ export function buildMetisDesignViewModel({
     scannedAt: new Date(snapshot.scannedAt).toLocaleString(),
     scopeLabel: scope === "multi" ? "Multipage" : "Single Page",
     pagesSampledLabel: sampledPagesLabel,
-    sampledPagesCount: scope === "multi" ? pageCount : 1,
+    sampledPagesCount: displayPageCount,
     score: Math.round(score.score),
     riskLabel: riskTone.label,
     riskColor: riskTone.color,

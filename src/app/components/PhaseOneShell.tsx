@@ -20,6 +20,7 @@ import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
 import {
   buildPageScanSnapshot,
+  getPageScanStoreSummary,
   savePageScan
 } from "../../shared/lib/pageScanHistory";
 import type { PanelMode, ScanScope } from "../useMetisState";
@@ -326,6 +327,7 @@ export function PhaseOneShell({
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
   const [plusReturnMode, setPlusReturnMode] = useState<PanelMode | null>(null);
+  const [savedPageCount, setSavedPageCount] = useState(0);
   const lastSnapshotKeyRef = useRef<string | null>(null);
 
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
@@ -347,6 +349,7 @@ export function PhaseOneShell({
           insight,
           scope: scanScope,
           pageCount,
+          savedPageCount,
           answers: plusAnswers,
           plusReport,
           requiredQuestionCount: PLUS_CORE_KEYS.length
@@ -369,6 +372,24 @@ export function PhaseOneShell({
 
   const currentQuestion =
     questionDefinitions.find((definition) => plusAnswers[definition.key] === undefined) ?? null;
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const syncSavedPageCount = async () => {
+      const summary = await getPageScanStoreSummary();
+
+      if (!isCancelled) {
+        setSavedPageCount(summary.savedPageCount);
+      }
+    };
+
+    void syncSavedPageCount();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [routeKey, panelMode]);
 
   useEffect(() => {
     if (!snapshotKey || !routeKey) {
@@ -472,11 +493,18 @@ export function PhaseOneShell({
       return;
     }
 
-    await savePageScan(buildPageScanSnapshot(activeSnapshot), {
+    const summary = await savePageScan(buildPageScanSnapshot(activeSnapshot), {
       markAsLatestCaptured: true
     });
+    setSavedPageCount(summary.savedPageCount);
+
+    const savedPagesLabel =
+      summary.savedPageCount === 1
+        ? "Sampled 1 page"
+        : `Sampled ${summary.savedPageCount} pages`;
+
     toast.success("Page captured", {
-      description: `${viewModel.pagesSampledLabel} saved for ${viewModel.hostname} and set as the latest compare target.`
+      description: `${savedPagesLabel} saved for ${viewModel.hostname} and set as the latest compare target.`
     });
   };
 

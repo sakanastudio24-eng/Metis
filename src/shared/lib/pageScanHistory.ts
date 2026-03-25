@@ -15,6 +15,11 @@ interface StoredPageScans {
   latestCapturedSnapshot?: PageScanSnapshot | null;
 }
 
+export interface PageScanStoreSummary {
+  savedPageCount: number;
+  latestCapturedSnapshot: PageScanSnapshot | null;
+}
+
 const STORAGE_KEY = "metis:page-scans";
 
 type StorageAreaLike = {
@@ -248,6 +253,15 @@ export async function getLatestCapturedPageScan(): Promise<PageScanSnapshot | nu
   return stored.latestCapturedSnapshot ?? null;
 }
 
+export async function getPageScanStoreSummary(): Promise<PageScanStoreSummary> {
+  const stored = await getStoredPageScans();
+
+  return {
+    savedPageCount: Object.keys(stored.scans).length,
+    latestCapturedSnapshot: stored.latestCapturedSnapshot ?? null
+  };
+}
+
 export async function getPageScanComparisonContext(snapshot: PageScanSnapshot): Promise<{
   previous: PageScanSnapshot | null;
   comparison: PageScanComparison | null;
@@ -274,7 +288,7 @@ export async function getPageScanComparisonContext(snapshot: PageScanSnapshot): 
 export async function savePageScan(
   snapshot: PageScanSnapshot,
   options: { markAsLatestCaptured?: boolean } = {}
-): Promise<void> {
+): Promise<PageScanStoreSummary> {
   const stored = await getStoredPageScans();
   const next: StoredPageScans = {
     scans: {
@@ -290,6 +304,11 @@ export async function savePageScan(
   };
 
   await setStoredPageScans(next);
+
+  return {
+    savedPageCount: Object.keys(next.scans).length,
+    latestCapturedSnapshot: next.latestCapturedSnapshot ?? null
+  };
 }
 
 export async function savePageScanAndCompare(snapshot: PageScanSnapshot): Promise<{
