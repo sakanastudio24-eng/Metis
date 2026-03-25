@@ -61,6 +61,29 @@ function scoreToRiskTone(score) {
             };
     }
 }
+function controlToTone(control) {
+    switch (control.label) {
+        case "Controlled":
+            return {
+                label: "Controlled",
+                color: "#22c55e",
+                bg: "rgba(34,197,94,0.16)"
+            };
+        case "Mixed":
+            return {
+                label: "Mixed",
+                color: "#f59e0b",
+                bg: "rgba(245,158,11,0.16)"
+            };
+        case "Uncontrolled":
+        default:
+            return {
+                label: "Uncontrolled",
+                color: "#ef4444",
+                bg: "rgba(239,68,68,0.16)"
+            };
+    }
+}
 function visitEstimate(answers) {
     switch (answers.monthlyVisits) {
         case "under1k":
@@ -355,8 +378,9 @@ function buildFixRecommendationCards(issues) {
     })
         .slice(0, 5);
 }
-function buildMetisDesignViewModel({ snapshot, issues, score, insight, scope, pageCount, savedPageCount, answers, plusReport, requiredQuestionCount }) {
+function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, scope, pageCount, savedPageCount, answers, plusReport, requiredQuestionCount }) {
     const riskTone = scoreToRiskTone(score);
+    const controlTone = controlToTone(control);
     const detectedStack = detectStack(snapshot, answers);
     const pricingContext = (0, pricing_1.resolvePricingContext)(snapshot, detectedStack.detection, answers);
     const monthlyWaste = deriveMonthlyWaste(snapshot, answers) * pricingContext.providerMultiplier;
@@ -383,6 +407,11 @@ function buildMetisDesignViewModel({ snapshot, issues, score, insight, scope, pa
         riskLabel: riskTone.label,
         riskColor: riskTone.color,
         riskBg: riskTone.bg,
+        controlScore: Math.round(control.score),
+        controlLabel: controlTone.label,
+        controlColor: controlTone.color,
+        controlBg: controlTone.bg,
+        controlReasons: control.reasons,
         estimateRange: `~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
         quickInsight: plusReport?.summary ?? insight?.summary ?? "Metis is still building a clean read of this page.",
         supportingDetail: plusReport?.detail ??

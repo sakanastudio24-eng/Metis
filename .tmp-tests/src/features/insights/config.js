@@ -16,9 +16,9 @@ exports.INSIGHT_SUMMARY_TEMPLATES = {
     },
     requestCount: {
         "warming up": "Metis is still warming up on this page.",
-        healthy: "The page still looks controlled, but request volume is starting to build.",
-        watch: "Request volume is pushing this page into a watch state.",
-        "high risk": "Request volume is a primary driver of this page's cost pressure."
+        healthy: "Request volume is noticeable, but it may still be justified for this route.",
+        watch: "Request volume is elevated enough that this route is worth reviewing more closely.",
+        "high risk": "Request volume is a major driver of this route's cost profile and needs context."
     },
     duplicateRequests: {
         "warming up": "Metis is still warming up on this page.",
@@ -46,9 +46,9 @@ exports.INSIGHT_SUMMARY_TEMPLATES = {
     },
     aiSpendSurface: {
         "warming up": "Metis is still warming up on this page.",
-        healthy: "The page looks stable, but an AI cost surface is already present.",
-        watch: "AI-backed work is contributing to this route's cost profile.",
-        "high risk": "AI-backed requests are a major source of cost pressure on this route."
+        healthy: "An AI cost surface is present, but that may be expected for this route.",
+        watch: "AI-backed work is part of this route's cost profile and should be checked for efficiency.",
+        "high risk": "AI-backed work is a major source of cost pressure and may be firing more than the route needs."
     },
     analyticsAdsRumSurface: {
         "warming up": "Metis is still warming up on this page.",
@@ -58,19 +58,19 @@ exports.INSIGHT_SUMMARY_TEMPLATES = {
     },
     hostingCdnSpendSurface: {
         "warming up": "Metis is still warming up on this page.",
-        healthy: "The route is controlled, but its hosting path already matters financially.",
-        watch: "Hosting and CDN choices are shaping this route's cost profile.",
-        "high risk": "The hosting and CDN path is amplifying cost on this route."
+        healthy: "The hosting path matters financially here, but that does not make the route inherently wasteful.",
+        watch: "The hosting and CDN path is amplifying the cost profile of this route.",
+        "high risk": "The hosting and CDN path is making existing waste more expensive on this route."
     }
 };
 exports.INSIGHT_NEXT_STEPS = {
     default: "Keep monitoring this route and recheck after meaningful product changes.",
-    requestCount: "Trim non-essential requests first, then defer low-value scripts and fold overlapping fetch paths together.",
+    requestCount: "Separate expected route activity from redundant work first, then trim low-value requests and overlapping fetch paths.",
     duplicateRequests: "Audit duplicate asset and API paths, then collapse repeated calls behind shared loaders or caches.",
     pageWeight: "Trim the heaviest assets first and defer anything that does not need to land in the first page view.",
     largeImages: "Start with the heaviest images and reduce bytes through resizing, better formats, or lazy loading.",
     thirdPartySprawl: "Review third-party tags and keep only the vendors that still justify their network and operational cost.",
-    aiSpendSurface: "Reduce AI call frequency first through debouncing, caching, and narrower trigger points before traffic multiplies the spend.",
+    aiSpendSurface: "Check whether AI work is expected on this route, then reduce call frequency with debouncing, caching, and narrower trigger points where it is not.",
     analyticsAdsRumSurface: "Trim low-value analytics, ad-tech, and RUM vendors first, then keep the remaining tags lazy and well-scoped.",
-    hostingCdnSpendSurface: "Treat cache misses, transfer-heavy assets, and repeated compute as infra-cost problems and tune them against the active host/CDN path."
+    hostingCdnSpendSurface: "Treat cache misses, transfer-heavy assets, and repeated compute as infra-cost amplifiers and tune them against the active host/CDN path."
 };

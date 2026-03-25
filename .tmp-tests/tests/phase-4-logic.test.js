@@ -5,6 +5,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // and the insight scenarios that should stay stable while UI polish continues.
 const node_test_1 = require("node:test");
 const assert = require("node:assert/strict");
+const control_1 = require("../src/features/control/control");
 const detection_1 = require("../src/features/detection");
 const insights_1 = require("../src/features/insights");
 const pricing_1 = require("../src/features/pricing");
@@ -270,6 +271,147 @@ function createSnapshot(resources, overrides = {}) {
     assert.ok((report?.missingCoreQuestions.length ?? 0) > 0);
     assert.match(report?.nextStep ?? "", /Cloudflare|cache rules|media delivery/i);
 });
+(0, node_test_1.test)("control keeps AI-heavy dynamic routes out of the uncontrolled bucket", () => {
+    const snapshot = createSnapshot([
+        createResource("https://api.openai.com/v1/chat/completions", {
+            category: "api",
+            initiatorType: "fetch",
+            encodedBodySize: 90_000,
+            isThirdParty: true
+        }),
+        createResource("https://example.com/_next/static/chunks/app.js", {
+            category: "script",
+            initiatorType: "script",
+            encodedBodySize: 180_000
+        }),
+        createResource("https://example.com/api/assist", {
+            category: "api",
+            initiatorType: "fetch",
+            encodedBodySize: 75_000
+        })
+    ]);
+    const answers = {
+        aiUsage: "yesOften",
+        appType: "aiApp",
+        pageDynamics: "highlyDynamic"
+    };
+    const issues = (0, detection_1.detectIssues)(snapshot, answers);
+    const control = (0, control_1.assessControl)(snapshot, issues, answers);
+    assert.ok(control.score >= 40);
+    assert.ok(["Controlled", "Mixed"].includes(control.label));
+    assert.match(control.reasons.join(" "), /AI|dynamic|route/i);
+});
+(0, node_test_1.test)("control lowers static high-request pages without app context", () => {
+    const resources = Array.from({ length: 130 }, (_, index) => createResource(`https://example.com/chunk-${index}.js`, {
+        category: "script",
+        initiatorType: "script",
+        encodedBodySize: 12_000
+    }));
+    const snapshot = createSnapshot(resources);
+    const answers = {
+        appType: "marketing",
+        pageDynamics: "mostlyStatic"
+    };
+    const issues = (0, detection_1.detectIssues)(snapshot, answers);
+    const control = (0, control_1.assessControl)(snapshot, issues, answers);
+    assert.equal(control.label, "Uncontrolled");
+    assert.ok(control.penalties.some((entry) => entry.id === "static-high-request-count"));
+});
+(0, node_test_1.test)("control penalizes duplicate-heavy routes regardless of stack", () => {
+    const resources = Array.from({ length: 20 }, (_, index) => createResource(`https://example.com/api/feed?slot=${index}`, {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 50_000
+    }));
+    const snapshot = createSnapshot(resources);
+    const issues = (0, detection_1.detectIssues)(snapshot);
+    const control = (0, control_1.assessControl)(snapshot, issues, {});
+    assert.equal(control.label, "Uncontrolled");
+    assert.ok(control.penalties.some((entry) => entry.id === "duplicate-requests"));
+});
+(0, node_test_1.test)("control credits large payloads that have CDN and media context", () => {
+    const resources = Array.from({ length: 6 }, (_, index) => createResource(`https://cdn.example.net/gallery-${index}.jpg`, {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 350_000,
+        isThirdParty: true,
+        isMeaningfulImage: true
+    }));
+    const snapshot = createSnapshot(resources, {
+        stackSignals: [
+            {
+                name: "https://cdn.example.net/gallery-0.jpg",
+                hostname: "cdn.example.net",
+                pathname: "/gallery-0.jpg",
+                source: "resource"
+            },
+            {
+                name: "https://cdnjs.cloudflare.com/ajax/libs/app.js",
+                hostname: "cdnjs.cloudflare.com",
+                pathname: "/ajax/libs/app.js",
+                source: "resource"
+            }
+        ]
+    });
+    const answers = {
+        appType: "mediaHeavy",
+        hostingProvider: "cloudflare"
+    };
+    const issues = (0, detection_1.detectIssues)(snapshot, answers);
+    const control = (0, control_1.assessControl)(snapshot, issues, answers);
+    assert.ok(control.score >= 40);
+    assert.ok(["Controlled", "Mixed"].includes(control.label));
+    assert.ok(control.credits.some((entry) => entry.id === "payload-on-cdn"));
+});
+(0, node_test_1.test)("control treats third-party sprawl without context as uncontrolled", () => {
+    const resources = Array.from({ length: 15 }, (_, index) => createResource(`https://vendor-${index}.example.net/sdk.js`, {
+        category: "script",
+        initiatorType: "script",
+        encodedBodySize: 125_000,
+        isThirdParty: true
+    }));
+    const snapshot = createSnapshot(resources);
+    const issues = (0, detection_1.detectIssues)(snapshot);
+    const control = (0, control_1.assessControl)(snapshot, issues, {});
+    assert.equal(control.label, "Uncontrolled");
+    assert.ok(control.penalties.some((entry) => entry.id === "heavy-third-party-sprawl"));
+});
+(0, node_test_1.test)("control does not punish provider presence by itself", () => {
+    const snapshot = createSnapshot([], {
+        stackSignals: [
+            {
+                name: "https://d111111abcdef8.cloudfront.net/app.js",
+                hostname: "d111111abcdef8.cloudfront.net",
+                pathname: "/app.js",
+                source: "resource"
+            }
+        ]
+    });
+    const issues = (0, detection_1.detectIssues)(snapshot);
+    const control = (0, control_1.assessControl)(snapshot, issues, {});
+    assert.equal(control.penalties.length, 0);
+    assert.ok(control.score >= 50);
+});
+(0, node_test_1.test)("control does not punish AI presence by itself", () => {
+    const snapshot = createSnapshot([], {
+        stackSignals: [
+            {
+                name: "https://api.openai.com/v1/chat/completions",
+                hostname: "api.openai.com",
+                pathname: "/v1/chat/completions",
+                source: "resource"
+            }
+        ]
+    });
+    const issues = (0, detection_1.detectIssues)(snapshot, {
+        aiUsage: "yesOften"
+    });
+    const control = (0, control_1.assessControl)(snapshot, issues, {
+        aiUsage: "yesOften"
+    });
+    assert.equal(control.penalties.length, 0);
+    assert.ok(control.score >= 50);
+});
 (0, node_test_1.test)("design view model splits metadata and builds scale simulation rows", () => {
     const resources = [
         createResource("https://example.com/_next/static/chunks/app.js", {
@@ -310,6 +452,12 @@ function createSnapshot(resources, overrides = {}) {
     const viewModel = (0, liveAdapter_1.buildMetisDesignViewModel)({
         snapshot,
         issues,
+        control: (0, control_1.assessControl)(snapshot, issues, {
+            hostingProvider: "vercel",
+            monthlyVisits: "1kTo10k",
+            appType: "saasDashboard",
+            aiUsage: "yesOften"
+        }),
         score,
         insight,
         scope: "multi",
@@ -332,6 +480,7 @@ function createSnapshot(resources, overrides = {}) {
     assert.equal(viewModel.scaleSimulationRows[2]?.trafficLabel, "10k users");
     assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^~\$/);
     assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
+    assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
 });
 (0, node_test_1.test)("design view model can show saved page count beyond current scan scope", () => {
     const snapshot = createSnapshot([]);
@@ -341,6 +490,7 @@ function createSnapshot(resources, overrides = {}) {
     const viewModel = (0, liveAdapter_1.buildMetisDesignViewModel)({
         snapshot,
         issues,
+        control: (0, control_1.assessControl)(snapshot, issues, {}),
         score,
         insight,
         scope: "single",
@@ -367,6 +517,9 @@ function createSnapshot(resources, overrides = {}) {
     const viewModel = (0, liveAdapter_1.buildMetisDesignViewModel)({
         snapshot,
         issues,
+        control: (0, control_1.assessControl)(snapshot, issues, {
+            aiUsage: "yesOften"
+        }),
         score,
         insight,
         scope: "single",
@@ -410,6 +563,7 @@ function createSnapshot(resources, overrides = {}) {
     const viewModel = (0, liveAdapter_1.buildMetisDesignViewModel)({
         snapshot,
         issues,
+        control: (0, control_1.assessControl)(snapshot, issues, {}),
         score,
         insight,
         scope: "single",
@@ -479,6 +633,10 @@ function createSnapshot(resources, overrides = {}) {
     const viewModel = (0, liveAdapter_1.buildMetisDesignViewModel)({
         snapshot,
         issues,
+        control: (0, control_1.assessControl)(snapshot, issues, {
+            aiUsage: "yesOften",
+            hostingProvider: "vercel"
+        }),
         score,
         insight,
         scope: "single",

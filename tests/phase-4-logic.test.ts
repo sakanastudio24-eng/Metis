@@ -3,6 +3,7 @@
 // and the insight scenarios that should stay stable while UI polish continues.
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import { assessControl } from "../src/features/control/control";
 import { detectIssues } from "../src/features/detection";
 import { buildInsight } from "../src/features/insights";
 import { resolvePricingContext } from "../src/features/pricing";
@@ -331,6 +332,169 @@ test("plus refinement keeps partial output when only some core answers are prese
   assert.match(report?.nextStep ?? "", /Cloudflare|cache rules|media delivery/i);
 });
 
+test("control keeps AI-heavy dynamic routes out of the uncontrolled bucket", () => {
+  const snapshot = createSnapshot([
+    createResource("https://api.openai.com/v1/chat/completions", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 90_000,
+      isThirdParty: true
+    }),
+    createResource("https://example.com/_next/static/chunks/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 180_000
+    }),
+    createResource("https://example.com/api/assist", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 75_000
+    })
+  ]);
+  const answers = {
+    aiUsage: "yesOften" as const,
+    appType: "aiApp" as const,
+    pageDynamics: "highlyDynamic" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const control = assessControl(snapshot, issues, answers);
+
+  assert.ok(control.score >= 40);
+  assert.ok(["Controlled", "Mixed"].includes(control.label));
+  assert.match(control.reasons.join(" "), /AI|dynamic|route/i);
+});
+
+test("control lowers static high-request pages without app context", () => {
+  const resources = Array.from({ length: 130 }, (_, index) =>
+    createResource(`https://example.com/chunk-${index}.js`, {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 12_000
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const answers = {
+    appType: "marketing" as const,
+    pageDynamics: "mostlyStatic" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const control = assessControl(snapshot, issues, answers);
+
+  assert.equal(control.label, "Uncontrolled");
+  assert.ok(control.penalties.some((entry) => entry.id === "static-high-request-count"));
+});
+
+test("control penalizes duplicate-heavy routes regardless of stack", () => {
+  const resources = Array.from({ length: 20 }, (_, index) =>
+    createResource(`https://example.com/api/feed?slot=${index}`, {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 50_000
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const issues = detectIssues(snapshot);
+  const control = assessControl(snapshot, issues, {});
+
+  assert.equal(control.label, "Uncontrolled");
+  assert.ok(control.penalties.some((entry) => entry.id === "duplicate-requests"));
+});
+
+test("control credits large payloads that have CDN and media context", () => {
+  const resources = Array.from({ length: 6 }, (_, index) =>
+    createResource(`https://cdn.example.net/gallery-${index}.jpg`, {
+      category: "image",
+      initiatorType: "img",
+      encodedBodySize: 350_000,
+      isThirdParty: true,
+      isMeaningfulImage: true
+    })
+  );
+  const snapshot = createSnapshot(resources, {
+    stackSignals: [
+      {
+        name: "https://cdn.example.net/gallery-0.jpg",
+        hostname: "cdn.example.net",
+        pathname: "/gallery-0.jpg",
+        source: "resource"
+      },
+      {
+        name: "https://cdnjs.cloudflare.com/ajax/libs/app.js",
+        hostname: "cdnjs.cloudflare.com",
+        pathname: "/ajax/libs/app.js",
+        source: "resource"
+      }
+    ]
+  });
+  const answers = {
+    appType: "mediaHeavy" as const,
+    hostingProvider: "cloudflare" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const control = assessControl(snapshot, issues, answers);
+
+  assert.ok(control.score >= 40);
+  assert.ok(["Controlled", "Mixed"].includes(control.label));
+  assert.ok(control.credits.some((entry) => entry.id === "payload-on-cdn"));
+});
+
+test("control treats third-party sprawl without context as uncontrolled", () => {
+  const resources = Array.from({ length: 15 }, (_, index) =>
+    createResource(`https://vendor-${index}.example.net/sdk.js`, {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 125_000,
+      isThirdParty: true
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const issues = detectIssues(snapshot);
+  const control = assessControl(snapshot, issues, {});
+
+  assert.equal(control.label, "Uncontrolled");
+  assert.ok(control.penalties.some((entry) => entry.id === "heavy-third-party-sprawl"));
+});
+
+test("control does not punish provider presence by itself", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://d111111abcdef8.cloudfront.net/app.js",
+        hostname: "d111111abcdef8.cloudfront.net",
+        pathname: "/app.js",
+        source: "resource"
+      }
+    ]
+  });
+  const issues = detectIssues(snapshot);
+  const control = assessControl(snapshot, issues, {});
+
+  assert.equal(control.penalties.length, 0);
+  assert.ok(control.score >= 50);
+});
+
+test("control does not punish AI presence by itself", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://api.openai.com/v1/chat/completions",
+        hostname: "api.openai.com",
+        pathname: "/v1/chat/completions",
+        source: "resource"
+      }
+    ]
+  });
+  const issues = detectIssues(snapshot, {
+    aiUsage: "yesOften"
+  });
+  const control = assessControl(snapshot, issues, {
+    aiUsage: "yesOften"
+  });
+
+  assert.equal(control.penalties.length, 0);
+  assert.ok(control.score >= 50);
+});
+
 test("design view model splits metadata and builds scale simulation rows", () => {
   const resources = [
     createResource("https://example.com/_next/static/chunks/app.js", {
@@ -372,6 +536,12 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
+    control: assessControl(snapshot, issues, {
+      hostingProvider: "vercel",
+      monthlyVisits: "1kTo10k",
+      appType: "saasDashboard",
+      aiUsage: "yesOften"
+    }),
     score,
     insight,
     scope: "multi",
@@ -395,6 +565,7 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   assert.equal(viewModel.scaleSimulationRows[2]?.trafficLabel, "10k users");
   assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^~\$/);
   assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
+  assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
 });
 
 test("design view model can show saved page count beyond current scan scope", () => {
@@ -406,6 +577,7 @@ test("design view model can show saved page count beyond current scan scope", ()
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
+    control: assessControl(snapshot, issues, {}),
     score,
     insight,
     scope: "single",
@@ -435,6 +607,9 @@ test("design view model adds stack fallback questions for missing groups", () =>
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
+    control: assessControl(snapshot, issues, {
+      aiUsage: "yesOften"
+    }),
     score,
     insight,
     scope: "single",
@@ -481,6 +656,7 @@ test("design view model detects known stack from raw stack signals even when ret
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
+    control: assessControl(snapshot, issues, {}),
     score,
     insight,
     scope: "single",
@@ -557,6 +733,10 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
+    control: assessControl(snapshot, issues, {
+      aiUsage: "yesOften",
+      hostingProvider: "vercel"
+    }),
     score,
     insight,
     scope: "single",
