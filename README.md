@@ -1,12 +1,12 @@
 # Metis
 
-Metis is a Chrome extension that sits on top of a live page and turns what the browser is already doing into a cost-risk read you can act on.
+Metis is a Chrome extension that keeps a lightweight bridge on the page and moves the main product workspace into Chrome's side panel.
 
 The product goal is still simple:
 
 - open a site
-- click Metis
-- scan the current route
+- click the Metis hover
+- stream the current route into the side panel
 - see a score, issues, stack context, and a rough waste read
 
 This repo keeps one project `README.md` at the root. Everything else in `docs/` is a named flow or reference note, not another project README.
@@ -26,17 +26,17 @@ The live path now covers:
 - provider-aware pricing assumptions
 - capture history
 - Plus refinement
-- injected panel/report rendering
+- side panel workspace rendering
 
 What is working now:
 
 - Chrome Extension Manifest V3 setup
 - React + TypeScript + Tailwind extension scaffold
-- always-visible on-page launcher on normal web pages
-- on-demand Metis scan after the on-page Metis trigger is clicked
-- live mini panel and full panel with score-first Phase 3 UI
+- always-visible on-page hover on normal web pages
+- on-demand Metis scan after the page hover is clicked
+- Chrome side panel workspace for the compact panel and full report
 - split `Cost Risk` and `Control` summaries in both panel and full report
-- attached right-side report expansion instead of a detached center modal
+- tab-session bridge between page state and the side panel
 - filtered resource pipeline with duplicate, third-party, and top-offender signals
 - per-origin baseline comparison
 - multipage accumulation across visited pages
@@ -69,13 +69,14 @@ What is not finished yet:
 
 ## Product Direction
 
-Metis should feel like a lightweight layer on top of a site, not a separate dashboard.
+Metis should feel like a lightweight layer on top of a site, with the stable workspace living in the browser side panel instead of inside the page DOM.
 
 The live implementation uses:
 
-- an always-mounted launcher on normal web pages
+- an always-mounted hover bridge on normal web pages
 - a Shadow DOM mount to isolate extension styles from host page styles
-- local React state for panel and report flow
+- a content-script bridge for scan lifecycle and route awareness
+- a side panel app for the stable Metis workspace
 - a deterministic scan -> detect -> score -> insight pipeline
 - a parallel control layer so heaviness and justification are shown separately
 - a fingerprint-based stack detector for cost-relevant vendors
@@ -111,11 +112,12 @@ If you want the shortest path through the repo:
 
 1. read [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis/docs/flow-overview.md)
 2. read [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
-3. read [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
-4. read [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
-5. read [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
-6. read [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
-7. read [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
+3. read [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/sidepanel-session-flow.md)
+4. read [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
+5. read [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
+6. read [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
+7. read [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
+8. read [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
 
 ## Setup
 
@@ -136,7 +138,7 @@ Important:
 
 - load `dist/`, not the repo root
 - reload the extension after code changes
-- after reloading, refresh the target page so the launcher mounts again
+- after reloading, refresh the target page so the hover bridge mounts again
 - content scripts do not run on Chrome-internal pages like `chrome://`
 
 ## Development Commands
@@ -191,14 +193,16 @@ The extension currently requests:
 - `activeTab`
 - `storage`
 - `scripting`
+- `sidePanel`
 - `host_permissions: <all_urls>`
 - `content_scripts.matches: <all_urls>`
 
-This is the current launcher-first permission model:
+This is the current hover-plus-side-panel permission model:
 
 - `storage` for captures, history, and refinement state
-- `host_permissions` and `content_scripts` so the Metis launcher stays visible on normal pages
-- `activeTab` and `scripting` as a fallback if the toolbar action needs to re-inject Metis into the current tab
+- `host_permissions` and `content_scripts` so the Metis hover stays visible on normal pages
+- `sidePanel` so the main Metis workspace lives in extension context
+- `activeTab` and `scripting` as a fallback if the toolbar action needs to re-establish the bridge for the current tab
 
 ## Roadmap
 
@@ -242,6 +246,7 @@ If you want to understand the product quickly, these are the best docs to start 
 - [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
 - [docs/normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
 - [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
+- [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/sidepanel-session-flow.md)
 - [docs/capture-save-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/capture-save-flow.md)
 - [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
 - [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)

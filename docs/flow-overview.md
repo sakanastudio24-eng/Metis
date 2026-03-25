@@ -8,22 +8,22 @@ If you only read one flow note after the root README, read this one first.
 
 Metis does four jobs in sequence:
 
-1. scan the current route
-2. normalize the noisy browser data into stable signals
+1. keep a lightweight page bridge alive on the site
+2. scan the current route and normalize the noisy browser data into stable signals
 3. turn those signals into issues, cost risk, control, stack context, and estimate language
-4. map that output into the injected panel and report UI
+4. map that output into the Chrome side panel workspace
 
 In practice, the live path looks like this:
 
 ```text
-Page
+Page bridge
   -> scan snapshot
   -> normalized metrics + evidence
   -> detected issues
   -> score breakdown + control assessment
   -> insight + refinement output
   -> pricing context
-  -> panel/report view model
+  -> side panel view model
 ```
 
 ## Where Each Part Lives
@@ -124,8 +124,9 @@ It takes the current scan, score, stack, and refinement state and shapes them in
 ## Runtime flow
 
 - [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
+- [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/sidepanel-session-flow.md)
 
-This explains how the extension mounts, when it scans, and how it behaves on route changes and live updates.
+These explain how the page bridge mounts, how the side panel session stays stable, and how route changes and reloads move through the product.
 
 ## Settings and export
 
