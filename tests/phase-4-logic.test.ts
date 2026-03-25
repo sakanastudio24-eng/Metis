@@ -380,7 +380,9 @@ test("design view model splits metadata and builds scale simulation rows", () =>
     requiredQuestionCount: 3
   });
 
-  assert.deepEqual(viewModel.metaTokens, ["Live", "Sampled 5 pages", "example.com"]);
+  assert.equal(viewModel.hostname, "example.com");
+  assert.equal(viewModel.pagesSampledLabel, "Sampled 5 pages");
+  assert.equal(viewModel.sampledPagesCount, 5);
   assert.equal(viewModel.routeKey, "https://example.com/");
   assert.match(viewModel.snapshotKey, /https:\/\/example.com\/::/);
   assert.equal(viewModel.scaleSimulationRows.length, 5);
@@ -583,8 +585,46 @@ test("money stack detector recognizes amazon spend signals without generic tech 
   const hostingGroup = detection.groups.find((group) => group.id === "hostingCdn");
 
   assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "CloudFront"));
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS"));
   assert.ok(analyticsGroup?.vendors.some((vendor) => vendor.label === "Amazon Advertising"));
   assert.ok(analyticsGroup?.vendors.some((vendor) => vendor.label === "CloudWatch RUM"));
+});
+
+test("money stack detector treats Cloudflare Browser Insights as analytics and Cloudflare platform context", () => {
+  const snapshot = createSnapshot([], {
+    page: {
+      href: "https://www.perplexity.ai/",
+      origin: "https://www.perplexity.ai",
+      hostname: "www.perplexity.ai",
+      pathname: "/"
+    },
+    stackSignals: [
+      {
+        name: "https://static.cloudflareinsights.com/beacon.min.js",
+        hostname: "static.cloudflareinsights.com",
+        pathname: "/beacon.min.js",
+        source: "resource"
+      },
+      {
+        name: "https://api.execute-api.us-east-1.amazonaws.com/prod/session",
+        hostname: "api.execute-api.us-east-1.amazonaws.com",
+        pathname: "/prod/session",
+        source: "resource"
+      }
+    ]
+  });
+
+  const detection = detectMoneyStack(snapshot, {});
+  const analyticsGroup = detection.groups.find((group) => group.id === "analyticsAdsRum");
+  const hostingGroup = detection.groups.find((group) => group.id === "hostingCdn");
+
+  assert.ok(
+    analyticsGroup?.vendors.some(
+      (vendor) => vendor.label === "Cloudflare Browser Insights"
+    )
+  );
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "Cloudflare CDN"));
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS"));
 });
 
 test("loading helpers only replay on new routes and soften same-route refreshes", () => {

@@ -27,6 +27,7 @@ const STACK_BRAND_COLORS = {
   googleAi: "#60a5fa",
   ga4: "#f9a825",
   gtm: "#f59e0b",
+  cloudflareBrowserInsights: "#f6821f",
   amazonAds: "#ff9900",
   cloudwatchRum: "#22c55e",
   metaPixel: "#60a5fa",
@@ -251,7 +252,11 @@ const VENDOR_SPECS: VendorSpec[] = [
     group: "hostingCdn",
     brandColor: STACK_BRAND_COLORS.cloudflare,
     sources: [
-      { kind: "host", patterns: ["cloudflare", "cloudflareinsights.com", "challenges.cloudflare.com"] }
+      {
+        kind: "host",
+        patterns: ["challenges.cloudflare.com", "workers.dev", "pages.dev", "cdnjs.cloudflare.com"]
+      },
+      { kind: "path", patterns: ["/cdn-cgi/"] }
     ],
     answerMatches: ["hostingProvider", "stackCdnProvider"],
     answerValues: ["cloudflare"]
@@ -274,7 +279,21 @@ const VENDOR_SPECS: VendorSpec[] = [
     group: "hostingCdn",
     brandColor: STACK_BRAND_COLORS.aws,
     sources: [
-      { kind: "host", patterns: ["amazonaws.com", "awsstatic.com"] }
+      {
+        kind: "host",
+        patterns: [
+          "amazonaws.com",
+          "awsstatic.com",
+          "amazoncognito.com",
+          "amplifyapp.com",
+          "appsync-api.",
+          "execute-api.",
+          ".on.aws",
+          "awswaf.com",
+          "amazontrust.com"
+        ]
+      },
+      { kind: "name", patterns: ["x-amz-", "x-amz-cf", "amz-credential"] }
     ],
     answerMatches: ["hostingProvider"],
     answerValues: ["aws"]
@@ -329,6 +348,16 @@ const VENDOR_SPECS: VendorSpec[] = [
     sources: [{ kind: "host", patterns: ["googletagmanager.com"] }],
     answerMatches: ["stackAnalytics"],
     answerValues: ["gtm"]
+  },
+  {
+    id: "cloudflare-browser-insights",
+    label: "Cloudflare Browser Insights",
+    group: "analyticsAdsRum",
+    brandColor: STACK_BRAND_COLORS.cloudflareBrowserInsights,
+    sources: [
+      { kind: "host", patterns: ["cloudflareinsights.com"] },
+      { kind: "path", patterns: ["/beacon.min.js"] }
+    ]
   },
   {
     id: "amazon-ads",
@@ -451,6 +480,20 @@ function maybeAddVendor(
   });
 }
 
+function inferVendor(
+  vendors: Map<string, { spec: VendorSpec; sources: Set<MoneyStackVendorSource>; hits: number }>,
+  vendorId: string,
+  source: MoneyStackVendorSource
+) {
+  const spec = VENDOR_SPECS.find((entry) => entry.id === vendorId);
+
+  if (!spec) {
+    return;
+  }
+
+  maybeAddVendor(vendors, spec, source);
+}
+
 export function detectMoneyStack(
   snapshot: RawScanSnapshot,
   answers: PlusRefinementAnswers = {}
@@ -490,6 +533,16 @@ export function detectMoneyStack(
     if (!matched && spec.domMarkers && hasPattern(bucket.names, spec.domMarkers)) {
       maybeAddVendor(vendors, spec, "dom");
     }
+  }
+
+  // Some vendors imply a broader paid platform behind them even when the page
+  // only exposes the edge product directly.
+  if (vendors.has("cloudfront") || vendors.has("cloudwatch-rum")) {
+    inferVendor(vendors, "aws", "mixed");
+  }
+
+  if (vendors.has("cloudflare-browser-insights")) {
+    inferVendor(vendors, "cloudflare", "mixed");
   }
 
   const groups: DetectedStackGroup[] = [
