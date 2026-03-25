@@ -205,9 +205,11 @@ function ScaleSimulationSection({
 }
 
 function FixRecommendationsSection({
-  cards
+  cards,
+  totalSavingsLabel
 }: {
   cards: MetisDesignViewModel["fixRecommendationCards"];
+  totalSavingsLabel: MetisDesignViewModel["totalSavingsLabel"];
 }) {
   if (cards.length === 0) {
     return null;
@@ -246,7 +248,7 @@ function FixRecommendationsSection({
               marginTop: 10
             }}
           >
-            Total savings: ~${cards.reduce((sum, card) => sum + Number(card.saveLabel?.replace(/[^\d]/g, "") || 0), 0)}/mo
+            Total savings: {totalSavingsLabel}
           </div>
         </div>
       </div>
@@ -833,6 +835,68 @@ export function FullReportLayout({
               </motion.button>
             </div>
 
+            <div
+              className="mt-5 rounded-[22px] px-5 py-4"
+              style={{
+                background: "rgba(12,22,35,0.34)",
+                border: "1px solid rgba(255,255,255,0.07)"
+              }}
+            >
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.3)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase"
+                }}
+              >
+                Report Scope
+              </div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.58)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 12,
+                  lineHeight: "18px",
+                  marginTop: 8
+                }}
+              >
+                <AcronymText text="This changes whether Metis reads only this route or the pages you have already visited on this site." />
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSetScanScope("single")}
+                  className="rounded-full px-5 py-3"
+                  style={{
+                    background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
+                    color: scanScope === "single" ? "#0c1623" : "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text="Single Page" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSetScanScope("multi")}
+                  className="rounded-full px-5 py-3"
+                  style={{
+                    background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
+                    color: scanScope === "multi" ? "#0c1623" : "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text="Multipage" />
+                </button>
+              </div>
+            </div>
+
             <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
               {isRefinementOpen && currentQuestion && (
                 <div
@@ -901,58 +965,6 @@ export function FullReportLayout({
                     }}
                   >
                     <AcronymText text={currentQuestion.whyItMatters} />
-                  </div>
-
-                  <div
-                    className="mt-5 rounded-[18px] px-4 py-4"
-                    style={{
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.06)"
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: "rgba(255,255,255,0.3)",
-                        fontFamily: "Inter, sans-serif",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        marginBottom: 10
-                      }}
-                    >
-                      Scan Scope
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onSetScanScope("single")}
-                        className="rounded-full px-5 py-3"
-                        style={{
-                          background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
-                          color: scanScope === "single" ? "#0c1623" : "white",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 13,
-                          fontWeight: 700
-                        }}
-                      >
-                        Single Page
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSetScanScope("multi")}
-                        className="rounded-full px-5 py-3"
-                        style={{
-                          background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
-                          color: scanScope === "multi" ? "#0c1623" : "white",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 13,
-                          fontWeight: 700
-                        }}
-                      >
-                        Multipage
-                      </button>
-                    </div>
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
@@ -1056,7 +1068,12 @@ export function FullReportLayout({
             />
           )}
 
-          {isPlusUser && <FixRecommendationsSection cards={viewModel.fixRecommendationCards} />}
+          {isPlusUser && (
+            <FixRecommendationsSection
+              cards={viewModel.fixRecommendationCards}
+              totalSavingsLabel={viewModel.totalSavingsLabel}
+            />
+          )}
         </div>
       </div>
 
