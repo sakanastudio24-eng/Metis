@@ -10,6 +10,8 @@ import type {
 interface StoredPageScans {
   scans: Record<string, PageScanSnapshot>;
   latestScanUrl?: string;
+  // This is the manual cross-page compare target. Auto scans should not replace
+  // it unless the user explicitly captures again.
   latestCapturedSnapshot?: PageScanSnapshot | null;
 }
 
@@ -260,6 +262,8 @@ export async function getPageScanComparisonContext(snapshot: PageScanSnapshot): 
     previous,
     comparison: previous ? comparePageScans(previous, snapshot) : null,
     latestCapturedSnapshot,
+    // Same-page history and latest-manual-capture are separate compare modes.
+    // Keep them separate so a user can capture page A and still browse page B.
     latestCapturedComparison:
       latestCapturedSnapshot && latestCapturedSnapshot.pageKey !== snapshot.pageKey
         ? comparePageScans(latestCapturedSnapshot, snapshot)
@@ -278,6 +282,8 @@ export async function savePageScan(
       [snapshot.pageKey]: snapshot
     },
     latestScanUrl: snapshot.pageKey,
+    // Normal background saves update page history. Only an explicit capture
+    // should promote a snapshot into the cross-page compare slot.
     latestCapturedSnapshot: options.markAsLatestCaptured
       ? snapshot
       : stored.latestCapturedSnapshot ?? null
