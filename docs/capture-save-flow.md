@@ -2,11 +2,11 @@
 
 This is the simple version of how Metis capture works today.
 
-The important thing to know is that `Capture` is not a screenshot tool and it is not a crawler. It is a save point for the current page scan.
+The important thing to know is that Metis does not use a screenshot-style capture system. It saves a compact scan snapshot for the current route while the panel is open.
 
-## What Capture Saves
+## What Metis Saves
 
-When you press `Capture`, Metis saves a compact page snapshot with:
+When Metis saves a page snapshot, it keeps:
 
 - the current page URL
 - a normalized page key
@@ -20,13 +20,20 @@ When you press `Capture`, Metis saves a compact page snapshot with:
 
 This is enough to compare one saved page state against another later without storing the full raw scan output.
 
-## Two Kinds Of Saved State
+## How Saving Works Now
 
-Metis now keeps two related records in storage.
+The current product flow is automatic:
 
-### 1. Per-page history
+1. open the panel
+2. Metis scans the current route
+3. Metis saves a compact snapshot for that normalized page key
+4. the UI shows `Page saved`
 
-This is keyed by:
+That means the current route is already being stored without a separate capture click.
+
+## Per-page History
+
+Page history is keyed by:
 
 - `origin + pathname`
 
@@ -36,19 +43,7 @@ That means:
 - `/dashboard` compares against older `/dashboard` scans
 - query strings do not create fake new pages
 
-This is the right model for same-page-over-time comparison.
-
-### 2. Latest captured page
-
-This is the most recent page the user manually captured.
-
-That means:
-
-- capture page A
-- open page B
-- Metis can still compare page B against the latest captured page A
-
-This is the cross-page compare path.
+This is the right model for same-page-over-time comparison, and it is also what drives the sampled-pages count in the UI.
 
 ## What Happens On Auto Scan
 
@@ -58,19 +53,7 @@ When Metis scans a page while the panel is open, it:
 2. compares it to the last saved snapshot for the same page key
 3. saves the new same-page snapshot
 
-That updates page history, but it does not replace the latest manual capture.
-
-This matters because the user may want to keep page A as the compare target while browsing page B, page C, and page D.
-
-## What Happens On Manual Capture
-
-When the user presses `Capture`, Metis:
-
-1. builds the current compact page snapshot
-2. saves it into per-page history
-3. marks it as `latestCapturedSnapshot`
-
-That manual action is what carries the saved page across routes.
+If the user opens page A, then page B, then page C, each normalized route can be saved into the page-history store.
 
 ## Compare Modes Metis Supports
 
@@ -83,21 +66,12 @@ Compare:
 - current `/pricing`
 - last saved `/pricing`
 
-### Latest captured page
-
-Compare:
-
-- current page
-- latest manually captured page
-
-That is the mode that makes cross-page capture useful.
-
 ## Why This Design Exists
 
 This approach keeps the model simple:
 
 - page history stays stable
-- manual capture still has meaning
-- Metis can compare across routes without pretending it has a full timeline system
+- the UI can show how many distinct pages have been saved
+- Metis can compare route states without pretending it has a full timeline system
 
-It is a good v1 shape because it gives the user a real “save this page state” action without forcing the product to become a full session recorder.
+It is a good v1 shape because it keeps the saved state small, cheap to reason about, and stable across navigation.
