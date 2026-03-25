@@ -1,6 +1,7 @@
-// phase-4-logic.test.ts verifies the deterministic Phase 4 core without a browser.
+// metis-core.logic.test.ts verifies the deterministic Metis core without a browser.
 // It covers normalized metric aggregation, multipage shaping, weighted scoring,
-// and the insight scenarios that should stay stable while UI polish continues.
+// control assessment, and the report scenarios that should stay stable while UI
+// polish continues.
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { assessControl } from "../src/features/control/control";
