@@ -7,6 +7,7 @@ const contentEntry = fileURLToPath(new URL("./src/content/index.tsx", import.met
 const backgroundEntry = fileURLToPath(
   new URL("./src/background/index.ts", import.meta.url)
 );
+const sidePanelEntry = fileURLToPath(new URL("./sidepanel.html", import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -25,7 +26,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         content: contentEntry,
-        background: backgroundEntry
+        background: backgroundEntry,
+        sidepanel: sidePanelEntry
       },
       output: {
         entryFileNames: "assets/[name].js",
