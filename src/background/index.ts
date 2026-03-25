@@ -1,5 +1,6 @@
-// background/index.ts now owns the trust-first beta runtime:
-// Metis injects only after the user clicks the extension action.
+// background/index.ts is now just a safety net.
+// The launcher is content-script mounted on normal sites, and the toolbar click
+// only acts as a fallback if a page somehow missed the automatic mount.
 chrome.runtime.onInstalled.addListener(() => {
   console.info("[Metis] background service worker ready");
 });
