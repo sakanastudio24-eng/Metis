@@ -88,7 +88,7 @@ export interface MetisDesignViewModel {
   scannedAt: string;
   scopeLabel: string;
   pagesSampledLabel: string;
-  metaTokens: string[];
+  sampledPagesCount: number;
   score: number;
   riskLabel: string;
   riskColor: string;
@@ -563,10 +563,7 @@ export function buildMetisDesignViewModel({
   const monthlyProjection = sessionCostValue * 10_000;
   const issuesForDisplay = issues.map(issueToDesignIssue);
   const detectedStack = detectStack(snapshot, answers);
-  const metaTokens =
-    scope === "multi"
-      ? ["Live", `Sampled ${pageCount} pages`, snapshot.page.hostname]
-      : ["Live", "Sampled 1 page", snapshot.page.hostname];
+  const sampledPagesLabel = scope === "multi" ? `Sampled ${pageCount} pages` : "Sampled 1 page";
 
   return {
     routeKey: snapshot.page.href,
@@ -575,8 +572,8 @@ export function buildMetisDesignViewModel({
     pathname: snapshot.page.pathname,
     scannedAt: new Date(snapshot.scannedAt).toLocaleString(),
     scopeLabel: scope === "multi" ? "Multipage" : "Single Page",
-    pagesSampledLabel: metaTokens.join(" · "),
-    metaTokens,
+    pagesSampledLabel: sampledPagesLabel,
+    sampledPagesCount: scope === "multi" ? pageCount : 1,
     score: Math.round(score.score),
     riskLabel: riskTone.label,
     riskColor: riskTone.color,

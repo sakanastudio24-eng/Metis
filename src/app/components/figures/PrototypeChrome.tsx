@@ -146,7 +146,7 @@ export function ProfileButton({
           background: avatarBackground,
           border: "1.5px solid rgba(255,255,255,0.18)"
         }}
-        title="Profile"
+        title="Profile · Live"
       >
         <span
           className="select-none text-white font-bold"
@@ -154,33 +154,14 @@ export function ProfileButton({
         >
           JD
         </span>
-        {isPlusUser && (
-          <motion.div
-            className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-2 py-[3px]"
-            style={{
-              background: "linear-gradient(180deg, rgba(220,94,94,0.98) 0%, rgba(196,70,70,0.98) 100%)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              boxShadow: "0 8px 18px rgba(220,94,94,0.32)"
-            }}
-            initial={{ opacity: 0, y: -3, scale: 0.88 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 420, damping: 24 }}
-          >
-            <span
-              style={{
-                color: "white",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 7.5,
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                lineHeight: 1
-              }}
-            >
-              Plus
-            </span>
-          </motion.div>
-        )}
+        <span
+          className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full"
+          style={{
+            background: "#22c55e",
+            border: "1.5px solid #0d1825",
+            boxShadow: "0 0 0 2px rgba(34,197,94,0.18)"
+          }}
+        />
       </motion.button>
 
       <AnimatePresence>
@@ -225,6 +206,21 @@ export function ProfileButton({
                 >
                   jamie@acmecorp.io
                 </p>
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2 py-1">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#22c55e" }} />
+                  <span
+                    style={{
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: "rgba(255,255,255,0.55)",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase"
+                    }}
+                  >
+                    Live
+                  </span>
+                </div>
               </div>
             </div>
 

@@ -5,7 +5,7 @@
  * meaningful sections above the fold.
  */
 import type { ReactNode } from "react";
-import { Bot, Copy, Download, Target, X } from "lucide-react";
+import { Bot, Camera, Copy, Download, Target, X } from "lucide-react";
 import { motion } from "motion/react";
 import type { ScanScope } from "../../useMetisState";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
@@ -386,6 +386,7 @@ interface FullReportLayoutProps {
   setIsRefinementOpen: (value: boolean) => void;
   onAnswer: (key: keyof PlusRefinementAnswers, value: string) => void;
   onCopyReport: () => void;
+  onCapture?: () => void;
   onUpgrade?: () => void;
   isPlusUser?: boolean;
   headerAccessory?: ReactNode;
@@ -403,6 +404,7 @@ export function FullReportLayout({
   setIsRefinementOpen,
   onAnswer,
   onCopyReport,
+  onCapture,
   onUpgrade,
   isPlusUser = false,
   headerAccessory,
@@ -669,26 +671,48 @@ export function FullReportLayout({
                 }}
               >
                 <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {viewModel.metaTokens.map((token, index) => (
-                      <div key={token} className="flex items-center gap-2">
-                        {index === 0 ? (
-                          <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
-                        ) : (
-                          <div className="h-1 w-1 rounded-full bg-white/20" />
-                        )}
-                        <div
-                          style={{
-                            color: "rgba(255,255,255,0.38)",
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: 12,
-                            fontWeight: 600
-                          }}
-                        >
-                          {token}
-                        </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.38)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 12,
+                        fontWeight: 600
+                      }}
+                    >
+                      {viewModel.hostname}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div
+                        className="rounded-full px-3 py-1.5"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.55)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 11,
+                          fontWeight: 700
+                        }}
+                      >
+                        {viewModel.pagesSampledLabel}
                       </div>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => onCapture?.()}
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.68)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 11,
+                          fontWeight: 700
+                        }}
+                      >
+                        <Camera size={12} />
+                        Capture
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-start justify-between gap-4 px-5 py-5">

@@ -2,6 +2,7 @@
  * PanelLayout
  * Zip-authoritative mini/full panel body bound to live Phase 4 data.
  */
+import { Camera } from "lucide-react";
 import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
@@ -12,6 +13,7 @@ interface PanelLayoutProps {
   viewModel: MetisDesignViewModel | null;
   compact?: boolean;
   refreshTick?: number;
+  onCapture?: () => void;
 }
 
 function RiskBadge({
@@ -43,7 +45,8 @@ function RiskBadge({
 export function PanelLayout({
   viewModel,
   compact = false,
-  refreshTick = 0
+  refreshTick = 0,
+  onCapture
 }: PanelLayoutProps) {
   if (!viewModel) {
     return (
@@ -138,26 +141,49 @@ export function PanelLayout({
         transition={{ duration: 0.26, delay: 0.08, ease: "easeOut" }}
       >
         <div className="border-b px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-          <div className="flex flex-wrap items-center gap-2">
-            {viewModel.metaTokens.map((token, index) => (
-              <div key={token} className="flex items-center gap-2">
-                {index === 0 ? (
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
-                ) : (
-                  <div className="h-1 w-1 rounded-full bg-white/20" />
-                )}
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.38)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: compact ? 11 : 12,
-                    fontWeight: 600
-                  }}
-                >
-                  {token}
-                </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div
+              style={{
+                color: "rgba(255,255,255,0.38)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: compact ? 11 : 12,
+                fontWeight: 600
+              }}
+            >
+              {viewModel.hostname}
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className="rounded-full px-3 py-1.5"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.55)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: 700
+                }}
+              >
+                {viewModel.pagesSampledLabel}
               </div>
-            ))}
+              <button
+                type="button"
+                onClick={() => onCapture?.()}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.68)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: 700
+                }}
+                title="Capture current page sample"
+              >
+                <Camera size={compact ? 10 : 11} />
+                Capture
+              </button>
+            </div>
           </div>
         </div>
 

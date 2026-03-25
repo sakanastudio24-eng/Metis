@@ -18,6 +18,10 @@ import {
 } from "../../features/refinement/config";
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
+import {
+  buildPageScanSnapshot,
+  savePageScan
+} from "../../shared/lib/pageScanHistory";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
   PlusRefinementAnswers,
@@ -457,6 +461,17 @@ export function PhaseOneShell({
     });
   };
 
+  const handleCaptureSample = async () => {
+    if (!activeSnapshot || !viewModel) {
+      return;
+    }
+
+    await savePageScan(buildPageScanSnapshot(activeSnapshot));
+    toast.success("Page captured", {
+      description: `${viewModel.pagesSampledLabel} saved for ${viewModel.hostname}.`
+    });
+  };
+
   const handleOpenMini = () => {
     setPanelMode("mini");
   };
@@ -544,7 +559,14 @@ export function PhaseOneShell({
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <PanelLayout viewModel={viewModel} compact refreshTick={refreshTick} />
+                  <PanelLayout
+                    viewModel={viewModel}
+                    compact
+                    refreshTick={refreshTick}
+                    onCapture={() => {
+                      void handleCaptureSample();
+                    }}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -643,6 +665,9 @@ export function PhaseOneShell({
                         onAnswer={handleAnswer}
                         onCopyReport={() => {
                           void handleCopyReport();
+                        }}
+                        onCapture={() => {
+                          void handleCaptureSample();
                         }}
                         onUpgrade={() => handleOpenPlusModal("full")}
                         isPlusUser={isPlusUser}
