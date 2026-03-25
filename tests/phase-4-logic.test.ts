@@ -14,7 +14,10 @@ import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figure
 import {
   buildPageScanSnapshot,
   comparePageScans,
-  getPageScanKey
+  getLatestCapturedPageScan,
+  getPageScanComparisonContext,
+  getPageScanKey,
+  savePageScan
 } from "../src/shared/lib/pageScanHistory";
 import type {
   PageContext,
@@ -753,4 +756,72 @@ test("page scan comparison computes deltas and summary lines", () => {
   assert.equal(comparison.totalEncodedBodySizeDelta, 320_000);
   assert.match(comparison.summary[0] ?? "", /14 more requests/i);
   assert.match(comparison.summary[1] ?? "", /320 KB/i);
+});
+
+test("latest captured snapshot carries across pages without being overwritten by auto saves", async () => {
+  const storageState: Record<string, unknown> = {};
+  const chromeMock = {
+    runtime: { id: "test-extension", lastError: undefined },
+    storage: {
+      local: {
+        get: (keys: string[], callback: (result: Record<string, unknown>) => void) => {
+          const result = Object.fromEntries(keys.map((key) => [key, storageState[key]]));
+          callback(result);
+        },
+        set: (items: Record<string, unknown>, callback: () => void) => {
+          Object.assign(storageState, items);
+          callback();
+        }
+      }
+    }
+  };
+
+  const previousChrome = (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+  (globalThis as typeof globalThis & { chrome?: unknown }).chrome = chromeMock;
+
+  try {
+    const pageASnapshot = {
+      url: "https://example.com/pricing",
+      pageKey: "https://example.com/pricing",
+      timestamp: Date.parse("2026-03-24T12:00:00.000Z"),
+      requestCount: 12,
+      duplicateRequestCount: 2,
+      duplicateEndpointCount: 1,
+      thirdPartyDomainCount: 3,
+      totalEncodedBodySize: 220_000,
+      meaningfulImageCount: 1,
+      meaningfulImageBytes: 90_000
+    };
+
+    const pageBSnapshot = {
+      url: "https://example.com/dashboard",
+      pageKey: "https://example.com/dashboard",
+      timestamp: Date.parse("2026-03-24T12:05:00.000Z"),
+      requestCount: 18,
+      duplicateRequestCount: 4,
+      duplicateEndpointCount: 2,
+      thirdPartyDomainCount: 5,
+      totalEncodedBodySize: 360_000,
+      meaningfulImageCount: 2,
+      meaningfulImageBytes: 140_000
+    };
+
+    await savePageScan(pageASnapshot, { markAsLatestCaptured: true });
+    const latestCaptured = await getLatestCapturedPageScan();
+    assert.equal(latestCaptured?.pageKey, pageASnapshot.pageKey);
+
+    const comparisonContext = await getPageScanComparisonContext(pageBSnapshot);
+    assert.equal(comparisonContext.latestCapturedSnapshot?.pageKey, pageASnapshot.pageKey);
+    assert.equal(comparisonContext.latestCapturedComparison?.requestCountDelta, 6);
+
+    await savePageScan(pageBSnapshot);
+    const latestCapturedAfterAutoSave = await getLatestCapturedPageScan();
+    assert.equal(latestCapturedAfterAutoSave?.pageKey, pageASnapshot.pageKey);
+  } finally {
+    if (previousChrome === undefined) {
+      delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+    } else {
+      (globalThis as typeof globalThis & { chrome?: unknown }).chrome = previousChrome;
+    }
+  }
 });
