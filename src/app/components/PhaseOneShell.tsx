@@ -100,7 +100,7 @@ function LauncherButton({
       <AnimatePresence>
         {hovered && (
           <motion.div
-            className="absolute right-[68px] top-1/2 -translate-y-1/2 rounded-full px-4 py-2.5"
+            className="absolute right-[68px] top-1/2 inline-flex h-[34px] -translate-y-1/2 items-center rounded-full px-4"
             style={{
               background: "#0d1825",
               border: "1px solid rgba(255,255,255,0.08)",
@@ -111,7 +111,7 @@ function LauncherButton({
             exit={{ opacity: 0, x: 12 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="flex items-center gap-3 whitespace-nowrap">
+            <div className="flex items-center gap-2.5 whitespace-nowrap leading-none">
               <div
                 style={{
                   color: "rgba(255,255,255,0.38)",
@@ -124,7 +124,7 @@ function LauncherButton({
               >
                 Metis
               </div>
-              <div className="h-1 w-1 rounded-full bg-white/20" />
+              <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
               <div
                 style={{
                   color: "white",
@@ -135,7 +135,7 @@ function LauncherButton({
               >
                 Cost Risk: {score ?? "…"}
               </div>
-              <div className="h-1 w-1 rounded-full bg-white/20" />
+              <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
               <div
                 style={{
                   color: "rgba(255,255,255,0.66)",
