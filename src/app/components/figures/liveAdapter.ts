@@ -576,8 +576,10 @@ export function buildMetisDesignViewModel({
   const sampledPagesLabel =
     displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
 
-  // This adapter is the one place where product logic is translated into
-  // presentation language. Keep the components below mostly display-only.
+  // This adapter is the only place where the product core is translated into
+  // report-ready language. If copy, estimate framing, or section ordering
+  // needs to change, prefer changing it here rather than spreading logic into
+  // the panel components.
   return {
     routeKey: snapshot.page.href,
     snapshotKey: `${snapshot.page.href}::${snapshot.scannedAt}`,

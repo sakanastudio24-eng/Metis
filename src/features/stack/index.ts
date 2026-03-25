@@ -56,6 +56,9 @@ export function collectDomStackSignals(pageHref: string): StackSignal[] {
   const signals: StackSignal[] = [];
   const w = window as unknown as Record<string, unknown>;
 
+  // Globals are some of the strongest browser-safe clues we can use in a
+  // content script. We keep them as raw evidence instead of resolving vendors
+  // here so the fingerprint layer stays explainable and testable.
   if ("__NEXT_DATA__" in w) {
     addSignal(signals, "global:nextjs", "dom", pageHref);
   }
@@ -144,6 +147,10 @@ function normalizeStackSignalEvidence(snapshot: RawScanSnapshot): TechnologyEvid
     const pathKey = `path:${signal.pathname.toLowerCase()}`;
     const nameKey = signal.name.toLowerCase();
 
+    // The same raw clue can produce multiple useful evidence records. For
+    // example, `cloudfront.net` is valuable as a host match while `/_next/`
+    // is valuable as a path convention. Dedupe happens at the evidence level
+    // so repeated resources do not inflate fingerprint scores forever.
     const normalizedItems: Array<{
       dedupe: string;
       key: string;
@@ -256,6 +263,9 @@ function scoreFingerprints(evidence: TechnologyEvidence[]) {
   const resolved = new Map<string, ResolvedTechnology>();
 
   for (const fingerprint of TECHNOLOGY_FINGERPRINTS) {
+    // Fingerprints win by accumulated evidence, not by one brittle string
+    // match. That keeps the detector honest on dynamic sites where some clues
+    // are noisy or missing.
     const hits = evidence.filter((entry) => matchesPattern(entry, fingerprint));
     const score = hits.reduce((total, entry) => total + entry.weight, 0);
 
@@ -283,6 +293,8 @@ function scoreFingerprints(evidence: TechnologyEvidence[]) {
       continue;
     }
 
+    // Explicit implications like Next.js -> React are allowed, but only after
+    // the parent fingerprint already resolved from direct evidence.
     for (const impliedId of fingerprint.implies) {
       if (resolved.has(impliedId)) {
         continue;

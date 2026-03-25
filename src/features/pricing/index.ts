@@ -82,6 +82,9 @@ export function resolvePricingContext(
   const matchedProviders: ResolvedPricingProvider[] = [];
   const seen = new Set<PricingProviderId>();
 
+  // The pricing layer is deliberately conservative. Strong stack evidence wins
+  // first, while user answers are only used to sharpen billing context when
+  // the page itself cannot prove the provider family.
   const addProvider = (
     alias: PricingProviderAlias | null,
     confidence: ResolvedPricingProvider["confidence"]
