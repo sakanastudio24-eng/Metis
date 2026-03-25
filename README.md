@@ -34,6 +34,7 @@ What is working now:
 - logic tests for normalization, scoring, and insights
 - local visual test pages for layout checks
 - public threshold, weighting, scoring, scan, and capture flow docs
+- internal pricing reference layer for provider-aware estimate wording
 
 What is not finished yet:
 
@@ -204,6 +205,8 @@ If you want to understand the product quickly, these are the best docs to start 
 - [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
 - [docs/capture-save-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/capture-save-flow.md)
 - [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
+- [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
+- [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
 
 Phase 2 notes live in:
 
