@@ -5,10 +5,12 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { detectIssues } from "../src/features/detection";
 import { buildInsight } from "../src/features/insights";
+import { resolvePricingContext } from "../src/features/pricing";
 import { buildPlusOptimizationReport } from "../src/features/refinement";
 import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } from "../src/features/scan";
 import { scoreSnapshot } from "../src/features/scoring";
 import { detectMoneyStack } from "../src/features/stack";
+import { PRICING_ENTRIES } from "../src/config/pricing";
 import { buildMetisDesignViewModel } from "../src/app/components/figures/liveAdapter";
 import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figures/loadingState";
 import {
@@ -391,7 +393,7 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   assert.match(viewModel.snapshotKey, /https:\/\/example.com\/::/);
   assert.equal(viewModel.scaleSimulationRows.length, 5);
   assert.equal(viewModel.scaleSimulationRows[2]?.trafficLabel, "10k users");
-  assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^\$/);
+  assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^~\$/);
   assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
 });
 
@@ -641,6 +643,73 @@ test("money stack detector classifies direct AWS service hosts explicitly", () =
   assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS S3"));
   assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS API Gateway"));
   assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS"));
+});
+
+test("money stack detector resolves DigitalOcean from direct provider hosts", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://assets.example.ams3.digitaloceanspaces.com/app.js",
+        hostname: "assets.example.ams3.digitaloceanspaces.com",
+        pathname: "/app.js",
+        source: "resource"
+      }
+    ]
+  });
+
+  const detection = detectMoneyStack(snapshot, {});
+  const hostingGroup = detection.groups.find((group) => group.id === "hostingCdn");
+
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "DigitalOcean"));
+});
+
+test("pricing catalog preserves raw plan labels and normalized tiers", () => {
+  assert.ok(
+    PRICING_ENTRIES.some(
+      (entry) =>
+        entry.providerId === "hostinger" &&
+        entry.rawPlanLabel === "Shared Single (Entry)" &&
+        entry.normalizedTier === "entry"
+    )
+  );
+  assert.ok(
+    PRICING_ENTRIES.some(
+      (entry) =>
+        entry.providerId === "aws" &&
+        entry.rawPlanLabel === "ECS/Fargate Cluster" &&
+        entry.normalizedTier === "cluster"
+    )
+  );
+});
+
+test("pricing context maps CloudFront to AWS and stays approximate", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://d123.cloudfront.net/static/nav.js",
+        hostname: "d123.cloudfront.net",
+        pathname: "/static/nav.js",
+        source: "resource"
+      }
+    ]
+  });
+
+  const detection = detectMoneyStack(snapshot, {});
+  const pricing = resolvePricingContext(snapshot, detection, {});
+
+  assert.equal(pricing.primaryProvider?.providerId, "aws");
+  assert.match(pricing.estimateSourceNote ?? "", /AWS/i);
+  assert.equal(pricing.heuristicFallback, false);
+});
+
+test("pricing context can fall back to broad answer aliases without forcing stack detection", () => {
+  const snapshot = createSnapshot([]);
+  const detection = detectMoneyStack(snapshot, { hostingProvider: "aws" });
+  const pricing = resolvePricingContext(snapshot, detection, { hostingProvider: "aws" });
+
+  assert.equal(detection.groups.some((group) => group.id === "hostingCdn"), false);
+  assert.equal(pricing.primaryProvider?.providerId, "aws");
+  assert.equal(pricing.heuristicFallback, false);
 });
 
 test("money stack detector treats Cloudflare Browser Insights as analytics and Cloudflare platform context", () => {

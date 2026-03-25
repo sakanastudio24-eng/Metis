@@ -7,6 +7,7 @@ exports.buildMetisDesignViewModel = buildMetisDesignViewModel;
  * view model used by the zip-authoritative shell.
  */
 const config_1 = require("../../../features/refinement/config");
+const pricing_1 = require("../../../features/pricing");
 const stack_1 = require("../../../features/stack");
 function formatCurrency(value) {
     if (value < 0.1) {
@@ -189,15 +190,15 @@ function buildCostRows(score, snapshot, answers) {
     ];
 }
 function detectStack(snapshot, answers) {
-    const detection = (0, stack_1.detectMoneyStack)(snapshot, answers);
-    const groups = detection.groups.map((group) => ({
+    const moneyStackDetection = (0, stack_1.detectMoneyStack)(snapshot, answers);
+    const groups = moneyStackDetection.groups.map((group) => ({
         label: group.label,
         items: group.vendors.map((vendor) => ({
             label: vendor.label,
             brandColor: vendor.brandColor
         }))
     }));
-    const chips = detection.groups.flatMap((group) => group.vendors.slice(0, group.id === "framework" ? 2 : group.id === "hostingCdn" ? 2 : 1).map((vendor) => ({
+    const chips = moneyStackDetection.groups.flatMap((group) => group.vendors.slice(0, group.id === "framework" ? 2 : group.id === "hostingCdn" ? 2 : 1).map((vendor) => ({
         label: vendor.label,
         tone: group.id === "hostingCdn"
             ? "provider"
@@ -208,7 +209,7 @@ function detectStack(snapshot, answers) {
                     : "neutral",
         brandColor: vendor.brandColor
     })));
-    const missingGroups = detection.missingCostGroups.map((group) => {
+    const missingGroups = moneyStackDetection.missingCostGroups.map((group) => {
         switch (group) {
             case "hostingCdn":
                 return "hostingCdn";
@@ -219,7 +220,7 @@ function detectStack(snapshot, answers) {
                 return "analytics";
         }
     });
-    return { chips, groups, missingGroups };
+    return { chips, groups, missingGroups, detection: moneyStackDetection };
 }
 function buildStackChips(snapshot, score, scope, pageCount, detected) {
     const chips = [...detected.chips];
@@ -276,7 +277,7 @@ function buildScaleSimulationRows(monthlyWaste) {
     return cases.map((entry) => ({
         trafficLabel: entry.label,
         scenario: entry.scenario,
-        amount: `${formatMonthly(monthlyWaste * entry.factor)}${entry.factor < 10 ? "/mo" : "/mo"}`
+        amount: `~${formatMonthly(monthlyWaste * entry.factor)}/mo`
     }));
 }
 const FIX_LIBRARY = {
@@ -356,12 +357,13 @@ function buildFixRecommendationCards(issues) {
 }
 function buildMetisDesignViewModel({ snapshot, issues, score, insight, scope, pageCount, savedPageCount, answers, plusReport, requiredQuestionCount }) {
     const riskTone = scoreToRiskTone(score);
-    const monthlyWaste = deriveMonthlyWaste(snapshot, answers);
-    const visitCount = visitEstimate(answers);
+    const detectedStack = detectStack(snapshot, answers);
+    const pricingContext = (0, pricing_1.resolvePricingContext)(snapshot, detectedStack.detection, answers);
+    const monthlyWaste = deriveMonthlyWaste(snapshot, answers) * pricingContext.providerMultiplier;
+    const visitCount = pricingContext.monthlyVisitBaseline ?? visitEstimate(answers);
     const sessionCostValue = monthlyWaste / Math.max(250, visitCount / 4);
     const monthlyProjection = sessionCostValue * 10_000;
     const issuesForDisplay = issues.map(issueToDesignIssue);
-    const detectedStack = detectStack(snapshot, answers);
     const displayPageCount = Math.max(savedPageCount ?? 0, pageCount, 1);
     const sampledPagesLabel = displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
     // This adapter is the one place where product logic is translated into
@@ -384,7 +386,7 @@ function buildMetisDesignViewModel({ snapshot, issues, score, insight, scope, pa
         supportingDetail: plusReport?.detail ??
             insight?.supportingDetail ??
             "Interact with the page once to help Metis refine the session profile.",
-        sessionCost: formatCurrency(sessionCostValue),
+        sessionCost: `~${formatCurrency(sessionCostValue)}`,
         monthlyProjection: `~${formatMonthly(monthlyProjection)}/month`,
         summaryPills: buildSummaryPills(issuesForDisplay),
         issues: issuesForDisplay,
@@ -395,6 +397,7 @@ function buildMetisDesignViewModel({ snapshot, issues, score, insight, scope, pa
         questionState: buildQuestionState(plusReport, requiredQuestionCount),
         scaleSimulationRows: buildScaleSimulationRows(monthlyWaste),
         aiCostPerRequestEstimate: answers.aiUsage && answers.aiUsage !== "no" ? "~$0.0001" : null,
+        estimateSourceNote: pricingContext.estimateSourceNote,
         fixRecommendationCards: buildFixRecommendationCards(issues),
         stackQuestionDefinitions: (0, config_1.buildStackFallbackQuestionDefinitions)(detectedStack.missingGroups),
         stackDetectionState: {

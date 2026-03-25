@@ -7,10 +7,12 @@ const node_test_1 = require("node:test");
 const assert = require("node:assert/strict");
 const detection_1 = require("../src/features/detection");
 const insights_1 = require("../src/features/insights");
+const pricing_1 = require("../src/features/pricing");
 const refinement_1 = require("../src/features/refinement");
 const scan_1 = require("../src/features/scan");
 const scoring_1 = require("../src/features/scoring");
 const stack_1 = require("../src/features/stack");
+const pricing_2 = require("../src/config/pricing");
 const liveAdapter_1 = require("../src/app/components/figures/liveAdapter");
 const loadingState_1 = require("../src/app/components/figures/loadingState");
 const pageScanHistory_1 = require("../src/shared/lib/pageScanHistory");
@@ -328,7 +330,7 @@ function createSnapshot(resources, overrides = {}) {
     assert.match(viewModel.snapshotKey, /https:\/\/example.com\/::/);
     assert.equal(viewModel.scaleSimulationRows.length, 5);
     assert.equal(viewModel.scaleSimulationRows[2]?.trafficLabel, "10k users");
-    assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^\$/);
+    assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^~\$/);
     assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
 });
 (0, node_test_1.test)("design view model can show saved page count beyond current scan scope", () => {
@@ -556,6 +558,54 @@ function createSnapshot(resources, overrides = {}) {
     assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS S3"));
     assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS API Gateway"));
     assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS"));
+});
+(0, node_test_1.test)("money stack detector resolves DigitalOcean from direct provider hosts", () => {
+    const snapshot = createSnapshot([], {
+        stackSignals: [
+            {
+                name: "https://assets.example.ams3.digitaloceanspaces.com/app.js",
+                hostname: "assets.example.ams3.digitaloceanspaces.com",
+                pathname: "/app.js",
+                source: "resource"
+            }
+        ]
+    });
+    const detection = (0, stack_1.detectMoneyStack)(snapshot, {});
+    const hostingGroup = detection.groups.find((group) => group.id === "hostingCdn");
+    assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "DigitalOcean"));
+});
+(0, node_test_1.test)("pricing catalog preserves raw plan labels and normalized tiers", () => {
+    assert.ok(pricing_2.PRICING_ENTRIES.some((entry) => entry.providerId === "hostinger" &&
+        entry.rawPlanLabel === "Shared Single (Entry)" &&
+        entry.normalizedTier === "entry"));
+    assert.ok(pricing_2.PRICING_ENTRIES.some((entry) => entry.providerId === "aws" &&
+        entry.rawPlanLabel === "ECS/Fargate Cluster" &&
+        entry.normalizedTier === "cluster"));
+});
+(0, node_test_1.test)("pricing context maps CloudFront to AWS and stays approximate", () => {
+    const snapshot = createSnapshot([], {
+        stackSignals: [
+            {
+                name: "https://d123.cloudfront.net/static/nav.js",
+                hostname: "d123.cloudfront.net",
+                pathname: "/static/nav.js",
+                source: "resource"
+            }
+        ]
+    });
+    const detection = (0, stack_1.detectMoneyStack)(snapshot, {});
+    const pricing = (0, pricing_1.resolvePricingContext)(snapshot, detection, {});
+    assert.equal(pricing.primaryProvider?.providerId, "aws");
+    assert.match(pricing.estimateSourceNote ?? "", /AWS/i);
+    assert.equal(pricing.heuristicFallback, false);
+});
+(0, node_test_1.test)("pricing context can fall back to broad answer aliases without forcing stack detection", () => {
+    const snapshot = createSnapshot([]);
+    const detection = (0, stack_1.detectMoneyStack)(snapshot, { hostingProvider: "aws" });
+    const pricing = (0, pricing_1.resolvePricingContext)(snapshot, detection, { hostingProvider: "aws" });
+    assert.equal(detection.groups.some((group) => group.id === "hostingCdn"), false);
+    assert.equal(pricing.primaryProvider?.providerId, "aws");
+    assert.equal(pricing.heuristicFallback, false);
 });
 (0, node_test_1.test)("money stack detector treats Cloudflare Browser Insights as analytics and Cloudflare platform context", () => {
     const snapshot = createSnapshot([], {
