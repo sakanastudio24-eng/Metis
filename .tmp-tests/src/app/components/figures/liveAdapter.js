@@ -412,6 +412,26 @@ function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, 
         controlColor: controlTone.color,
         controlBg: controlTone.bg,
         controlReasons: control.reasons,
+        splitSummary: {
+            costRisk: {
+                title: "Cost Risk",
+                score: Math.round(score.score),
+                label: riskTone.label,
+                color: riskTone.color,
+                background: riskTone.bg,
+                summary: "The waste and cost pressure Metis sees on this route right now.",
+                detail: `Current waste estimate: ~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month`
+            },
+            control: {
+                title: "Control",
+                score: Math.round(control.score),
+                label: controlTone.label,
+                color: controlTone.color,
+                background: controlTone.bg,
+                summary: "Whether the route weight looks justified for the product context Metis can see.",
+                reasons: control.reasons
+            }
+        },
         estimateRange: `~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
         quickInsight: plusReport?.summary ?? insight?.summary ?? "Metis is still building a clean read of this page.",
         supportingDetail: plusReport?.detail ??

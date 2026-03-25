@@ -13,8 +13,14 @@ import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } f
 import { scoreSnapshot } from "../src/features/scoring";
 import { detectMoneyStack } from "../src/features/stack";
 import { PRICING_ENTRIES } from "../src/config/pricing";
+import { buildExportReportDocument } from "../src/app/components/figures/exportDocument";
 import { buildMetisDesignViewModel } from "../src/app/components/figures/liveAdapter";
 import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figures/loadingState";
+import {
+  DEFAULT_METIS_SETTINGS,
+  getMetisLocalSettings,
+  saveMetisLocalSettings
+} from "../src/shared/lib/metisLocalSettings";
 import {
   buildPageScanSnapshot,
   comparePageScans,
@@ -1101,4 +1107,86 @@ test("latest captured snapshot carries across pages without being overwritten by
       (globalThis as typeof globalThis & { chrome?: unknown }).chrome = previousChrome;
     }
   }
+});
+
+test("local settings persist through chrome storage when available", async () => {
+  const storageState: Record<string, unknown> = {};
+  const previousChrome = (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+
+  (globalThis as typeof globalThis & { chrome?: unknown }).chrome = {
+    runtime: { id: "metis-test", lastError: undefined },
+    storage: {
+      local: {
+        get(keys: string[], callback: (result: Record<string, unknown>) => void) {
+          const result = Object.fromEntries(keys.map((key) => [key, storageState[key]]));
+          callback(result);
+        },
+        set(items: Record<string, unknown>, callback: () => void) {
+          Object.assign(storageState, items);
+          callback();
+        }
+      }
+    }
+  };
+
+  try {
+    const nextSettings = {
+      ...DEFAULT_METIS_SETTINGS,
+      preferredScanScope: "multi" as const,
+      motionPreference: "reduced" as const,
+      showSampleProgress: false
+    };
+
+    await saveMetisLocalSettings(nextSettings);
+    const loadedSettings = await getMetisLocalSettings();
+
+    assert.equal(loadedSettings.preferredScanScope, "multi");
+    assert.equal(loadedSettings.motionPreference, "reduced");
+    assert.equal(loadedSettings.showSampleProgress, false);
+  } finally {
+    if (previousChrome === undefined) {
+      delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+    } else {
+      (globalThis as typeof globalThis & { chrome?: unknown }).chrome = previousChrome;
+    }
+  }
+});
+
+test("export document builder keeps report sections deterministic", () => {
+  const snapshot = createSnapshot([
+    createResource("https://example.com/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 120_000
+    }),
+    createResource("https://example.com/api/feed", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 80_000
+    })
+  ]);
+
+  const issues = detectIssues(snapshot);
+  const control = assessControl(snapshot, issues, {});
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    control,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers: {},
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  const document = buildExportReportDocument(viewModel);
+
+  assert.equal(document.title, "Metis report · example.com");
+  assert.equal(document.sections[0]?.title, "Overview");
+  assert.match(document.sections[0]?.lines[0] ?? "", /Cost Risk:/);
+  assert.equal(document.sections.at(-1)?.title, "Recommendations");
 });

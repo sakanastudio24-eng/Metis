@@ -15,8 +15,10 @@ const scan_1 = require("../src/features/scan");
 const scoring_1 = require("../src/features/scoring");
 const stack_1 = require("../src/features/stack");
 const pricing_2 = require("../src/config/pricing");
+const exportDocument_1 = require("../src/app/components/figures/exportDocument");
 const liveAdapter_1 = require("../src/app/components/figures/liveAdapter");
 const loadingState_1 = require("../src/app/components/figures/loadingState");
+const metisLocalSettings_1 = require("../src/shared/lib/metisLocalSettings");
 const pageScanHistory_1 = require("../src/shared/lib/pageScanHistory");
 const defaultPage = {
     href: "https://example.com/",
@@ -933,4 +935,79 @@ function createSnapshot(resources, overrides = {}) {
             globalThis.chrome = previousChrome;
         }
     }
+});
+(0, node_test_1.test)("local settings persist through chrome storage when available", async () => {
+    const storageState = {};
+    const previousChrome = globalThis.chrome;
+    globalThis.chrome = {
+        runtime: { id: "metis-test", lastError: undefined },
+        storage: {
+            local: {
+                get(keys, callback) {
+                    const result = Object.fromEntries(keys.map((key) => [key, storageState[key]]));
+                    callback(result);
+                },
+                set(items, callback) {
+                    Object.assign(storageState, items);
+                    callback();
+                }
+            }
+        }
+    };
+    try {
+        const nextSettings = {
+            ...metisLocalSettings_1.DEFAULT_METIS_SETTINGS,
+            preferredScanScope: "multi",
+            motionPreference: "reduced",
+            showSampleProgress: false
+        };
+        await (0, metisLocalSettings_1.saveMetisLocalSettings)(nextSettings);
+        const loadedSettings = await (0, metisLocalSettings_1.getMetisLocalSettings)();
+        assert.equal(loadedSettings.preferredScanScope, "multi");
+        assert.equal(loadedSettings.motionPreference, "reduced");
+        assert.equal(loadedSettings.showSampleProgress, false);
+    }
+    finally {
+        if (previousChrome === undefined) {
+            delete globalThis.chrome;
+        }
+        else {
+            globalThis.chrome = previousChrome;
+        }
+    }
+});
+(0, node_test_1.test)("export document builder keeps report sections deterministic", () => {
+    const snapshot = createSnapshot([
+        createResource("https://example.com/app.js", {
+            category: "script",
+            initiatorType: "script",
+            encodedBodySize: 120_000
+        }),
+        createResource("https://example.com/api/feed", {
+            category: "api",
+            initiatorType: "fetch",
+            encodedBodySize: 80_000
+        })
+    ]);
+    const issues = (0, detection_1.detectIssues)(snapshot);
+    const control = (0, control_1.assessControl)(snapshot, issues, {});
+    const score = (0, scoring_1.scoreSnapshot)(snapshot, issues);
+    const insight = (0, insights_1.buildInsight)(snapshot, issues, score);
+    const viewModel = (0, liveAdapter_1.buildMetisDesignViewModel)({
+        snapshot,
+        issues,
+        control,
+        score,
+        insight,
+        scope: "single",
+        pageCount: 1,
+        answers: {},
+        plusReport: null,
+        requiredQuestionCount: 3
+    });
+    const document = (0, exportDocument_1.buildExportReportDocument)(viewModel);
+    assert.equal(document.title, "Metis report · example.com");
+    assert.equal(document.sections[0]?.title, "Overview");
+    assert.match(document.sections[0]?.lines[0] ?? "", /Cost Risk:/);
+    assert.equal(document.sections.at(-1)?.title, "Recommendations");
 });

@@ -9,6 +9,7 @@ exports.getPageScanStoreSummary = getPageScanStoreSummary;
 exports.getPageScanComparisonContext = getPageScanComparisonContext;
 exports.savePageScan = savePageScan;
 exports.savePageScanAndCompare = savePageScanAndCompare;
+exports.clearPageScanStore = clearPageScanStore;
 const STORAGE_KEY = "metis:page-scans";
 function getChromeRuntime() {
     const runtime = globalThis;
@@ -214,4 +215,10 @@ async function savePageScanAndCompare(snapshot) {
         latestCapturedSnapshot: context.latestCapturedSnapshot,
         latestCapturedComparison: context.latestCapturedComparison
     };
+}
+async function clearPageScanStore() {
+    await setStoredPageScans({
+        scans: {},
+        latestCapturedSnapshot: null
+    });
 }
