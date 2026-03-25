@@ -1,9 +1,9 @@
-// content/index.tsx mounts Metis into a Shadow DOM on the host page.
-// The host wrapper is fixed and isolated so page layout systems, root font sizes,
-// and surrounding CSS have as little influence on the extension UI as possible.
+// content/index.tsx mounts only the lightweight page bridge into a Shadow DOM.
+// The main Metis workspace now lives in Chrome's side panel, while the page
+// layer stays small: hover, scan trigger, route awareness, and messaging.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "../app/App";
+import { PageBridgeApp } from "./PageBridgeApp";
 import styles from "../styles/tailwind.css?inline";
 
 const HOST_ID = "metis-extension-host";
@@ -80,7 +80,7 @@ function mount() {
 
   createRoot(appRoot).render(
     <StrictMode>
-      <App initialPanelMode="idle" />
+      <PageBridgeApp />
     </StrictMode>
   );
 }
