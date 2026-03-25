@@ -14,10 +14,6 @@ import {
   type MetisTabSessionState
 } from "../shared/types/runtime";
 
-chrome.runtime.onInstalled.addListener(() => {
-  console.info("[Metis] background service worker ready");
-});
-
 function isRestrictedUrl(url?: string) {
   if (!url) {
     return true;
@@ -55,6 +51,41 @@ async function ensureContentBridge(tabId: number) {
 
   return true;
 }
+
+// Content scripts declared in the manifest do not always appear on tabs that
+// were already open when the extension was reloaded during development. This
+// keeps the hover bridge visible on existing tabs after reloads and browser
+// restarts instead of forcing a manual page refresh first.
+async function primeOpenTabsWithBridge() {
+  const tabs = await chrome.tabs.query({});
+
+  await Promise.all(
+    tabs.map(async (tab) => {
+      if (!tab.id || isRestrictedUrl(tab.url)) {
+        return;
+      }
+
+      try {
+        await ensureContentBridge(tab.id);
+      } catch (error) {
+        console.warn("[Metis] failed to prime content bridge", {
+          tabId: tab.id,
+          url: tab.url,
+          error
+        });
+      }
+    })
+  );
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.info("[Metis] background service worker ready");
+  void primeOpenTabsWithBridge();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  void primeOpenTabsWithBridge();
+});
 
 async function broadcastSessionChange(tabId: number) {
   const session = await getMetisTabSession(tabId);
