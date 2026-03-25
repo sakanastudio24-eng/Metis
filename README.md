@@ -35,6 +35,8 @@ What is working now:
 - always-visible on-page launcher on normal web pages
 - on-demand Metis scan after the on-page Metis trigger is clicked
 - live mini panel and full panel with score-first Phase 3 UI
+- split `Cost Risk` and `Control` summaries in both panel and full report
+- attached right-side report expansion instead of a detached center modal
 - filtered resource pipeline with duplicate, third-party, and top-offender signals
 - per-origin baseline comparison
 - multipage accumulation across visited pages
@@ -48,6 +50,8 @@ What is working now:
 - local visual test pages for layout checks
 - public flow docs for scanning, normalization, stack detection, pricing, capture, and UI mapping
 - internal pricing reference layer for provider-aware estimate wording
+- local settings for scan behavior, motion, layout, and saved-scan management
+- export document shell for future PDF/report output
 
 What is not finished yet:
 
@@ -73,8 +77,10 @@ The live implementation uses:
 - a Shadow DOM mount to isolate extension styles from host page styles
 - local React state for panel and report flow
 - a deterministic scan -> detect -> score -> insight pipeline
+- a parallel control layer so heaviness and justification are shown separately
 - a fingerprint-based stack detector for cost-relevant vendors
 - a local pricing reference layer for estimate framing
+- local-only settings and save management
 
 ## Repo Structure
 
@@ -107,6 +113,8 @@ If you want the shortest path through the repo:
 2. read [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
 3. read [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
 4. read [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
+5. read [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
+6. read [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
 
 ## Setup
 
@@ -237,6 +245,8 @@ If you want to understand the product quickly, these are the best docs to start 
 - [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
 - [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
 - [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
+- [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
+- [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
 
 Phase-based references live in:
 

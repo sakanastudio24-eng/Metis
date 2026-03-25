@@ -10,7 +10,7 @@ Metis does four jobs in sequence:
 
 1. scan the current route
 2. normalize the noisy browser data into stable signals
-3. turn those signals into issues, score, stack context, and estimate language
+3. turn those signals into issues, cost risk, control, stack context, and estimate language
 4. map that output into the injected panel and report UI
 
 In practice, the live path looks like this:
@@ -20,7 +20,7 @@ Page
   -> scan snapshot
   -> normalized metrics + evidence
   -> detected issues
-  -> score breakdown
+  -> score breakdown + control assessment
   -> insight + refinement output
   -> pricing context
   -> panel/report view model
@@ -76,6 +76,18 @@ This is the deterministic product core:
 - assign weighted deductions
 - summarize the result in plain language
 
+## Control layer
+
+- [src/features/control](/Users/zech/Downloads/The-Big-One/Metis/src/features/control)
+- [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
+
+This layer answers the judgment question:
+
+- is the route heavy?
+- and does that heaviness look justified?
+
+Metis now keeps `Cost Risk` and `Control` separate on purpose.
+
 ## Capture and cross-page history
 
 - [docs/capture-save-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/capture-save-flow.md)
@@ -114,3 +126,9 @@ It takes the current scan, score, stack, and refinement state and shapes them in
 - [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
 
 This explains how the extension mounts, when it scans, and how it behaves on route changes and live updates.
+
+## Settings and export
+
+- [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
+
+This covers the new local settings surface, saved scan management, and the report-shaped export shell.
