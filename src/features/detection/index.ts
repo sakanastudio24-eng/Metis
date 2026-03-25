@@ -73,8 +73,8 @@ export function detectIssues(
   if (metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.high) {
     issues.push({
       id: "high-request-count",
-      title: "High request count may increase bandwidth costs",
-      detail: `${metrics.requestCount} requests were retained after cleanup, which can raise transfer volume and edge work for a single experience.`,
+      title: "Request volume is elevated and worth reviewing",
+      detail: `${metrics.requestCount} requests were retained after cleanup. That may be justified on a dynamic route, but it is worth checking whether the page is doing more network work than it needs to.`,
       severity: "high",
       category: "requestCount",
       metric: {
@@ -87,8 +87,8 @@ export function detectIssues(
   } else if (metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.medium) {
     issues.push({
       id: "high-request-count",
-      title: "Request volume is trending high",
-      detail: `${metrics.requestCount} requests survived normalization, which suggests the page is doing more network work than it needs to.`,
+      title: "Request volume is elevated",
+      detail: `${metrics.requestCount} requests survived normalization. Some of that may be expected, but this route is worth reviewing for redundant or low-value network work.`,
       severity: "medium",
       category: "requestCount",
       metric: {
@@ -102,7 +102,7 @@ export function detectIssues(
     issues.push({
       id: "high-request-count",
       title: "Request volume is worth watching",
-      detail: `${metrics.requestCount} requests is still manageable, but it leaves less room for third-party growth and heavier page states.`,
+      detail: `${metrics.requestCount} requests is still manageable, but it leaves less headroom if this route grows or adds more third-party work.`,
       severity: "low",
       category: "requestCount",
       metric: {
@@ -347,16 +347,16 @@ export function detectIssues(
       id: "ai-spend-surface",
       title:
         highAi
-          ? "AI-backed requests are a visible cost driver on this route"
+          ? "AI work is a major part of this route's cost profile"
           : mediumAi
-            ? "AI-backed traffic is contributing to route cost"
-            : "An AI provider is present on this route",
+            ? "AI work is contributing to this route's cost profile"
+            : "An AI cost surface is present on this route",
       detail:
         highAi
-          ? `${aiVendors[0]?.label ?? "An AI provider"} is active and the current request profile is already large enough to make repeated model calls directly expensive.`
+          ? `${aiVendors[0]?.label ?? "An AI provider"} is active and the current request profile is large enough that repeated model calls could become materially expensive if the route is doing more AI work than it needs to.`
           : mediumAi
-            ? `${aiVendors[0]?.label ?? "An AI provider"} is active here and the request profile suggests vendor cost can rise quickly as traffic grows.`
-            : `${aiVendors[0]?.label ?? "An AI provider"} was detected alongside route activity, so repeated AI work would add direct vendor cost.`,
+            ? `${aiVendors[0]?.label ?? "An AI provider"} is active here and the request profile suggests vendor cost can rise quickly as traffic grows, even if AI usage is expected on the route.`
+            : `${aiVendors[0]?.label ?? "An AI provider"} was detected alongside route activity. That is not automatically waste, but repeated AI work would add direct vendor cost.`,
       severity: highAi ? "high" : mediumAi ? "medium" : "low",
       category: "aiSpendSurface",
       metric: {
@@ -390,15 +390,15 @@ export function detectIssues(
       id: "hosting-cdn-spend-surface",
       title:
         highHosting
-          ? "The current hosting and CDN setup is amplifying route cost"
+          ? "The hosting path is amplifying this route's cost profile"
           : mediumHosting
-            ? "Hosting and CDN choices are now part of the cost profile"
+            ? "The hosting path is now part of the cost profile"
             : "A billable hosting or CDN layer is active on this route",
       detail:
         highHosting
-          ? `${scoredHostingVendors.map((vendor) => vendor.label).join(", ")} are serving this route alongside a heavier request or transfer profile, so infra billing likely contributes to waste.`
+          ? `${scoredHostingVendors.map((vendor) => vendor.label).join(", ")} are serving this route alongside a heavier request or transfer profile. The host or CDN is not the fault, but cache misses, transfer-heavy assets, and repeated compute become more expensive here.`
           : mediumHosting
-            ? `${scoredHostingVendors.map((vendor) => vendor.label).join(", ")} are part of the current route path, so repeated requests and heavier assets have a clearer infra cost impact.`
+            ? `${scoredHostingVendors.map((vendor) => vendor.label).join(", ")} are part of the current route path, so repeated requests and heavier assets have a clearer infra cost impact without making the provider itself the problem.`
             : `${scoredHostingVendors[0]?.label ?? "A host or CDN"} was detected on this route, which makes transfer, cache misses, and repeated work more relevant financially.`,
       severity: highHosting ? "high" : mediumHosting ? "medium" : "low",
       category: "hostingCdnSpendSurface",
