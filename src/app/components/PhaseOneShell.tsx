@@ -19,9 +19,6 @@ import {
 } from "../../features/refinement/config";
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
-import {
-  getPageScanStoreSummary,
-} from "../../shared/lib/pageScanHistory";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
   PlusRefinementAnswers,
@@ -333,7 +330,6 @@ export function PhaseOneShell({
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
   const [plusReturnMode, setPlusReturnMode] = useState<PanelMode | null>(null);
-  const [savedPageCount, setSavedPageCount] = useState(0);
   const lastSnapshotKeyRef = useRef<string | null>(null);
 
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
@@ -357,7 +353,6 @@ export function PhaseOneShell({
           insight,
           scope: scanScope,
           pageCount,
-          savedPageCount,
           answers: plusAnswers,
           plusReport,
           requiredQuestionCount: PLUS_CORE_KEYS.length
@@ -380,24 +375,6 @@ export function PhaseOneShell({
 
   const currentQuestion =
     questionDefinitions.find((definition) => plusAnswers[definition.key] === undefined) ?? null;
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    const syncSavedPageCount = async () => {
-      const summary = await getPageScanStoreSummary();
-
-      if (!isCancelled) {
-        setSavedPageCount(summary.savedPageCount);
-      }
-    };
-
-    void syncSavedPageCount();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [routeKey, panelMode]);
 
   useEffect(() => {
     if (!snapshotKey || !routeKey) {

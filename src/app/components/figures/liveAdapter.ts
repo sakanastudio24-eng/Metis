@@ -579,7 +579,6 @@ export function buildMetisDesignViewModel({
   insight,
   scope,
   pageCount,
-  savedPageCount,
   answers,
   plusReport,
   requiredQuestionCount
@@ -594,7 +593,6 @@ export function buildMetisDesignViewModel({
   answers: PlusRefinementAnswers;
   plusReport: PlusOptimizationReport | null;
   requiredQuestionCount: number;
-  savedPageCount?: number;
 }): MetisDesignViewModel {
   const riskTone = scoreToRiskTone(score);
   const controlTone = controlToTone(control);
@@ -605,7 +603,7 @@ export function buildMetisDesignViewModel({
   const sessionCostValue = monthlyWaste / Math.max(250, visitCount / 4);
   const monthlyProjection = sessionCostValue * 10_000;
   const issuesForDisplay = issues.map(issueToDesignIssue);
-  const displayPageCount = Math.max(savedPageCount ?? 0, pageCount, 1);
+  const displayPageCount = Math.max(pageCount, 1);
   const sampledPagesLabel =
     displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
 
