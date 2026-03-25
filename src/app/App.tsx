@@ -71,8 +71,7 @@ export default function App({
 
       const type = "type" in message ? message.type : null;
 
-      if (type === "METIS_OPEN") {
-        setPanelMode("mini");
+      if (type === "METIS_PING") {
         sendResponse({ ok: true });
         return true;
       }

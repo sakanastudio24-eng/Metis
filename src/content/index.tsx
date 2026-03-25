@@ -80,7 +80,7 @@ function mount() {
 
   createRoot(appRoot).render(
     <StrictMode>
-      <App initialPanelMode="mini" />
+      <App initialPanelMode="idle" />
     </StrictMode>
   );
 }

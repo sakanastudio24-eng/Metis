@@ -18,9 +18,9 @@ function isRestrictedUrl(url?: string) {
   );
 }
 
-async function tryOpenExistingInjection(tabId: number) {
+async function tryPingExistingInjection(tabId: number) {
   try {
-    const response = await chrome.tabs.sendMessage(tabId, { type: "METIS_OPEN" });
+    const response = await chrome.tabs.sendMessage(tabId, { type: "METIS_PING" });
     return Boolean(response && typeof response === "object" && "ok" in response);
   } catch {
     return false;
@@ -32,7 +32,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     return;
   }
 
-  const alreadyInjected = await tryOpenExistingInjection(tab.id);
+  const alreadyInjected = await tryPingExistingInjection(tab.id);
 
   if (alreadyInjected) {
     return;
@@ -43,8 +43,6 @@ chrome.action.onClicked.addListener(async (tab) => {
       target: { tabId: tab.id },
       files: ["assets/content.js"]
     });
-
-    await chrome.tabs.sendMessage(tab.id, { type: "METIS_OPEN" });
   } catch (error) {
     console.error("[Metis] failed to inject into tab", error);
   }
