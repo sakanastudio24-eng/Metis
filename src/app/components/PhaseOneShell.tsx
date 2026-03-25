@@ -342,7 +342,9 @@ export function PhaseOneShell({
     activeSnapshot && score && insight
       ? buildPlusOptimizationReport(insight, activeSnapshot, issues, score, plusAnswers)
       : null;
-  const pageCount = scanScope === "multi" ? Math.max(visitedSnapshots.length, 1) : 1;
+  // Sample progress should reflect how many distinct pages Metis has seen on
+  // this origin, even when the report is still rendering in single-page mode.
+  const pageCount = Math.max(visitedSnapshots.length, 1);
   const viewModel =
     activeSnapshot && score && control
       ? buildMetisDesignViewModel({
