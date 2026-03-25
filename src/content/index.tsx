@@ -52,6 +52,12 @@ function createHost() {
 }
 
 function mount() {
+  const existingHost = document.getElementById(HOST_ID) as HTMLDivElement | null;
+
+  if (existingHost?.dataset.metisMounted === "true") {
+    return;
+  }
+
   const shadowRoot = createHost();
 
   if (!shadowRoot) {
@@ -64,11 +70,17 @@ function mount() {
     return;
   }
 
+  const host = document.getElementById(HOST_ID) as HTMLDivElement | null;
+
+  if (host) {
+    host.dataset.metisMounted = "true";
+  }
+
   console.info("[Metis] content script loaded");
 
   createRoot(appRoot).render(
     <StrictMode>
-      <App />
+      <App initialPanelMode="mini" />
     </StrictMode>
   );
 }

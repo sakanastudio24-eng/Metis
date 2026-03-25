@@ -7,8 +7,8 @@ import type { PlusRefinementAnswers, RawScanSnapshot } from "../shared/types/aud
 export type PanelMode = "idle" | "mini" | "full";
 export type ScanScope = "single" | "multi";
 
-export function useMetisState() {
-  const [panelMode, setPanelMode] = useState<PanelMode>("idle");
+export function useMetisState(initialPanelMode: PanelMode = "idle") {
+  const [panelMode, setPanelMode] = useState<PanelMode>(initialPanelMode);
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [rawSnapshot, setRawSnapshot] = useState<RawScanSnapshot | null>(null);
   const [baselineSnapshot, setBaselineSnapshot] = useState<RawScanSnapshot | null>(null);

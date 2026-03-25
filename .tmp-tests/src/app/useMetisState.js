@@ -5,8 +5,8 @@ exports.useMetisState = useMetisState;
 // It holds panel mode, scope selection, and the latest scan snapshots used by
 // the current scoring, Phase 4 insight flow, and the optional Plus refinement layer.
 const react_1 = require("react");
-function useMetisState() {
-    const [panelMode, setPanelMode] = (0, react_1.useState)("idle");
+function useMetisState(initialPanelMode = "idle") {
+    const [panelMode, setPanelMode] = (0, react_1.useState)(initialPanelMode);
     const [scanScope, setScanScope] = (0, react_1.useState)("single");
     const [rawSnapshot, setRawSnapshot] = (0, react_1.useState)(null);
     const [baselineSnapshot, setBaselineSnapshot] = (0, react_1.useState)(null);

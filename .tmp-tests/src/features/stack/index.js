@@ -36,6 +36,9 @@ function addSignal(signals, name, source, baseHref, fallbackHost = "local.signal
 function collectDomStackSignals(pageHref) {
     const signals = [];
     const w = window;
+    // Globals are some of the strongest browser-safe clues we can use in a
+    // content script. We keep them as raw evidence instead of resolving vendors
+    // here so the fingerprint layer stays explainable and testable.
     if ("__NEXT_DATA__" in w) {
         addSignal(signals, "global:nextjs", "dom", pageHref);
     }
@@ -110,6 +113,10 @@ function normalizeStackSignalEvidence(snapshot) {
         const hostKey = `host:${signal.hostname.toLowerCase()}`;
         const pathKey = `path:${signal.pathname.toLowerCase()}`;
         const nameKey = signal.name.toLowerCase();
+        // The same raw clue can produce multiple useful evidence records. For
+        // example, `cloudfront.net` is valuable as a host match while `/_next/`
+        // is valuable as a path convention. Dedupe happens at the evidence level
+        // so repeated resources do not inflate fingerprint scores forever.
         const normalizedItems = [
             {
                 dedupe: `${source}:${hostKey}`,
@@ -197,6 +204,9 @@ function sourceFromEvidence(evidence) {
 function scoreFingerprints(evidence) {
     const resolved = new Map();
     for (const fingerprint of fingerprints_1.TECHNOLOGY_FINGERPRINTS) {
+        // Fingerprints win by accumulated evidence, not by one brittle string
+        // match. That keeps the detector honest on dynamic sites where some clues
+        // are noisy or missing.
         const hits = evidence.filter((entry) => matchesPattern(entry, fingerprint));
         const score = hits.reduce((total, entry) => total + entry.weight, 0);
         if (score < fingerprint.minScore) {
@@ -220,6 +230,8 @@ function scoreFingerprints(evidence) {
         if (!fingerprint.implies || !resolved.has(fingerprint.id)) {
             continue;
         }
+        // Explicit implications like Next.js -> React are allowed, but only after
+        // the parent fingerprint already resolved from direct evidence.
         for (const impliedId of fingerprint.implies) {
             if (resolved.has(impliedId)) {
                 continue;

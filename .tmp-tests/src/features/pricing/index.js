@@ -57,6 +57,9 @@ function buildEstimateSourceNote(provider) {
 function resolvePricingContext(snapshot, detection, answers = {}) {
     const matchedProviders = [];
     const seen = new Set();
+    // The pricing layer is deliberately conservative. Strong stack evidence wins
+    // first, while user answers are only used to sharpen billing context when
+    // the page itself cannot prove the provider family.
     const addProvider = (alias, confidence) => {
         if (!alias) {
             return;

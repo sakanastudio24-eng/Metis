@@ -35,7 +35,11 @@ function stopEventPropagation(
   event.stopPropagation();
 }
 
-export default function App() {
+export default function App({
+  initialPanelMode = "idle"
+}: {
+  initialPanelMode?: "idle" | "mini" | "full";
+}) {
   const {
     panelMode,
     setPanelMode,
@@ -52,8 +56,41 @@ export default function App() {
     setPlusAnswers,
     isPlusRefinementOpen,
     setIsPlusRefinementOpen
-  } = useMetisState();
+  } = useMetisState(initialPanelMode);
   const scanTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const listener = (
+      message: unknown,
+      _sender: chrome.runtime.MessageSender,
+      sendResponse: (response?: unknown) => void
+    ) => {
+      if (!message || typeof message !== "object") {
+        return false;
+      }
+
+      const type = "type" in message ? message.type : null;
+
+      if (type === "METIS_OPEN") {
+        setPanelMode("mini");
+        sendResponse({ ok: true });
+        return true;
+      }
+
+      if (type === "METIS_CLOSE") {
+        setPanelMode("idle");
+        sendResponse({ ok: true });
+        return true;
+      }
+
+      return false;
+    };
+
+    chrome.runtime.onMessage.addListener(listener);
+    return () => {
+      chrome.runtime.onMessage.removeListener(listener);
+    };
+  }, [setPanelMode]);
 
   useEffect(() => {
     let lastHref = window.location.href;
