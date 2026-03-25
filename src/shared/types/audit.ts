@@ -302,6 +302,32 @@ export interface ControlAssessment {
   penalties: ControlPenalty[];
 }
 
+export type MetisRefreshMode = "smart" | "steady";
+export type MetisMotionPreference = "full" | "reduced";
+
+export interface MetisLocalSettings {
+  preferredScanScope: "single" | "multi";
+  refreshMode: MetisRefreshMode;
+  motionPreference: MetisMotionPreference;
+  attachedReport: boolean;
+  showSampleProgress: boolean;
+}
+
+export interface ExportReportSection {
+  id: string;
+  title: string;
+  lines: string[];
+}
+
+export interface ExportReportDocument {
+  title: string;
+  hostname: string;
+  generatedAt: string;
+  costRiskScore: number;
+  controlScore: number;
+  sections: ExportReportSection[];
+}
+
 export interface ResourceAggregate {
   normalizedUrl: string;
   sampleUrl: string;

@@ -21,16 +21,34 @@ import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
 import type { PanelMode, ScanScope } from "../useMetisState";
 import type {
+  MetisLocalSettings,
   PlusRefinementAnswers,
   RawScanSnapshot
 } from "../../shared/types/audit";
+import {
+  clearPageScanStore,
+  getPageScanStoreSummary
+} from "../../shared/lib/pageScanHistory";
+import {
+  clearVisitedSiteSnapshots
+} from "../../shared/lib/siteBaseline";
+import {
+  DEFAULT_METIS_SETTINGS,
+  getMetisLocalSettings,
+  saveMetisLocalSettings
+} from "../../shared/lib/metisLocalSettings";
 import {
   DETECTION_TOTAL_DURATION_MS,
   METIS_RED,
   PANEL_BG
 } from "../data/metis-mock-data";
 import { FullReportLayout } from "./figures/FullReportLayout";
+import { buildExportOutlineText, buildExportReportDocument } from "./figures/exportDocument";
 import { isSoftRefresh, shouldReplayLoading } from "./figures/loadingState";
+import {
+  ExportArchitectureModal,
+  LocalSettingsModal
+} from "./figures/MetisUtilityModals";
 import { PanelLayout } from "./figures/PanelLayout";
 import {
   CopyReportButton,
@@ -209,11 +227,13 @@ function MiniPanelHeader({
   onClose,
   onOpenReport,
   onUpgrade,
+  onSettings,
   isPlusUser
 }: {
   onClose: () => void;
   onOpenReport: () => void;
   onUpgrade: () => void;
+  onSettings: () => void;
   isPlusUser: boolean;
 }) {
   return (
@@ -275,7 +295,7 @@ function MiniPanelHeader({
       </div>
 
       <div className="flex items-center gap-1.5">
-        <ProfileButton onUpgrade={onUpgrade} isPlusUser={isPlusUser} />
+        <ProfileButton onUpgrade={onUpgrade} onSettings={onSettings} isPlusUser={isPlusUser} />
         <button
           type="button"
           onClick={onOpenReport}
@@ -329,6 +349,11 @@ export function PhaseOneShell({
   const [refreshTick, setRefreshTick] = useState(0);
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
+  const [settingsReady, setSettingsReady] = useState(false);
+  const [savedPageCount, setSavedPageCount] = useState(0);
   const [plusReturnMode, setPlusReturnMode] = useState<PanelMode | null>(null);
   const lastSnapshotKeyRef = useRef<string | null>(null);
 
@@ -362,6 +387,7 @@ export function PhaseOneShell({
       : null;
   const routeKey = viewModel?.routeKey ?? rawSnapshot?.page.href ?? null;
   const snapshotKey = viewModel?.snapshotKey ?? null;
+  const exportDocument = viewModel ? buildExportReportDocument(viewModel) : null;
 
   const questionDefinitions = useMemo(() => {
     const baseDefinitions = PLUS_QUESTION_DEFINITIONS.filter((definition) => {
@@ -379,6 +405,52 @@ export function PhaseOneShell({
     questionDefinitions.find((definition) => plusAnswers[definition.key] === undefined) ?? null;
 
   useEffect(() => {
+    let cancelled = false;
+
+    void Promise.all([getMetisLocalSettings(), getPageScanStoreSummary()]).then(
+      ([storedSettings, summary]) => {
+        if (cancelled) {
+          return;
+        }
+
+        setSettings(storedSettings);
+        setSavedPageCount(summary.savedPageCount);
+        setSettingsReady(true);
+      }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!settingsReady) {
+      return;
+    }
+
+    void saveMetisLocalSettings(settings);
+  }, [settings, settingsReady]);
+
+  useEffect(() => {
+    if (!settingsReady || scanScope === settings.preferredScanScope) {
+      return;
+    }
+
+    // Settings own the default scan mode now, so reopening Metis feels
+    // persistent instead of snapping back to a hardcoded scope.
+    setScanScope(settings.preferredScanScope);
+  }, [scanScope, setScanScope, settings.preferredScanScope, settingsReady]);
+
+  useEffect(() => {
+    if (!settingsReady || !snapshotKey) {
+      return;
+    }
+
+    void refreshSavedPageSummary();
+  }, [settingsReady, snapshotKey]);
+
+  useEffect(() => {
     if (!snapshotKey || !routeKey) {
       return;
     }
@@ -386,12 +458,12 @@ export function PhaseOneShell({
     const lastSnapshotKey = lastSnapshotKeyRef.current;
     // A soft refresh should feel alive, but it should not replay the full
     // startup experience unless the page truly changed.
-    if (isSoftRefresh(lastSnapshotKey, snapshotKey)) {
+    if (settings.refreshMode === "smart" && isSoftRefresh(lastSnapshotKey, snapshotKey)) {
       setRefreshTick((current) => current + 1);
     }
 
     lastSnapshotKeyRef.current = snapshotKey;
-  }, [routeKey, snapshotKey]);
+  }, [routeKey, settings.refreshMode, snapshotKey]);
 
   useEffect(() => {
     if (panelMode !== "mini" || !shouldReplayLoading(miniRouteKey, routeKey)) {
@@ -472,6 +544,55 @@ export function PhaseOneShell({
 
     toast.success("Report copied", {
       description: "Metis copied the current report summary to your clipboard."
+    });
+  };
+
+  const refreshSavedPageSummary = async () => {
+    const summary = await getPageScanStoreSummary();
+    setSavedPageCount(summary.savedPageCount);
+  };
+
+  const handleOpenSettings = () => {
+    setIsSettingsOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setIsSettingsOpen(false);
+  };
+
+  const handleClearSavedScans = async () => {
+    await clearPageScanStore();
+    await refreshSavedPageSummary();
+    toast.success("Saved scan history cleared", {
+      description: "Metis removed stored page snapshots from this device."
+    });
+  };
+
+  const handleResetCurrentSiteProgress = async () => {
+    const origin = rawSnapshot?.page.origin ?? window.location.origin;
+    await clearVisitedSiteSnapshots(origin);
+    toast.success("Current-site progress reset", {
+      description: "Metis will rebuild sampled-page progress for this origin from the next scan."
+    });
+  };
+
+  const handleOpenExport = () => {
+    if (!viewModel) {
+      return;
+    }
+
+    setIsExportOpen(true);
+  };
+
+  const handleCopyExportOutline = async () => {
+    if (!viewModel) {
+      return;
+    }
+
+    const document = buildExportReportDocument(viewModel);
+    await navigator.clipboard.writeText(buildExportOutlineText(document));
+    toast.success("Export outline copied", {
+      description: "The current export document shape is now on your clipboard."
     });
   };
 
@@ -565,6 +686,7 @@ export function PhaseOneShell({
               onClose={() => setPanelMode("idle")}
               onOpenReport={() => setPanelMode("full")}
               onUpgrade={() => handleOpenPlusModal("mini")}
+              onSettings={handleOpenSettings}
               isPlusUser={isPlusUser}
             />
 
@@ -584,7 +706,8 @@ export function PhaseOneShell({
                   <PanelLayout
                     viewModel={viewModel}
                     compact
-                    refreshTick={refreshTick}
+                    refreshTick={settings.motionPreference === "reduced" ? 0 : refreshTick}
+                    showSampleProgress={settings.showSampleProgress}
                   />
                 </motion.div>
               )}
@@ -643,15 +766,37 @@ export function PhaseOneShell({
               transition={{ duration: 0.22, ease: "easeOut" }}
             />
 
-            <div className="pointer-events-none fixed inset-0 z-[2147483647] flex items-center justify-center p-5">
+            <div
+              className={`pointer-events-none fixed inset-0 z-[2147483647] flex ${
+                settings.attachedReport ? "items-stretch justify-end pl-5 pr-0 py-3" : "items-center justify-center p-5"
+              }`}
+            >
+              {/* The attached report mode makes fullscreen feel like the panel
+                  extended outward instead of opening a separate modal product. */}
               <motion.div
                 key="report-modal"
-                className="pointer-events-auto h-[92vh] w-full max-w-[1360px]"
+                className={`pointer-events-auto ${
+                  settings.attachedReport
+                    ? "h-full w-full max-w-[1380px]"
+                    : "h-[92vh] w-full max-w-[1360px]"
+                }`}
                 onClick={(event) => event.stopPropagation()}
-                initial={{ opacity: 0, y: 26, scale: 0.975 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 18, scale: 0.985 }}
-                transition={panelTransition}
+                initial={
+                  settings.attachedReport
+                    ? { opacity: 0, x: 36 }
+                    : { opacity: 0, y: 26, scale: 0.975 }
+                }
+                animate={
+                  settings.attachedReport
+                    ? { opacity: 1, x: 0 }
+                    : { opacity: 1, y: 0, scale: 1 }
+                }
+                exit={
+                  settings.attachedReport
+                    ? { opacity: 0, x: 22 }
+                    : { opacity: 0, y: 18, scale: 0.985 }
+                }
+                transition={settings.attachedReport ? { duration: 0.24, ease: "easeOut" } : panelTransition}
               >
                 <AnimatePresence mode="wait">
                   {!fullLoaded ? (
@@ -692,12 +837,16 @@ export function PhaseOneShell({
                         headerAccessory={
                           <ProfileButton
                             onUpgrade={() => handleOpenPlusModal("full")}
+                            onSettings={handleOpenSettings}
                             isPlusUser={isPlusUser}
                             onDark
                           />
                         }
-                        refreshTick={refreshTick}
+                        refreshTick={settings.motionPreference === "reduced" ? 0 : refreshTick}
                         onClose={() => setPanelMode("mini")}
+                        showSampleProgress={settings.showSampleProgress}
+                        onOpenExport={handleOpenExport}
+                        attachedLayout={settings.attachedReport}
                       />
                     </motion.div>
                   )}
@@ -705,6 +854,39 @@ export function PhaseOneShell({
               </motion.div>
             </div>
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <LocalSettingsModal
+            settings={settings}
+            scanSummary={{
+              savedPageCount,
+              latestCapturedSnapshot: null
+            }}
+            currentSitePages={Math.max(visitedSnapshots.length, 1)}
+            onClose={handleCloseSettings}
+            onChange={setSettings}
+            onClearSavedScans={() => {
+              void handleClearSavedScans();
+            }}
+            onResetCurrentSiteProgress={() => {
+              void handleResetCurrentSiteProgress();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isExportOpen && exportDocument && (
+          <ExportArchitectureModal
+            document={exportDocument}
+            onClose={() => setIsExportOpen(false)}
+            onCopyOutline={() => {
+              void handleCopyExportOutline();
+            }}
+          />
         )}
       </AnimatePresence>
 

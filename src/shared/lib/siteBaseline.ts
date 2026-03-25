@@ -210,3 +210,23 @@ export async function upsertVisitedSiteSnapshot(
     }
   });
 }
+
+export async function clearVisitedSiteSnapshots(origin: string): Promise<void> {
+  const storage = getStorageArea();
+
+  if (!storage) {
+    return;
+  }
+
+  const key = getPagesStorageKey(origin);
+
+  await new Promise<void>((resolve) => {
+    try {
+      storage.set({ [key]: {} }, () => {
+        resolveStorageValue(undefined, resolve, undefined);
+      });
+    } catch {
+      resolve();
+    }
+  });
+}

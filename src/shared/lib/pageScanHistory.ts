@@ -327,3 +327,10 @@ export async function savePageScanAndCompare(snapshot: PageScanSnapshot): Promis
     latestCapturedComparison: context.latestCapturedComparison
   };
 }
+
+export async function clearPageScanStore(): Promise<void> {
+  await setStoredPageScans({
+    scans: {},
+    latestCapturedSnapshot: null
+  });
+}

@@ -105,10 +105,12 @@ export function LoadingScreen() {
 
 export function ProfileButton({
   onUpgrade,
+  onSettings,
   isPlusUser = false,
   onDark = true
 }: {
   onUpgrade: () => void;
+  onSettings?: () => void;
   isPlusUser?: boolean;
   onDark?: boolean;
 }) {
@@ -155,11 +157,11 @@ export function ProfileButton({
           JD
         </span>
         <span
-          className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full"
+          className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full"
           style={{
             background: "#22c55e",
-            border: "1.5px solid #0d1825",
-            boxShadow: "0 0 0 2px rgba(34,197,94,0.18)"
+            border: "1px solid #0d1825",
+            boxShadow: "0 0 0 1.5px rgba(34,197,94,0.16)"
           }}
         />
       </motion.button>
@@ -207,7 +209,7 @@ export function ProfileButton({
                   jamie@acmecorp.io
                 </p>
                 <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2 py-1">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#22c55e" }} />
+                  <span className="h-1 w-1 rounded-full" style={{ background: "#22c55e" }} />
                   <span
                     style={{
                       fontFamily: "Inter, sans-serif",
@@ -287,6 +289,11 @@ export function ProfileButton({
                         setOpen(false);
                         if (item.label === "Get Plus") {
                           onUpgrade();
+                          return;
+                        }
+
+                        if (item.label === "Settings") {
+                          onSettings?.();
                         }
                       }}
                     >
@@ -320,10 +327,10 @@ export function ProfileButton({
 export function WhatJustHappened({ hostname }: { hostname: string }) {
   const [open, setOpen] = useState(false);
   const events = [
-    { icon: Activity, color: "#ef4444", label: "API requests on load", value: "12 calls" },
-    { icon: Activity, color: "#f97316", label: "AI completions fired", value: "3 calls" },
-    { icon: Activity, color: "#eab308", label: "Heavy assets loaded", value: "3 files › 2MB" },
-    { icon: Activity, color: "#6366f1", label: "Time to interactive", value: "3.4s" }
+    { icon: Activity, color: "#ef4444", label: "Route profile refreshed", value: "live" },
+    { icon: Wrench, color: "#f97316", label: "Issue checks re-ranked", value: "updated" },
+    { icon: CheckCheck, color: "#22c55e", label: "Saved scan kept locally", value: "ready" },
+    { icon: Activity, color: "#6366f1", label: "Control read re-evaluated", value: "scored" }
   ];
 
   return (
@@ -348,7 +355,7 @@ export function WhatJustHappened({ hostname }: { hostname: string }) {
               color: "rgba(255,255,255,0.55)"
             }}
           >
-            What just happened?
+            Latest scan activity
           </span>
         </div>
         <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -384,7 +391,7 @@ export function WhatJustHappened({ hostname }: { hostname: string }) {
                     letterSpacing: "0.08em"
                   }}
                 >
-                  LAST 10 SECONDS · {hostname}
+                  LIVE SESSION · {hostname}
                 </span>
               </div>
               {events.map((event, index) => (
