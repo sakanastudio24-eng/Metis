@@ -395,6 +395,29 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
 });
 
+test("design view model can show saved page count beyond current scan scope", () => {
+  const snapshot = createSnapshot([]);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const insight = buildInsight(snapshot, issues, score);
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    savedPageCount: 2,
+    answers: {},
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  assert.equal(viewModel.pagesSampledLabel, "Sampled 2 pages");
+  assert.equal(viewModel.sampledPagesCount, 2);
+});
+
 test("design view model adds stack fallback questions for missing groups", () => {
   const snapshot = createSnapshot([
     createResource("https://example.com/app.js", {

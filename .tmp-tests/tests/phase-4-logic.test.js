@@ -331,6 +331,26 @@ function createSnapshot(resources, overrides = {}) {
     assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^\$/);
     assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
 });
+(0, node_test_1.test)("design view model can show saved page count beyond current scan scope", () => {
+    const snapshot = createSnapshot([]);
+    const issues = (0, detection_1.detectIssues)(snapshot);
+    const score = (0, scoring_1.scoreSnapshot)(snapshot, issues);
+    const insight = (0, insights_1.buildInsight)(snapshot, issues, score);
+    const viewModel = (0, liveAdapter_1.buildMetisDesignViewModel)({
+        snapshot,
+        issues,
+        score,
+        insight,
+        scope: "single",
+        pageCount: 1,
+        savedPageCount: 2,
+        answers: {},
+        plusReport: null,
+        requiredQuestionCount: 3
+    });
+    assert.equal(viewModel.pagesSampledLabel, "Sampled 2 pages");
+    assert.equal(viewModel.sampledPagesCount, 2);
+});
 (0, node_test_1.test)("design view model adds stack fallback questions for missing groups", () => {
     const snapshot = createSnapshot([
         createResource("https://example.com/app.js", {
