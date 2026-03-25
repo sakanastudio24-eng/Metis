@@ -1,6 +1,7 @@
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
+import { ScoreVisualization } from "./ScoreVisualization";
 
 interface SplitScoreSummaryProps {
   viewModel: MetisDesignViewModel;
@@ -139,6 +140,13 @@ export function SplitScoreSummary({
   compact = false,
   pulseKey = 0
 }: SplitScoreSummaryProps) {
+  const combinedTone =
+    viewModel.combinedScore >= 65
+      ? "#22c55e"
+      : viewModel.combinedScore >= 40
+        ? "#f59e0b"
+        : "#ef4444";
+
   return (
     <motion.div
       className={compact ? "grid grid-cols-2 gap-3" : "grid gap-4 lg:grid-cols-2"}
@@ -147,6 +155,78 @@ export function SplitScoreSummary({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
     >
+      <motion.div
+        className={compact ? "col-span-2 rounded-[22px] px-4 py-4" : "rounded-[24px] px-5 py-5 lg:col-span-2"}
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.08)"
+        }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+      >
+        <div className="flex items-center gap-4">
+          <ScoreVisualization
+            score={viewModel.combinedScore}
+            size={compact ? 88 : 116}
+            color={combinedTone}
+            trackColor="rgba(255,255,255,0.08)"
+            pulseKey={pulseKey}
+          />
+          <div className="min-w-0">
+            <div
+              style={{
+                color: "rgba(255,255,255,0.36)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: compact ? 10 : 11,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase"
+              }}
+            >
+              Combined Score
+            </div>
+            <div
+              className="metis-display"
+              style={{
+                color: "white",
+                fontSize: compact ? 24 : 30,
+                lineHeight: 1,
+                marginTop: 8
+              }}
+            >
+              {viewModel.combinedScore}/100
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <div
+                className="rounded-full px-3 py-1.5"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.72)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: 700
+                }}
+              >
+                Cost Risk {viewModel.combinedBreakdown.costRisk}/100
+              </div>
+              <div
+                className="rounded-full px-3 py-1.5"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.72)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: 700
+                }}
+              >
+                Control {viewModel.combinedBreakdown.control}/100
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       <SummaryCard
         title={viewModel.splitSummary.costRisk.title}
         score={viewModel.splitSummary.costRisk.score}

@@ -106,6 +106,11 @@ export interface MetisDesignViewModel {
   riskLabel: string;
   riskColor: string;
   riskBg: string;
+  combinedScore: number;
+  combinedBreakdown: {
+    costRisk: number;
+    control: number;
+  };
   controlScore: number;
   controlLabel: string;
   controlColor: string;
@@ -621,6 +626,11 @@ export function buildMetisDesignViewModel({
   const displayPageCount = Math.max(pageCount, 1);
   const sampledPagesLabel =
     displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
+  const roundedRiskScore = Math.round(score.score);
+  const roundedControlScore = Math.round(control.score);
+  const costRiskContribution = Math.round(roundedRiskScore / 2);
+  const controlContribution = Math.round(roundedControlScore / 2);
+  const combinedScore = costRiskContribution + controlContribution;
 
   // This adapter is the only place where the product core is translated into
   // report-ready language. If copy, estimate framing, or section ordering
@@ -635,11 +645,16 @@ export function buildMetisDesignViewModel({
     scopeLabel: scope === "multi" ? "Multipage" : "Single Page",
     pagesSampledLabel: sampledPagesLabel,
     sampledPagesCount: displayPageCount,
-    score: Math.round(score.score),
+    score: roundedRiskScore,
     riskLabel: riskTone.label,
     riskColor: riskTone.color,
     riskBg: riskTone.bg,
-    controlScore: Math.round(control.score),
+    combinedScore,
+    combinedBreakdown: {
+      costRisk: costRiskContribution,
+      control: controlContribution
+    },
+    controlScore: roundedControlScore,
     controlLabel: controlTone.label,
     controlColor: controlTone.color,
     controlBg: controlTone.bg,
@@ -647,7 +662,7 @@ export function buildMetisDesignViewModel({
     splitSummary: {
       costRisk: {
         title: "Cost Risk",
-        score: Math.round(score.score),
+        score: roundedRiskScore,
         label: riskTone.label,
         color: riskTone.color,
         background: riskTone.bg,
@@ -656,7 +671,7 @@ export function buildMetisDesignViewModel({
       },
       control: {
         title: "Control",
-        score: Math.round(control.score),
+        score: roundedControlScore,
         label: controlTone.label,
         color: controlTone.color,
         background: controlTone.bg,

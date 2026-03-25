@@ -572,6 +572,14 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   assert.equal(viewModel.scaleSimulationRows[2]?.trafficLabel, "10k users");
   assert.match(viewModel.scaleSimulationRows[2]?.amount ?? "", /^~\$/);
   assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
+  assert.equal(
+    viewModel.combinedScore,
+    viewModel.combinedBreakdown.costRisk + viewModel.combinedBreakdown.control
+  );
+  assert.match(
+    `Cost Risk ${viewModel.combinedBreakdown.costRisk}/100`,
+    /^Cost Risk \d+\/100$/
+  );
   assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
 });
 
