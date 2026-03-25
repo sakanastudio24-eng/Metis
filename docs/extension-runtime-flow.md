@@ -5,24 +5,23 @@ This is the simple version of how Metis shows up on a page and keeps its data fr
 ## Flow
 
 1. `manifest.json` registers the MV3 surfaces.
-2. The user clicks the Metis toolbar action.
-3. `src/background/index.ts` checks whether Metis is already mounted in that tab.
-4. If the tab is not already injected, the service worker uses `chrome.scripting.executeScript` to inject `src/content/index.tsx`.
-5. `src/content/index.tsx` mounts a fixed Shadow DOM host and shows only the on-page Metis launcher.
-6. The user clicks the on-page Metis trigger.
-7. `src/app/App.tsx` delays the scan slightly so the route can settle, then runs the first scan.
-8. If the page is still settling, Metis schedules one more pass after `window.load`.
-9. After that, it keeps a light rescan loop and page-change checks alive while the panel is open.
-10. `src/shared/lib/siteBaseline.ts` stores baseline and visited-page snapshots.
+2. `content_scripts` mount `src/content/index.tsx` on normal web pages.
+3. `src/content/index.tsx` mounts a fixed Shadow DOM host and shows only the on-page Metis launcher.
+4. The user clicks the on-page Metis trigger.
+5. `src/app/App.tsx` delays the scan slightly so the route can settle, then runs the first scan.
+6. If the page is still settling, Metis schedules one more pass after `window.load`.
+7. After that, it keeps a light rescan loop and page-change checks alive while the panel is open.
+8. `src/shared/lib/siteBaseline.ts` stores baseline and visited-page snapshots.
+9. `src/background/index.ts` remains as a fallback path if the toolbar action ever needs to re-inject Metis into the current tab.
 
 ## Why It Works This Way
 
-Metis is still a content-script-first product, but the beta runtime is now explicitly on-demand.
+Metis is still a content-script-first product, but the launcher is now always available on normal pages while scanning stays user-triggered.
 
-That means the page-facing work stays close to the page while the trust story stays much cleaner:
+That means the page-facing work stays close to the page while the scan still waits for user intent:
 
-- inject only after user intent
-- show only the launcher first
+- keep the launcher visible
+- scan only after the launcher is clicked
 - settle once the page finishes loading
 - keep watching for route changes and later activity
 

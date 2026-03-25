@@ -32,7 +32,7 @@ What is working now:
 
 - Chrome Extension Manifest V3 setup
 - React + TypeScript + Tailwind extension scaffold
-- action-triggered launcher injection
+- always-visible on-page launcher on normal web pages
 - on-demand Metis scan after the on-page Metis trigger is clicked
 - live mini panel and full panel with score-first Phase 3 UI
 - filtered resource pipeline with duplicate, third-party, and top-offender signals
@@ -69,7 +69,7 @@ Metis should feel like a lightweight layer on top of a site, not a separate dash
 
 The live implementation uses:
 
-- the extension action to inject the launcher on demand
+- an always-mounted launcher on normal web pages
 - a Shadow DOM mount to isolate extension styles from host page styles
 - local React state for panel and report flow
 - a deterministic scan -> detect -> score -> insight pipeline
@@ -127,7 +127,7 @@ Important:
 
 - load `dist/`, not the repo root
 - reload the extension after code changes
-- after reloading, click the Metis toolbar action on the target page to inject the launcher again
+- after reloading, refresh the target page so the launcher mounts again
 - content scripts do not run on Chrome-internal pages like `chrome://`
 
 ## Development Commands
@@ -182,12 +182,14 @@ The extension currently requests:
 - `activeTab`
 - `storage`
 - `scripting`
+- `host_permissions: <all_urls>`
+- `content_scripts.matches: <all_urls>`
 
-This is the trust-first beta permission model:
+This is the current launcher-first permission model:
 
-- `activeTab` for user-triggered access to the current page
 - `storage` for captures, history, and refinement state
-- `scripting` for programmatic launcher injection after the user clicks Metis
+- `host_permissions` and `content_scripts` so the Metis launcher stays visible on normal pages
+- `activeTab` and `scripting` as a fallback if the toolbar action needs to re-inject Metis into the current tab
 
 ## Roadmap
 
