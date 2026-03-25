@@ -17,6 +17,7 @@ import {
   PLUS_CORE_KEYS,
   PLUS_QUESTION_DEFINITIONS
 } from "../../features/refinement/config";
+import { detectMoneyStack } from "../../features/stack";
 import { buildMultipageSnapshot } from "../../features/scan";
 import { scoreSnapshot } from "../../features/scoring";
 import type { PanelMode, ScanScope } from "../useMetisState";
@@ -80,6 +81,71 @@ function buildCurrentSnapshot(
   }
 
   return rawSnapshot;
+}
+
+function buildAutoRefinementAnswers(
+  snapshot: RawScanSnapshot | null
+): Partial<PlusRefinementAnswers> {
+  if (!snapshot) {
+    return {};
+  }
+
+  const detection = detectMoneyStack(snapshot, {});
+  const hostingGroup = detection.groups.find((group) => group.id === "hostingCdn");
+  const aiGroup = detection.groups.find((group) => group.id === "aiProviders");
+  const analyticsGroup = detection.groups.find((group) => group.id === "analyticsAdsRum");
+
+  const hostingVendorId = hostingGroup?.vendors[0]?.id;
+  const aiVendorId = aiGroup?.vendors[0]?.id;
+  const analyticsVendorId = analyticsGroup?.vendors[0]?.id;
+
+  return {
+    hostingProvider:
+      hostingVendorId === "vercel"
+        ? "vercel"
+        : hostingVendorId === "cloudflare"
+          ? "cloudflare"
+          : hostingVendorId === "cloudfront" ||
+              hostingVendorId === "aws" ||
+              hostingVendorId === "aws-s3" ||
+              hostingVendorId === "aws-api-gateway"
+            ? "aws"
+            : undefined,
+    stackCdnProvider:
+      hostingVendorId === "cloudflare"
+        ? "cloudflare"
+        : hostingVendorId === "cloudfront"
+          ? "cloudfront"
+          : hostingVendorId === "vercel"
+            ? "vercelEdge"
+            : undefined,
+    stackAiProvider:
+      aiVendorId === "openai"
+        ? "openai"
+        : aiVendorId === "anthropic"
+          ? "anthropic"
+          : aiVendorId === "googleAi"
+            ? "google"
+            : undefined,
+    stackAnalytics:
+      analyticsVendorId === "ga4"
+        ? "ga4"
+        : analyticsVendorId === "gtm"
+          ? "gtm"
+          : analyticsVendorId === "amazonAds"
+            ? "amazonAdvertising"
+            : analyticsVendorId === "cloudwatchRum"
+              ? "cloudwatchRum"
+              : analyticsVendorId === "metaPixel"
+                ? "metaPixel"
+                : analyticsVendorId === "segment"
+                  ? "segment"
+                  : analyticsVendorId === "plausible"
+                    ? "plausible"
+                    : analyticsVendorId === "mixpanel"
+                      ? "mixpanel"
+                      : undefined
+  };
 }
 
 function buildReportCopyText(
@@ -358,14 +424,25 @@ export function PhaseOneShell({
   const lastSnapshotKeyRef = useRef<string | null>(null);
 
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
-  const issues = activeSnapshot ? detectIssues(activeSnapshot, plusAnswers) : [];
-  const control = activeSnapshot ? assessControl(activeSnapshot, issues, plusAnswers) : null;
+  const inferredAnswers = useMemo(
+    () => buildAutoRefinementAnswers(activeSnapshot),
+    [activeSnapshot]
+  );
+  const effectiveAnswers = useMemo(
+    () => ({
+      ...inferredAnswers,
+      ...plusAnswers
+    }),
+    [inferredAnswers, plusAnswers]
+  );
+  const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
+  const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
   const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
   const insight =
     activeSnapshot && score ? buildInsight(activeSnapshot, issues, score) : null;
   const plusReport =
     activeSnapshot && score && insight
-      ? buildPlusOptimizationReport(insight, activeSnapshot, issues, score, plusAnswers)
+      ? buildPlusOptimizationReport(insight, activeSnapshot, issues, score, effectiveAnswers)
       : null;
   // Sample progress should reflect how many distinct pages Metis has seen on
   // this origin, even when the report is still rendering in single-page mode.
@@ -380,7 +457,7 @@ export function PhaseOneShell({
           insight,
           scope: scanScope,
           pageCount,
-          answers: plusAnswers,
+          answers: effectiveAnswers,
           plusReport,
           requiredQuestionCount: PLUS_CORE_KEYS.length
         })
@@ -395,11 +472,13 @@ export function PhaseOneShell({
         return true;
       }
 
-      return plusAnswers[definition.dependsOn.key] === definition.dependsOn.value;
+      return effectiveAnswers[definition.dependsOn.key] === definition.dependsOn.value;
     });
 
-    return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])];
-  }, [plusAnswers, viewModel?.stackQuestionDefinitions]);
+    return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])].filter(
+      (definition) => effectiveAnswers[definition.key] === undefined
+    );
+  }, [effectiveAnswers, plusAnswers, viewModel?.stackQuestionDefinitions]);
 
   const currentQuestion =
     questionDefinitions.find((definition) => plusAnswers[definition.key] === undefined) ?? null;
