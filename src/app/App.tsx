@@ -1,10 +1,9 @@
 // App.tsx owns the live content-script runtime.
-// It refreshes scan data, guards against invalid extension contexts,
-// and passes the latest snapshots into the injected Metis panel. Phase 4 also
-// guarantees one post-load rescan so pages that are still settling get a second,
-// deterministic pass before the steady interval loop takes over.
+// It now prefers user-triggered scanning: Metis waits until the panel opens,
+// delays the scan slightly so dynamic pages can settle, and only keeps the
+// rescan loop alive while the user is actually looking at the product.
 import type { MouseEvent, PointerEvent } from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Toaster } from "sonner";
 import { PhaseOneShell } from "./components/PhaseOneShell";
 import { useMetisState } from "./useMetisState";
@@ -18,7 +17,9 @@ import {
   upsertVisitedSiteSnapshot
 } from "../shared/lib/siteBaseline";
 
-const SCAN_REFRESH_INTERVAL_MS = 5000;
+const PANEL_OPEN_SCAN_DELAY_MS = 1000;
+const POST_LOAD_SCAN_DELAY_MS = 500;
+const SCAN_REFRESH_INTERVAL_MS = 3000;
 const NAVIGATION_CHECK_INTERVAL_MS = 500;
 
 function isExtensionContextInvalidated(error: unknown) {
@@ -38,6 +39,7 @@ export default function App() {
   const {
     panelMode,
     setPanelMode,
+    isPanelOpen,
     rawSnapshot,
     setRawSnapshot,
     baselineSnapshot,
@@ -51,18 +53,26 @@ export default function App() {
     isPlusRefinementOpen,
     setIsPlusRefinementOpen
   } = useMetisState();
+  const scanTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     let lastHref = window.location.href;
     let isStopped = false;
     let intervalId: number | null = null;
     let navigationCheckId: number | null = null;
+    const clearScheduledScan = () => {
+      if (scanTimeoutRef.current !== null) {
+        window.clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+    };
+
     const handlePostLoadSync = () => {
-      if (isStopped) {
+      if (isStopped || !isPanelOpen) {
         return;
       }
 
-      void syncSnapshots();
+      scheduleScan(POST_LOAD_SCAN_DELAY_MS);
     };
 
     const handlePageChange = () => {
@@ -71,7 +81,12 @@ export default function App() {
       }
 
       lastHref = window.location.href;
-      void syncSnapshots();
+
+      if (!isPanelOpen) {
+        return;
+      }
+
+      scheduleScan(PANEL_OPEN_SCAN_DELAY_MS);
     };
 
     const stopSync = () => {
@@ -89,13 +104,27 @@ export default function App() {
         window.clearInterval(navigationCheckId);
       }
 
+      clearScheduledScan();
+
       window.removeEventListener("popstate", handlePageChange);
       window.removeEventListener("hashchange", handlePageChange);
       window.removeEventListener("load", handlePostLoadSync);
     };
 
+    const scheduleScan = (delay = PANEL_OPEN_SCAN_DELAY_MS) => {
+      if (isStopped || !isPanelOpen) {
+        return;
+      }
+
+      clearScheduledScan();
+      scanTimeoutRef.current = window.setTimeout(() => {
+        scanTimeoutRef.current = null;
+        void syncSnapshots();
+      }, delay);
+    };
+
     const syncSnapshots = async () => {
-      if (isStopped) {
+      if (isStopped || !isPanelOpen) {
         return;
       }
 
@@ -130,19 +159,23 @@ export default function App() {
       }
     };
 
-    void syncSnapshots();
+    if (isPanelOpen) {
+      scheduleScan(PANEL_OPEN_SCAN_DELAY_MS);
+    }
 
-    if (document.readyState !== "complete") {
+    if (isPanelOpen && document.readyState !== "complete") {
       window.addEventListener("load", handlePostLoadSync, { once: true });
     }
 
-    intervalId = window.setInterval(() => {
-      void syncSnapshots();
-    }, SCAN_REFRESH_INTERVAL_MS);
+    if (isPanelOpen) {
+      intervalId = window.setInterval(() => {
+        void syncSnapshots();
+      }, SCAN_REFRESH_INTERVAL_MS);
 
-    navigationCheckId = window.setInterval(() => {
-      handlePageChange();
-    }, NAVIGATION_CHECK_INTERVAL_MS);
+      navigationCheckId = window.setInterval(() => {
+        handlePageChange();
+      }, NAVIGATION_CHECK_INTERVAL_MS);
+    }
 
     window.addEventListener("popstate", handlePageChange);
     window.addEventListener("hashchange", handlePageChange);
@@ -150,7 +183,7 @@ export default function App() {
     return () => {
       stopSync();
     };
-  }, [setBaselineSnapshot, setRawSnapshot, setVisitedSnapshots]);
+  }, [isPanelOpen, setBaselineSnapshot, setRawSnapshot, setVisitedSnapshots]);
 
   return (
     <div
