@@ -12,6 +12,8 @@ export function collectRawScanSnapshot(): RawScanSnapshot {
   const { resources, stackSignals, metrics } = collectResourceSummaries(page);
   const domStackSignals = collectDomStackSignals(page.href);
 
+  // Keep resource and DOM stack hints together so later cost-surface detection
+  // can reason about vendors without reopening the scan layer.
   return {
     scannedAt: new Date().toISOString(),
     page,
@@ -26,6 +28,8 @@ export function buildMultipageSnapshot(
   currentSnapshot: RawScanSnapshot,
   visitedSnapshots: RawScanSnapshot[]
 ): RawScanSnapshot {
+  // Multipage mode is still a simple aggregate. It favors a stable product read
+  // over trying to preserve every page as a first-class report section.
   const scopedSnapshots = visitedSnapshots.length > 0 ? visitedSnapshots : [currentSnapshot];
   const resources = scopedSnapshots.flatMap((snapshot) => snapshot.resources);
   const stackSignals = scopedSnapshots.flatMap((snapshot) => snapshot.stackSignals ?? []);
@@ -58,6 +62,8 @@ export function buildMultipageSnapshot(
 }
 
 export function buildScanDebugSummary(snapshot: RawScanSnapshot) {
+  // This summary is intentionally small because it is for runtime sanity checks,
+  // not for a user-facing debug panel.
   return {
     totalRequests: snapshot.metrics.requestCount,
     duplicateEndpoints: snapshot.metrics.duplicateEndpointCount,

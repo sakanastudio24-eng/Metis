@@ -1,20 +1,21 @@
 # Normalization Flow
 
-This document explains how Metis turns noisy browser resource data into a stable input for
-detection, scoring, and the final Phase 4 insight layer.
+This document explains the cleanup step between “the browser saw a lot of requests” and “Metis can explain what that means.”
 
-## Why Normalization Exists
+If scan collection is the raw intake, normalization is the part that makes the rest of the product trustworthy.
 
-Raw browser resource timing data is too noisy to score directly.
+## Why It Exists
 
-Different pages can include:
+Browser timing data is useful, but not in its raw form.
+
+Real pages include a lot of noise:
 
 - cached requests with zero transfer size
 - tiny assets that do not matter to cost risk
 - duplicate URLs with query strings or tracking noise
 - mixed initiator types that are not useful in raw form
 
-Metis normalizes this data before detection and scoring so the score stays explainable.
+Metis cleans that up first so the score can stay stable and the explanations can stay human.
 
 ## Source Files
 
@@ -39,7 +40,11 @@ Metis normalizes this data before detection and scoring so the score stays expla
 11. Build the final `RawScanSnapshot`.
 12. Feed the snapshot into detection, scoring, and deterministic insights.
 
-## Current Normalized Metrics
+## What That Produces
+
+After normalization, Metis has a much calmer view of the page.
+
+It knows:
 
 - `requestCount`
 - `uniqueRequestCount`
@@ -57,7 +62,9 @@ Metis normalizes this data before detection and scoring so the score stays expla
 - `topOffenders`
 - `topMeaningfulImages`
 
-## Current Rule
+These are the numbers the rest of the app should trust.
+
+## Rule
 
 Detection, scoring, and insights should read only normalized metrics, issue metadata,
 and score output.

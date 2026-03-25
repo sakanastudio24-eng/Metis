@@ -376,6 +376,8 @@ export function PhaseOneShell({
     }
 
     const lastSnapshotKey = lastSnapshotKeyRef.current;
+    // A soft refresh should feel alive, but it should not replay the full
+    // startup experience unless the page truly changed.
     if (isSoftRefresh(lastSnapshotKey, snapshotKey)) {
       setRefreshTick((current) => current + 1);
     }
@@ -388,6 +390,8 @@ export function PhaseOneShell({
       return;
     }
 
+    // The mini panel only replays the scanning loader for a genuinely new route
+    // or snapshot key, not every time the user reopens the panel.
     setMiniLoaded(false);
     const timer = window.setTimeout(() => {
       setMiniRouteKey(routeKey);
@@ -401,6 +405,8 @@ export function PhaseOneShell({
       return;
     }
 
+    // Fullscreen follows the same rule as the panel so the two surfaces stay in
+    // sync and do not feel like separate products.
     setFullLoaded(false);
     const timer = window.setTimeout(() => {
       setFullRouteKey(routeKey);

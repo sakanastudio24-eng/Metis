@@ -202,6 +202,8 @@ export function collectResourceSummaries(page: PageContext): {
       continue;
     }
 
+    // Stack signals are collected before the heavier filtering because provider
+    // hints can still be useful even when the resource itself is too small to score.
     const stackSignalKey = `${url.hostname}${url.pathname}`;
 
     if (!seenStackSignals.has(stackSignalKey) && stackSignals.length < STACK_SIGNAL_LIMIT) {
@@ -217,6 +219,8 @@ export function collectResourceSummaries(page: PageContext): {
     const transferSize = entry.transferSize ?? 0;
     const encodedBodySize = entry.encodedBodySize ?? 0;
 
+    // Metis treats zero-transfer and tiny assets as noise for scoring so request
+    // totals do not get inflated by cache hits and low-value files.
     if (transferSize === 0) {
       droppedZeroTransferCount += 1;
       continue;
