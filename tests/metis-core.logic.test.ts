@@ -569,7 +569,7 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
 });
 
-test("design view model can show saved page count beyond current scan scope", () => {
+test("design view model can show current-site sampled progress beyond single-page mode", () => {
   const snapshot = createSnapshot([]);
   const issues = detectIssues(snapshot);
   const score = scoreSnapshot(snapshot, issues);
@@ -582,14 +582,14 @@ test("design view model can show saved page count beyond current scan scope", ()
     score,
     insight,
     scope: "single",
-    pageCount: 1,
+    pageCount: 2,
     answers: {},
     plusReport: null,
     requiredQuestionCount: 3
   });
 
-  assert.equal(viewModel.pagesSampledLabel, "Sampled 1 page");
-  assert.equal(viewModel.sampledPagesCount, 1);
+  assert.equal(viewModel.pagesSampledLabel, "Sampled 2 pages");
+  assert.equal(viewModel.sampledPagesCount, 2);
 });
 
 test("design view model adds stack fallback questions for missing groups", () => {

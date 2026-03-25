@@ -483,7 +483,7 @@ function createSnapshot(resources, overrides = {}) {
     assert.equal(viewModel.aiCostPerRequestEstimate, "~$0.0001");
     assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
 });
-(0, node_test_1.test)("design view model can show saved page count beyond current scan scope", () => {
+(0, node_test_1.test)("design view model can show current-site sampled progress beyond single-page mode", () => {
     const snapshot = createSnapshot([]);
     const issues = (0, detection_1.detectIssues)(snapshot);
     const score = (0, scoring_1.scoreSnapshot)(snapshot, issues);
@@ -495,13 +495,13 @@ function createSnapshot(resources, overrides = {}) {
         score,
         insight,
         scope: "single",
-        pageCount: 1,
+        pageCount: 2,
         answers: {},
         plusReport: null,
         requiredQuestionCount: 3
     });
-    assert.equal(viewModel.pagesSampledLabel, "Sampled 1 page");
-    assert.equal(viewModel.sampledPagesCount, 1);
+    assert.equal(viewModel.pagesSampledLabel, "Sampled 2 pages");
+    assert.equal(viewModel.sampledPagesCount, 2);
 });
 (0, node_test_1.test)("design view model adds stack fallback questions for missing groups", () => {
     const snapshot = createSnapshot([
