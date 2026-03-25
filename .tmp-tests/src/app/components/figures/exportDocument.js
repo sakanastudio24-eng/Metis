@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildExportReportDocument = buildExportReportDocument;
 exports.buildExportOutlineText = buildExportOutlineText;
 function buildExportReportDocument(viewModel) {
+    // This document shape is the contract the future PDF path should target.
+    // Keeping it separate from the rendered UI avoids screenshot-style exports.
     return {
         title: `Metis report · ${viewModel.hostname}`,
         hostname: viewModel.hostname,
