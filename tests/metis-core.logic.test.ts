@@ -334,7 +334,8 @@ test("plus refinement keeps partial output when only some core answers are prese
   });
 
   assert.ok(report);
-  assert.equal(report?.summary.startsWith("Partial Plus read:"), true);
+  assert.equal(report?.summary, insight.summary);
+  assert.equal(report?.priorityLabel, "Plus suggestion");
   assert.ok((report?.missingCoreQuestions.length ?? 0) > 0);
   assert.match(report?.nextStep ?? "", /Cloudflare|cache rules|media delivery/i);
 });

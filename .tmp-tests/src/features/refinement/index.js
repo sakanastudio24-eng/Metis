@@ -157,12 +157,10 @@ function buildPlusOptimizationReport(baseInsight, snapshot, issues, score, answe
         .filter(Boolean)
         .join(" ");
     return {
-        summary: missingCoreQuestions.length === 0
-            ? `${buildPriorityLabel(answers, score)}: ${baseInsight.summary}`
-            : `Partial Plus read: ${baseInsight.summary}`,
+        summary: baseInsight.summary,
         detail,
         nextStep: buildProviderNextStep(answers, baseInsight.primaryCategory, baseInsight.nextStep),
-        priorityLabel: buildPriorityLabel(answers, score),
+        priorityLabel: missingCoreQuestions.length === 0 ? buildPriorityLabel(answers, score) : "Plus suggestion",
         answeredCount,
         missingCoreQuestions
     };
