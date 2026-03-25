@@ -32,8 +32,8 @@ What is working now:
 
 - Chrome Extension Manifest V3 setup
 - React + TypeScript + Tailwind extension scaffold
-- content script injection on normal webpages
-- floating Metis trigger
+- action-triggered page injection
+- on-demand Metis scan via extension click
 - live mini panel and full panel with score-first Phase 3 UI
 - filtered resource pipeline with duplicate, third-party, and top-offender signals
 - per-origin baseline comparison
@@ -69,7 +69,7 @@ Metis should feel like a lightweight layer on top of a site, not a separate dash
 
 The live implementation uses:
 
-- a content script to inject the UI
+- the extension action to inject the UI on demand
 - a Shadow DOM mount to isolate extension styles from host page styles
 - local React state for panel and report flow
 - a deterministic scan -> detect -> score -> insight pipeline
@@ -127,7 +127,7 @@ Important:
 
 - load `dist/`, not the repo root
 - reload the extension after code changes
-- refresh the webpage after reloading so the content script runs again
+- after reloading, click the Metis toolbar action on the target page to inject it again
 - content scripts do not run on Chrome-internal pages like `chrome://`
 
 ## Development Commands
@@ -181,9 +181,13 @@ The extension currently requests:
 
 - `activeTab`
 - `storage`
-- `host_permissions: <all_urls>`
+- `scripting`
 
-These permissions support the planned scanning model, but should be reviewed again before store submission.
+This is the trust-first beta permission model:
+
+- `activeTab` for user-triggered access to the current page
+- `storage` for captures, history, and refinement state
+- `scripting` for programmatic injection after the user clicks Metis
 
 ## Roadmap
 

@@ -5,34 +5,40 @@ This is the simple version of how Metis shows up on a page and keeps its data fr
 ## Flow
 
 1. `manifest.json` registers the MV3 surfaces.
-2. `src/content/index.tsx` injects a fixed Shadow DOM host and mounts React.
-3. `src/app/App.tsx` runs an immediate scan so the UI has something to show quickly.
-4. If the page is still settling, Metis schedules one more scan after `window.load`.
-5. After that, it keeps a light rescan loop and page-change checks alive.
-6. `src/shared/lib/siteBaseline.ts` stores baseline and visited-page snapshots.
-7. `src/background/index.ts` stays intentionally small until a later feature really needs background coordination.
+2. The user clicks the Metis toolbar action.
+3. `src/background/index.ts` tries to reopen an existing Metis instance in that tab.
+4. If the tab is not already injected, the service worker uses `chrome.scripting.executeScript` to inject `src/content/index.tsx`.
+5. `src/content/index.tsx` mounts a fixed Shadow DOM host and opens the mini panel immediately.
+6. `src/app/App.tsx` delays the scan slightly so the route can settle, then runs the first scan.
+7. If the page is still settling, Metis schedules one more pass after `window.load`.
+8. After that, it keeps a light rescan loop and page-change checks alive while the panel is open.
+9. `src/shared/lib/siteBaseline.ts` stores baseline and visited-page snapshots.
 
 ## Why It Works This Way
 
-Metis is a content-script-first product. That means the page-facing work stays close to the page, which keeps the model simple:
+Metis is still a content-script-first product, but the beta runtime is now explicitly on-demand.
 
+That means the page-facing work stays close to the page while the trust story stays much cleaner:
+
+- inject only after user intent
 - show something fast
 - settle once the page finishes loading
 - keep watching for route changes and later activity
 
 ## Scan Lifecycle Rule
 
-The content script should:
+Once injected, the content app should:
 
-- populate the UI fast with an immediate scan
+- open fast
+- wait a moment before the first scan
 - run a guaranteed second pass after `window.load` when the page is not complete yet
 - keep periodic rescans and navigation checks after that
 - log a small console-only scan summary for debugging without adding permanent debug UI
 
 ## Current Rule
 
-Keep page-facing logic in the content script and only move work into the service worker
-when Chrome APIs or cross-tab coordination require it.
+Keep page-facing logic in the injected app and only move work into the service worker
+when Chrome APIs, injection control, or cross-tab coordination require it.
 
 ## UI Isolation Rule
 
