@@ -13,7 +13,20 @@ This repo keeps one project `README.md` at the root. Everything else in `docs/` 
 
 ## Current Status
 
-Phase 4 logic is complete. The deterministic insight layer, scan-hardening pass, and logic tests are now implemented, with UI polish and store-readiness cleanup still remaining.
+Phase 4 is functionally in place.
+
+The live path now covers:
+
+- scan collection
+- normalization
+- issue detection
+- score breakdowns
+- deterministic insight copy
+- stack fingerprint resolution
+- provider-aware pricing assumptions
+- capture history
+- Plus refinement
+- injected panel/report rendering
 
 What is working now:
 
@@ -33,13 +46,13 @@ What is working now:
 - optional Plus report refinement questions and stack-aware guidance
 - logic tests for normalization, scoring, and insights
 - local visual test pages for layout checks
-- public threshold, weighting, scoring, scan, and capture flow docs
+- public flow docs for scanning, normalization, stack detection, pricing, capture, and UI mapping
 - internal pricing reference layer for provider-aware estimate wording
 
 What is not finished yet:
 
 - final copy tuning across more sites
-- estimate refinement beyond qualitative labels
+- estimate calibration across more provider and traffic shapes
 - store-ready polish and review
 
 ## Stack
@@ -54,13 +67,14 @@ What is not finished yet:
 
 Metis should feel like a lightweight layer on top of a site, not a separate dashboard.
 
-The current implementation uses:
+The live implementation uses:
 
 - a content script to inject the UI
 - a Shadow DOM mount to isolate extension styles from host page styles
-- local React state for the panel flow
-- a completed scan pipeline feeding detection, scoring, and insight output
-- public flow docs for normalization, scoring, insights, and runtime isolation
+- local React state for panel and report flow
+- a deterministic scan -> detect -> score -> insight pipeline
+- a fingerprint-based stack detector for cost-relevant vendors
+- a local pricing reference layer for estimate framing
 
 ## Repo Structure
 
@@ -84,6 +98,15 @@ docs/                   Architecture and testing notes
 ```
 
 The repo uses named flow docs in [docs](/Users/zech/Downloads/The-Big-One/Metis/docs) instead of nested generic `README.md` files.
+
+## Start Here
+
+If you want the shortest path through the repo:
+
+1. read [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis/docs/flow-overview.md)
+2. read [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
+3. read [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
+4. read [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
 
 ## Setup
 
@@ -199,6 +222,7 @@ See [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architec
 
 If you want to understand the product quickly, these are the best docs to start with:
 
+- [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis/docs/flow-overview.md)
 - [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architecture.md)
 - [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
 - [docs/normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
@@ -208,28 +232,10 @@ If you want to understand the product quickly, these are the best docs to start 
 - [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
 - [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
 
-Phase 2 notes live in:
+Phase-based references live in:
 
 - [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md)
 - [docs/phase-2-review.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-review.md)
-- [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
-- [docs/normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
-- [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
-- [docs/capture-save-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/capture-save-flow.md)
-- [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
-
-## Next Step
-
-The next implementation milestone after the current Phase 4 logic pass is:
-
-- compare the automated logic suite against manual site tests
-- tune the insight copy against more real sites
-- fix the remaining layout drift across real host sites
-- add estimate refinement without fake precision
-- tighten ship-readiness, permissions review, and store-facing polish
-
-Phase 3 planning now lives in:
-
 - [docs/phase-3-logic-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-logic-flow.md)
 - [docs/phase-3-ui-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-ui-flow.md)
 - [docs/scoring-config-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scoring-config-flow.md)
@@ -241,3 +247,12 @@ Phase 4 planning now lives in:
 - [docs/phase-4-implementation-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-implementation-plan.md)
 - [docs/phase-4-insight-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-insight-flow.md)
 - [docs/plus-refinement-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/plus-refinement-flow.md)
+
+## Next Step
+
+The next cleanup pass after the current Phase 4 logic work is:
+
+- compare logic output against more real-site manual tests
+- keep tightening copy and estimate framing
+- reduce remaining UI drift across host pages
+- review permissions and bundle size before store submission

@@ -41,11 +41,13 @@ Implemented in Phase 2. It combines:
 Separated on purpose so each phase can evolve cleanly:
 
 - `src/features/scan`
+- `src/features/stack`
 - `src/features/detection`
 - `src/features/scoring`
 - `src/features/insights`
+- `src/features/pricing`
 
-This separation prevents scan cleanup, issue logic, and scoring heuristics from getting mixed together.
+This separation prevents scan cleanup, stack inference, issue logic, pricing assumptions, and scoring heuristics from getting mixed together.
 
 ## Current Phase 3 Configuration
 
@@ -63,22 +65,36 @@ This keeps:
 
 out of the engine code so tuning stays mechanical and reviewable.
 
-## Phase 4 Direction
+## Current Phase 4 Direction
 
 Phase 4 remains deterministic and local-first.
 
 The current implemented flow is:
 
 ```text
-Normalized snapshot -> detected issues -> weighted score -> plain-language insight
+Normalized snapshot
+  -> technology evidence
+  -> fingerprint-resolved stack
+  -> detected issues
+  -> weighted score
+  -> plain-language insight
+  -> pricing-aware estimate wording
 ```
 
-That means `src/features/insights` consumes Phase 3 outputs rather than re-reading raw browser data.
+That means Metis now separates:
+
+- raw browser data
+- normalized metrics
+- stack evidence
+- issue detection
+- score math
+- user-facing estimate language
 
 The runtime now also guarantees:
 
-- an immediate scan for fast UI population
+- a delayed scan when the user opens Metis
 - a one-shot post-load rescan for pages that are still settling
+- lightweight rescans while Metis is open on dynamic pages
 - console-only debug summaries per scan pass
 
 ## Planned Source Layout
@@ -102,7 +118,14 @@ src/
 ## Expected Data Flow
 
 ```text
-Page -> Normalized scan snapshot -> Detection signals -> Score breakdown -> User-facing insight
+Page
+  -> scan snapshot
+  -> normalized metrics + stack evidence
+  -> fingerprint-resolved stack
+  -> detection signals
+  -> score breakdown
+  -> insight + pricing context
+  -> user-facing panel/report model
 ```
 
 ## Section-by-Section Build Order
