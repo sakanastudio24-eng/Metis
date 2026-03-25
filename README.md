@@ -1,20 +1,15 @@
 # Metis
 
-Metis is a Chrome extension that surfaces cost-risk signals directly on a webpage.
+Metis is a Chrome extension that sits on top of a live page and turns what the browser is already doing into a cost-risk read you can act on.
 
-The v1 product goal is simple:
+The product goal is still simple:
 
-- open any site
+- open a site
 - click Metis
-- see a cost risk score
-- see 3 to 5 real issues
-- see a rough cost insight
+- scan the current route
+- see a score, issues, stack context, and a rough waste read
 
-V1 is intentionally constrained:
-
-- no auth
-- no backend
-- no AI dependency
+This repo keeps one project `README.md` at the root. Everything else in `docs/` is a named flow or reference note, not another project README.
 
 ## Current Status
 
@@ -38,7 +33,7 @@ What is working now:
 - optional Plus report refinement questions and stack-aware guidance
 - logic tests for normalization, scoring, and insights
 - local visual test pages for layout checks
-- public threshold, weighting, and scoring flow docs
+- public threshold, weighting, scoring, scan, and capture flow docs
 
 What is not finished yet:
 
@@ -87,8 +82,7 @@ visual-test/            Local pages for extension UI checks
 docs/                   Architecture and testing notes
 ```
 
-The repo now uses named flow docs in [docs](/Users/zech/Downloads/The-Big-One/Metis/docs)
-instead of nested generic `README.md` files.
+The repo uses named flow docs in [docs](/Users/zech/Downloads/The-Big-One/Metis/docs) instead of nested generic `README.md` files.
 
 ## Setup
 
@@ -156,7 +150,7 @@ and [docs/visual-test-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visu
 Current manifest values:
 
 - name: `Metis`
-- version: `0.0.0.25`
+- version: see [package.json](/Users/zech/Downloads/The-Big-One/Metis/package.json) and [manifest.json](/Users/zech/Downloads/The-Big-One/Metis/manifest.json)
 - description: `Surface cost-risk signals directly on the page.`
 
 The extension currently requests:
@@ -200,6 +194,17 @@ Phase 4
 
 See [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architecture.md).
 
+## Flows
+
+If you want to understand the product quickly, these are the best docs to start with:
+
+- [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architecture.md)
+- [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
+- [docs/normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
+- [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
+- [docs/capture-save-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/capture-save-flow.md)
+- [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
+
 Phase 2 notes live in:
 
 - [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md)
@@ -207,6 +212,7 @@ Phase 2 notes live in:
 - [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
 - [docs/normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
 - [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
+- [docs/capture-save-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/capture-save-flow.md)
 - [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
 
 ## Next Step
