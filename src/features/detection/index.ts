@@ -56,6 +56,10 @@ function meetsLargeImageThreshold(
   );
 }
 
+function isScoredHostingVendor(vendor: { id: string }) {
+  return !["aws", "aws-s3", "aws-api-gateway", "cloudfront"].includes(vendor.id);
+}
+
 export function detectIssues(
   snapshot: RawScanSnapshot,
   answers: PlusRefinementAnswers = {}
@@ -371,13 +375,14 @@ export function detectIssues(
   }
 
   const hostingVendors = moneyStack.groups.find((group) => group.id === "hostingCdn")?.vendors ?? [];
-  if (hostingVendors.length > 0) {
+  const scoredHostingVendors = hostingVendors.filter(isScoredHostingVendor);
+  if (scoredHostingVendors.length > 0) {
     const highHosting =
-      hostingVendors.length >= 2 &&
+      scoredHostingVendors.length >= 2 &&
       (metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highTransferBytes ||
         metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highRequestCount);
     const mediumHosting =
-      hostingVendors.length >= 2 ||
+      scoredHostingVendors.length >= 2 ||
       metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumTransferBytes ||
       metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumRequestCount;
 
@@ -391,14 +396,14 @@ export function detectIssues(
             : "A billable hosting or CDN layer is active on this route",
       detail:
         highHosting
-          ? `${hostingVendors.map((vendor) => vendor.label).join(", ")} are serving this route alongside a heavier request or transfer profile, so infra billing likely contributes to waste.`
+          ? `${scoredHostingVendors.map((vendor) => vendor.label).join(", ")} are serving this route alongside a heavier request or transfer profile, so infra billing likely contributes to waste.`
           : mediumHosting
-            ? `${hostingVendors.map((vendor) => vendor.label).join(", ")} are part of the current route path, so repeated requests and heavier assets have a clearer infra cost impact.`
-            : `${hostingVendors[0]?.label ?? "A host or CDN"} was detected on this route, which makes transfer, cache misses, and repeated work more relevant financially.`,
+            ? `${scoredHostingVendors.map((vendor) => vendor.label).join(", ")} are part of the current route path, so repeated requests and heavier assets have a clearer infra cost impact.`
+            : `${scoredHostingVendors[0]?.label ?? "A host or CDN"} was detected on this route, which makes transfer, cache misses, and repeated work more relevant financially.`,
       severity: highHosting ? "high" : mediumHosting ? "medium" : "low",
       category: "hostingCdnSpendSurface",
       metric: {
-        hostingVendorCount: hostingVendors.length,
+        hostingVendorCount: scoredHostingVendors.length,
         totalEncodedBodySize: metrics.totalEncodedBodySize,
         requestCount: metrics.requestCount
       },

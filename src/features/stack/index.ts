@@ -4,6 +4,7 @@
 import type {
   DetectedStackGroup,
   DetectedStackVendor,
+  HostingProviderKind,
   MoneyStackConfidence,
   MoneyStackDetection,
   MoneyStackGroup,
@@ -52,6 +53,7 @@ type VendorSpec = {
   label: string;
   group: MoneyStackGroup;
   brandColor?: string;
+  providerKind?: HostingProviderKind;
   sources: Array<{
     kind: "name" | "host" | "path";
     patterns: string[];
@@ -60,6 +62,39 @@ type VendorSpec = {
   answerMatches?: Array<keyof PlusRefinementAnswers>;
   answerValues?: string[];
 };
+
+function isAwsHost(hostname: string) {
+  const host = hostname.toLowerCase();
+
+  return (
+    host === "amazonaws.com" ||
+    host.endsWith(".amazonaws.com") ||
+    host === "cloudfront.net" ||
+    host.endsWith(".cloudfront.net")
+  );
+}
+
+function classifyAwsHost(hostname: string): HostingProviderKind | null {
+  const host = hostname.toLowerCase();
+
+  if (host === "cloudfront.net" || host.endsWith(".cloudfront.net")) {
+    return "cloudfront";
+  }
+
+  if (host.endsWith(".s3.amazonaws.com") || host.includes(".s3.") || host.startsWith("s3.")) {
+    return "s3";
+  }
+
+  if (host.includes("execute-api.") && host.endsWith(".amazonaws.com")) {
+    return "api-gateway";
+  }
+
+  if (isAwsHost(host)) {
+    return "aws-generic";
+  }
+
+  return null;
+}
 
 function normalizeSignal(signal: StackSignal): StackSignal {
   return {
@@ -272,6 +307,7 @@ const VENDOR_SPECS: VendorSpec[] = [
     label: "CloudFront",
     group: "hostingCdn",
     brandColor: STACK_BRAND_COLORS.cloudfront,
+    providerKind: "cloudfront",
     sources: [
       { kind: "host", patterns: ["cloudfront.net"] },
       { kind: "name", patterns: ["x-amz-cf"] }
@@ -280,10 +316,29 @@ const VENDOR_SPECS: VendorSpec[] = [
     answerValues: ["cloudfront"]
   },
   {
+    id: "aws-s3",
+    label: "AWS S3",
+    group: "hostingCdn",
+    brandColor: STACK_BRAND_COLORS.aws,
+    providerKind: "s3",
+    sources: [
+      { kind: "host", patterns: [".s3.amazonaws.com", ".s3.", "s3.amazonaws.com"] }
+    ]
+  },
+  {
+    id: "aws-api-gateway",
+    label: "AWS API Gateway",
+    group: "hostingCdn",
+    brandColor: STACK_BRAND_COLORS.aws,
+    providerKind: "api-gateway",
+    sources: [{ kind: "host", patterns: ["execute-api."] }]
+  },
+  {
     id: "aws",
     label: "AWS",
     group: "hostingCdn",
     brandColor: STACK_BRAND_COLORS.aws,
+    providerKind: "aws-generic",
     sources: [
       {
         kind: "host",
@@ -543,6 +598,32 @@ export function detectMoneyStack(
     }
   }
 
+  for (const hostname of new Set(bucket.hostnames)) {
+    const awsKind = classifyAwsHost(hostname);
+
+    if (awsKind === "cloudfront") {
+      inferVendor(vendors, "cloudfront", "resource");
+      inferVendor(vendors, "aws", "mixed");
+      continue;
+    }
+
+    if (awsKind === "s3") {
+      inferVendor(vendors, "aws-s3", "resource");
+      inferVendor(vendors, "aws", "mixed");
+      continue;
+    }
+
+    if (awsKind === "api-gateway") {
+      inferVendor(vendors, "aws-api-gateway", "resource");
+      inferVendor(vendors, "aws", "mixed");
+      continue;
+    }
+
+    if (awsKind === "aws-generic") {
+      inferVendor(vendors, "aws", "resource");
+    }
+  }
+
   // Some vendors imply a broader paid platform behind them even when the page
   // only exposes the edge product directly.
   if (vendors.has("cloudfront") || vendors.has("cloudwatch-rum")) {
@@ -572,7 +653,8 @@ export function detectMoneyStack(
       group: spec.group,
       brandColor: spec.brandColor,
       source,
-      confidence
+      confidence,
+      providerKind: spec.providerKind
     };
     groups.find((group) => group.id === spec.group)?.vendors.push(vendor);
   }

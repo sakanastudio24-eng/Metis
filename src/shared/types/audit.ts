@@ -107,6 +107,11 @@ export type MoneyStackGroup =
 
 export type MoneyStackVendorSource = StackSignalSource | "answer" | "mixed";
 export type MoneyStackConfidence = "low" | "medium" | "high";
+export type HostingProviderKind =
+  | "cloudfront"
+  | "s3"
+  | "api-gateway"
+  | "aws-generic";
 
 export interface DetectedStackVendor {
   id: string;
@@ -115,6 +120,7 @@ export interface DetectedStackVendor {
   brandColor?: string;
   source: MoneyStackVendorSource;
   confidence: MoneyStackConfidence;
+  providerKind?: HostingProviderKind;
 }
 
 export interface DetectedStackGroup {

@@ -590,6 +590,32 @@ test("money stack detector recognizes amazon spend signals without generic tech 
   assert.ok(analyticsGroup?.vendors.some((vendor) => vendor.label === "CloudWatch RUM"));
 });
 
+test("money stack detector classifies direct AWS service hosts explicitly", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://bucket-name.s3.amazonaws.com/assets/app.js",
+        hostname: "bucket-name.s3.amazonaws.com",
+        pathname: "/assets/app.js",
+        source: "resource"
+      },
+      {
+        name: "https://abc123.execute-api.us-east-1.amazonaws.com/prod/search",
+        hostname: "abc123.execute-api.us-east-1.amazonaws.com",
+        pathname: "/prod/search",
+        source: "resource"
+      }
+    ]
+  });
+
+  const detection = detectMoneyStack(snapshot, {});
+  const hostingGroup = detection.groups.find((group) => group.id === "hostingCdn");
+
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS S3"));
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS API Gateway"));
+  assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS"));
+});
+
 test("money stack detector treats Cloudflare Browser Insights as analytics and Cloudflare platform context", () => {
   const snapshot = createSnapshot([], {
     page: {
@@ -625,6 +651,29 @@ test("money stack detector treats Cloudflare Browser Insights as analytics and C
   );
   assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "Cloudflare CDN"));
   assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS"));
+});
+
+test("generic AWS stack context does not create a hosting spend issue on its own", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://abc123.execute-api.us-east-1.amazonaws.com/prod/search",
+        hostname: "abc123.execute-api.us-east-1.amazonaws.com",
+        pathname: "/prod/search",
+        source: "resource"
+      },
+      {
+        name: "https://bucket-name.s3.amazonaws.com/assets/app.js",
+        hostname: "bucket-name.s3.amazonaws.com",
+        pathname: "/assets/app.js",
+        source: "resource"
+      }
+    ]
+  });
+
+  const issues = detectIssues(snapshot, {});
+
+  assert.equal(issues.some((issue) => issue.category === "hostingCdnSpendSurface"), false);
 });
 
 test("loading helpers only replay on new routes and soften same-route refreshes", () => {
