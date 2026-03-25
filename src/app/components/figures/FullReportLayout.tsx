@@ -5,149 +5,16 @@
  * meaningful sections above the fold.
  */
 import type { ReactNode } from "react";
-import { ArrowLeft, Bot, Check, Copy, Download, Target, X } from "lucide-react";
+import { ArrowLeft, Bot, Check, Copy, Download, Target, X, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import type { ScanScope } from "../../useMetisState";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type { PlusRefinementAnswers } from "../../../shared/types/audit";
 import type { MetisDesignViewModel } from "./liveAdapter";
-import { ScoreVisualization } from "./ScoreVisualization";
 import { TopIssuesList } from "./TopIssuesList";
 import { CostBreakdown } from "./CostBreakdown";
 import { DetectedStackBadges } from "./DetectedStackBadges";
-
-function RiskBadge({
-  label,
-  color,
-  background
-}: {
-  label: string;
-  color: string;
-  background: string;
-}) {
-  return (
-    <div
-      className="inline-flex items-center gap-2 rounded-full px-4 py-2"
-      style={{
-        background,
-        color,
-        fontFamily: "Inter, sans-serif",
-        fontSize: 12,
-        fontWeight: 600
-      }}
-    >
-      <div className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-      {label}
-    </div>
-  );
-}
-
-function ControlCard({
-  score,
-  label,
-  color,
-  background,
-  reasons
-}: {
-  score: number;
-  label: string;
-  color: string;
-  background: string;
-  reasons: string[];
-}) {
-  return (
-    <div
-      className="rounded-[22px] px-5 py-4"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.07)"
-      }}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div
-            style={{
-              color: "rgba(255,255,255,0.32)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase"
-            }}
-          >
-            Control
-          </div>
-          <div
-            style={{
-              color: "rgba(255,255,255,0.7)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 13,
-              lineHeight: "20px",
-              marginTop: 8
-            }}
-          >
-            This is the judgment layer: whether the weight on this route looks justified.
-          </div>
-        </div>
-        <div
-          className="rounded-full px-4 py-2"
-          style={{
-            background,
-            color,
-            fontFamily: "Inter, sans-serif",
-            fontSize: 12,
-            fontWeight: 700
-          }}
-        >
-          {label}
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-end gap-3">
-        <div
-          className="metis-display"
-          style={{
-            color: "white",
-            fontSize: 18
-          }}
-        >
-          {score}/100
-        </div>
-        <div
-          style={{
-            color: "rgba(255,255,255,0.42)",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 12,
-            marginBottom: 3
-          }}
-        >
-          Control score
-        </div>
-      </div>
-
-      {reasons.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {reasons.slice(0, 3).map((reason) => (
-            <div
-              key={reason}
-              className="rounded-[16px] px-4 py-3"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.05)",
-                color: "rgba(255,255,255,0.68)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 12,
-                lineHeight: "18px"
-              }}
-            >
-              {reason}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { SplitScoreSummary } from "./SplitScoreSummary";
 
 function alpha(color: string, suffix: string) {
   if (!color.startsWith("#")) {
@@ -506,6 +373,9 @@ interface FullReportLayoutProps {
   headerAccessory?: ReactNode;
   refreshTick?: number;
   onClose?: () => void;
+  showSampleProgress?: boolean;
+  onOpenExport?: () => void;
+  attachedLayout?: boolean;
 }
 
 export function FullReportLayout({
@@ -524,7 +394,10 @@ export function FullReportLayout({
   isPlusUser = false,
   headerAccessory,
   refreshTick = 0,
-  onClose
+  onClose,
+  showSampleProgress = true,
+  onOpenExport,
+  attachedLayout = false
 }: FullReportLayoutProps) {
   if (!viewModel) {
     return (
@@ -536,7 +409,9 @@ export function FullReportLayout({
 
   return (
     <motion.div
-      className="metis-report-shell flex h-full flex-col overflow-hidden rounded-[24px]"
+      className={`metis-report-shell flex h-full flex-col overflow-hidden ${
+        attachedLayout ? "rounded-l-[28px] rounded-r-none" : "rounded-[24px]"
+      }`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: "easeOut" }}
@@ -654,7 +529,6 @@ export function FullReportLayout({
       <div className="metis-scroll flex-1 overflow-y-auto px-8 py-7">
         <div className="space-y-6">
           <motion.div
-            key={`overview-${refreshTick}`}
             className="rounded-[28px] p-6"
             style={{
               background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
@@ -664,96 +538,9 @@ export function FullReportLayout({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.04, ease: "easeOut" }}
           >
-            <div className="grid items-start gap-6 xl:grid-cols-[134px_minmax(0,1fr)_328px]">
-              <div className="flex flex-col items-center justify-start gap-4">
-                <ScoreVisualization
-                  score={viewModel.score}
-                  size={126}
-                  color={viewModel.riskColor}
-                  trackColor="rgba(255,255,255,0.08)"
-                  pulseKey={refreshTick}
-                />
-              </div>
-
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_328px]">
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div
-                    className="metis-display"
-                    style={{
-                      color: "white",
-                      fontSize: 32,
-                      lineHeight: 1
-                    }}
-                  >
-                    {viewModel.score}
-                  </div>
-                  <RiskBadge
-                    label={viewModel.riskLabel}
-                    color={viewModel.riskColor}
-                    background={viewModel.riskBg}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 14
-                  }}
-                >
-                  Cost Risk Score
-                </div>
-
-                <div
-                  className="rounded-[22px] px-5 py-4"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.06)"
-                  }}
-                >
-                  <div
-                    className="metis-display"
-                    style={{
-                      color: "white",
-                      fontSize: 18
-                    }}
-                  >
-                    {viewModel.estimateRange}
-                  </div>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.42)",
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: 12,
-                      lineHeight: "18px",
-                      marginTop: 8
-                    }}
-                  >
-                    Driven by bandwidth, requests, and API usage.
-                  </div>
-                  {viewModel.estimateSourceNote && (
-                    <div
-                      style={{
-                        color: "rgba(255,255,255,0.34)",
-                        fontFamily: "Inter, sans-serif",
-                        fontSize: 11,
-                        lineHeight: "16px",
-                        marginTop: 8
-                      }}
-                    >
-                      {viewModel.estimateSourceNote}
-                    </div>
-                  )}
-                </div>
-
-                <ControlCard
-                  score={viewModel.controlScore}
-                  label={viewModel.controlLabel}
-                  color={viewModel.controlColor}
-                  background={viewModel.controlBg}
-                  reasons={viewModel.controlReasons}
-                />
-
+                <SplitScoreSummary viewModel={viewModel} pulseKey={refreshTick} />
                 <div
                   className="rounded-[22px] px-5 py-4"
                   style={{
@@ -819,19 +606,21 @@ export function FullReportLayout({
                       {viewModel.hostname}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <div
-                        className="rounded-full px-3 py-1.5"
-                        style={{
-                          background: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          color: "rgba(255,255,255,0.55)",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 11,
-                          fontWeight: 700
-                        }}
-                      >
-                        {viewModel.pagesSampledLabel}
-                      </div>
+                      {showSampleProgress && (
+                        <div
+                          className="rounded-full px-3 py-1.5"
+                          style={{
+                            background: "rgba(255,255,255,0.06)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            color: "rgba(255,255,255,0.55)",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 11,
+                            fontWeight: 700
+                          }}
+                        >
+                          {viewModel.pagesSampledLabel}
+                        </div>
+                      )}
                       <div
                         className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
                         style={{
@@ -844,7 +633,7 @@ export function FullReportLayout({
                         }}
                       >
                         <Check size={12} />
-                        Page saved
+                        Saved locally
                       </div>
                     </div>
                   </div>
@@ -888,7 +677,7 @@ export function FullReportLayout({
                     borderTop: "1px solid rgba(99,102,241,0.18)"
                   }}
                 >
-                  <div style={{ color: "#a5b4fc", fontSize: 16 }}>⚡</div>
+                  <Zap size={15} style={{ color: "#a5b4fc" }} />
                   <div
                     style={{
                       color: "rgba(255,255,255,0.55)",
@@ -947,7 +736,6 @@ export function FullReportLayout({
 
           <motion.div
             className="metis-report-grid"
-            key={`body-${refreshTick}`}
             initial={{ opacity: 0.9, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.32, delay: 0.08, ease: "easeOut" }}
@@ -1305,7 +1093,7 @@ export function FullReportLayout({
           </motion.button>
           <motion.button
             type="button"
-            onClick={onUpgrade}
+            onClick={onOpenExport}
             className="flex items-center gap-2 rounded-[18px] px-6 py-3"
             style={{
               background: "rgba(255,255,255,0.08)",
@@ -1319,7 +1107,7 @@ export function FullReportLayout({
             whileTap={{ scale: 0.98 }}
           >
             <Download size={15} />
-            Export PDF (Plus)
+            Export
           </motion.button>
         </div>
       </div>

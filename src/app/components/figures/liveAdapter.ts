@@ -65,6 +65,17 @@ export interface DesignQuestionState {
   priorityLabel: string | null;
 }
 
+export interface DesignSplitSummaryCard {
+  title: string;
+  score: number;
+  label: string;
+  color: string;
+  background: string;
+  summary: string;
+  detail?: string;
+  reasons?: string[];
+}
+
 export interface DesignScaleSimulationRow {
   trafficLabel: string;
   scenario: string;
@@ -100,6 +111,10 @@ export interface MetisDesignViewModel {
   controlColor: string;
   controlBg: string;
   controlReasons: string[];
+  splitSummary: {
+    costRisk: DesignSplitSummaryCard;
+    control: DesignSplitSummaryCard;
+  };
   estimateRange: string;
   quickInsight: string;
   supportingDetail: string;
@@ -629,6 +644,26 @@ export function buildMetisDesignViewModel({
     controlColor: controlTone.color,
     controlBg: controlTone.bg,
     controlReasons: control.reasons,
+    splitSummary: {
+      costRisk: {
+        title: "Cost Risk",
+        score: Math.round(score.score),
+        label: riskTone.label,
+        color: riskTone.color,
+        background: riskTone.bg,
+        summary: "The waste and cost pressure Metis sees on this route right now.",
+        detail: `Current waste estimate: ~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month`
+      },
+      control: {
+        title: "Control",
+        score: Math.round(control.score),
+        label: controlTone.label,
+        color: controlTone.color,
+        background: controlTone.bg,
+        summary: "Whether the route weight looks justified for the product context Metis can see.",
+        reasons: control.reasons
+      }
+    },
     estimateRange: `~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
     quickInsight:
       plusReport?.summary ?? insight?.summary ?? "Metis is still building a clean read of this page.",

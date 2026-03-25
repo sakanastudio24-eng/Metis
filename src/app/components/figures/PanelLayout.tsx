@@ -2,10 +2,10 @@
  * PanelLayout
  * Zip-authoritative mini/full panel body bound to live Phase 4 data.
  */
-import { Check } from "lucide-react";
+import { Check, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
-import { ScoreVisualization } from "./ScoreVisualization";
+import { SplitScoreSummary } from "./SplitScoreSummary";
 import { TopIssuesList } from "./TopIssuesList";
 import { DetectedStackBadges } from "./DetectedStackBadges";
 
@@ -13,38 +13,14 @@ interface PanelLayoutProps {
   viewModel: MetisDesignViewModel | null;
   compact?: boolean;
   refreshTick?: number;
-}
-
-function RiskBadge({
-  label,
-  color,
-  background
-}: {
-  label: string;
-  color: string;
-  background: string;
-}) {
-  return (
-    <div
-      className="inline-flex items-center gap-2 rounded-full px-4 py-2"
-      style={{
-        background,
-        color,
-        fontFamily: "Inter, sans-serif",
-        fontSize: 12,
-        fontWeight: 600
-      }}
-    >
-      <div className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-      {label}
-    </div>
-  );
+  showSampleProgress?: boolean;
 }
 
 export function PanelLayout({
   viewModel,
   compact = false,
-  refreshTick = 0
+  refreshTick = 0,
+  showSampleProgress = true
 }: PanelLayoutProps) {
   if (!viewModel) {
     return (
@@ -71,55 +47,12 @@ export function PanelLayout({
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
       <motion.div
-        className="flex flex-col items-center gap-4"
-        key={refreshTick}
-        initial={{ opacity: 0.88, y: 8 }}
+        className="space-y-4"
+        initial={{ opacity: 0.94, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.26, ease: "easeOut" }}
+        transition={{ duration: 0.24, ease: "easeOut" }}
       >
-        <ScoreVisualization
-          score={viewModel.score}
-          size={compact ? 108 : 138}
-          color={viewModel.riskColor}
-          trackColor="rgba(255,255,255,0.08)"
-          pulseKey={refreshTick}
-        />
-
-        <div className="text-center">
-          <div
-            style={{
-              color: "rgba(255,255,255,0.5)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: compact ? 14 : 18
-            }}
-          >
-            Cost Risk:{" "}
-            <span style={{ color: "white", fontWeight: 700 }}>{viewModel.score}</span>
-          </div>
-        </div>
-
-        <RiskBadge
-          label={viewModel.riskLabel}
-          color={viewModel.riskColor}
-          background={viewModel.riskBg}
-        />
-
-        <div
-          className="inline-flex items-center gap-2 rounded-full px-4 py-2"
-          style={{
-            background: viewModel.controlBg,
-            color: viewModel.controlColor,
-            fontFamily: "Inter, sans-serif",
-            fontSize: 12,
-            fontWeight: 600
-          }}
-        >
-          <div
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ background: viewModel.controlColor }}
-          />
-          Control: {viewModel.controlLabel}
-        </div>
+        <SplitScoreSummary viewModel={viewModel} compact pulseKey={refreshTick} />
 
         <motion.div
           className="w-full rounded-[24px] px-5 py-5"
@@ -169,19 +102,21 @@ export function PanelLayout({
               {viewModel.hostname}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <div
-                className="whitespace-nowrap rounded-full px-3 py-1.5"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.55)",
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: compact ? 10 : 11,
-                  fontWeight: 700
-                }}
-              >
-                {viewModel.pagesSampledLabel}
-              </div>
+              {showSampleProgress && (
+                <div
+                  className="whitespace-nowrap rounded-full px-3 py-1.5"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.55)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: compact ? 10 : 11,
+                    fontWeight: 700
+                  }}
+                >
+                  {viewModel.pagesSampledLabel}
+                </div>
+              )}
               <div
                 className="inline-flex whitespace-nowrap items-center gap-1.5 rounded-full px-3 py-1.5"
                 style={{
@@ -194,7 +129,7 @@ export function PanelLayout({
                 }}
               >
                 <Check size={compact ? 10 : 11} />
-                Page saved
+                Saved locally
               </div>
             </div>
           </div>
@@ -243,7 +178,7 @@ export function PanelLayout({
             borderTop: "1px solid rgba(99,102,241,0.18)"
           }}
         >
-          <div style={{ color: "#a5b4fc", fontSize: 16 }}>⚡</div>
+          <Zap size={15} style={{ color: "#a5b4fc" }} />
           <div
             style={{
               color: "rgba(255,255,255,0.55)",
