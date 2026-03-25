@@ -305,59 +305,56 @@ function buildScaleSimulationRows(monthlyWaste) {
 }
 const FIX_LIBRARY = {
     duplicateRequests: {
-        saveLabel: "Save ~$8/mo",
         priorityLabel: "Fix First",
         rootCause: "No request deduplication layer means multiple components trigger the same fetch independently on mount.",
         fix: "Add a shared SWR or React Query cache key so concurrent callers share a single in-flight request. Alternatively, hoist the fetch into a context provider.",
-        scaleImpact: "At 10× traffic → ~$80/month wasted on redundant compute alone."
     },
     requestCount: {
-        saveLabel: "Save ~$5/mo",
         rootCause: "The route is doing more work than its current UI state appears to require, which usually points to duplicate fetches, over-eager polling, or missing memoization.",
         fix: "Reduce duplicate fetch triggers, trim polling intervals, and move expensive loaders higher in the tree so they do not rerun on every interaction.",
-        scaleImpact: "At 10× traffic this request pattern compounds quickly into visible compute waste."
     },
     largeImages: {
-        saveLabel: "Save ~$4/mo",
         rootCause: "Large media is landing without enough compression, lazy loading, or responsive delivery for the rendered footprint.",
         fix: "Convert oversized assets to modern formats, lazy-load below-the-fold images, and use responsive image delivery instead of raw full-size payloads.",
-        scaleImpact: "At 10× traffic → bandwidth waste multiplies fast on image-heavy routes."
     },
     pageWeight: {
-        saveLabel: "Save ~$6/mo",
         rootCause: "The page is shipping more bytes than necessary across scripts, styles, and media for its current state.",
         fix: "Split heavy bundles, compress large assets, and cache stable resources more aggressively so repeat visits avoid full re-downloads.",
-        scaleImpact: "At 10× traffic → avoidable transfer costs become much harder to ignore."
     },
     thirdPartySprawl: {
-        saveLabel: "Save ~$3/mo",
         rootCause: "The route depends on too many external vendors for analytics, embeds, or helper scripts, which adds cost and latency overhead.",
         fix: "Remove low-value third-party tags, delay non-critical vendors, and collapse overlapping tools where possible.",
-        scaleImpact: "At 10× traffic → external vendor overhead becomes a larger share of the route cost profile."
     },
     aiSpendSurface: {
-        saveLabel: "Save ~$9/mo",
         priorityLabel: "Fix First",
         rootCause: "An AI provider is active on this route, and the current request path suggests the feature can fire more often than the user flow really needs.",
         fix: "Debounce or batch AI triggers, cache repeated prompts, and move non-essential completions off the hottest interaction path.",
-        scaleImpact: "At 10× traffic → direct model spend climbs much faster than standard request overhead."
     },
     analyticsAdsRumSurface: {
-        saveLabel: "Save ~$4/mo",
         rootCause: "Analytics, ad-tech, or RUM vendors are stacking on this route and each one adds execution, transfer, or paid measurement overhead.",
         fix: "Keep the highest-value tags, lazy-load non-critical vendors, and remove redundant measurement scripts that duplicate attribution or session replay.",
-        scaleImpact: "At 10× traffic → tag overhead becomes a steady vendor and execution tax on the route."
     },
     hostingCdnSpendSurface: {
-        saveLabel: "Save ~$5/mo",
         rootCause: "The active hosting or CDN path means cache misses, heavy transfer, and repeated compute have a clearer infra billing impact.",
         fix: "Push harder on caching, reduce transfer-heavy assets, and keep repeated work off the hottest edge or function path.",
-        scaleImpact: "At 10× traffic → infra billing compounds faster when cache misses and payload weight stay high."
     }
 };
-function buildFixRecommendationCards(issues) {
-    return issues
-        .map((issue, index) => {
+function formatSavingsLabel(value) {
+    return `Save ~${formatMonthly(value)}/mo`;
+}
+function buildFixRecommendationCards(issues, monthlyWaste) {
+    const rankedIssues = issues.slice(0, 5);
+    const recoveryBudget = Math.max(2, monthlyWaste * 0.75);
+    const weightedIssues = rankedIssues.map((issue, index) => {
+        const severityWeight = issue.severity === "high" ? 3 : issue.severity === "medium" ? 2 : 1;
+        return {
+            issue,
+            weight: severityWeight + (index === 0 ? 1 : 0)
+        };
+    });
+    const totalWeight = weightedIssues.reduce((sum, entry) => sum + entry.weight, 0) || 1;
+    const cards = weightedIssues
+        .map(({ issue, weight }, index) => {
         const severityLabel = issue.severity === "high" ? "critical" : issue.severity === "medium" ? "moderate" : "low";
         const color = severityLabel === "critical"
             ? "#ef4444"
@@ -365,18 +362,22 @@ function buildFixRecommendationCards(issues) {
                 ? "#f97316"
                 : "#eab308";
         const library = FIX_LIBRARY[issue.category] ?? {};
+        const savingsValue = Math.max(1, Math.round((recoveryBudget * weight) / totalWeight));
         return {
             title: issue.title,
             severityLabel,
             color,
             priorityLabel: index === 0 ? library.priorityLabel ?? "Fix First" : library.priorityLabel,
-            saveLabel: library.saveLabel,
+            saveLabel: formatSavingsLabel(savingsValue),
             rootCause: library.rootCause,
             fix: library.fix,
-            scaleImpact: library.scaleImpact
+            scaleImpact: `At 10× traffic → ~${formatMonthly(savingsValue * 10)}/mo recoverable if this issue stays on the route.`
         };
-    })
-        .slice(0, 5);
+    });
+    return {
+        cards,
+        totalSavingsLabel: `~${formatMonthly(recoveryBudget)}/mo`
+    };
 }
 function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, scope, pageCount, answers, plusReport, requiredQuestionCount }) {
     const riskTone = scoreToRiskTone(score);
@@ -384,6 +385,7 @@ function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, 
     const detectedStack = detectStack(snapshot, answers);
     const pricingContext = (0, pricing_1.resolvePricingContext)(snapshot, detectedStack.detection, answers);
     const monthlyWaste = deriveMonthlyWaste(snapshot, answers) * pricingContext.providerMultiplier;
+    const fixRecommendations = buildFixRecommendationCards(issues, monthlyWaste);
     const visitCount = pricingContext.monthlyVisitBaseline ?? visitEstimate(answers);
     const sessionCostValue = monthlyWaste / Math.max(250, visitCount / 4);
     const monthlyProjection = sessionCostValue * 10_000;
@@ -459,7 +461,8 @@ function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, 
         scaleSimulationRows: buildScaleSimulationRows(monthlyWaste),
         aiCostPerRequestEstimate: answers.aiUsage && answers.aiUsage !== "no" ? "~$0.0001" : null,
         estimateSourceNote: pricingContext.estimateSourceNote,
-        fixRecommendationCards: buildFixRecommendationCards(issues),
+        totalSavingsLabel: fixRecommendations.totalSavingsLabel,
+        fixRecommendationCards: fixRecommendations.cards,
         stackQuestionDefinitions: (0, config_1.buildStackFallbackQuestionDefinitions)(detectedStack.missingGroups),
         stackDetectionState: {
             missingGroups: detectedStack.missingGroups

@@ -767,6 +767,7 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
   assert.ok(viewModel.stackGroups.some((group) => group.label === "Payment"));
   assert.ok(viewModel.fixRecommendationCards.length > 0);
   assert.ok(viewModel.fixRecommendationCards.every((card) => !("placeholder" in card)));
+  assert.match(viewModel.totalSavingsLabel, /^~\$\d+\/mo$/);
   assert.ok(issues.some((issue) => issue.category === "aiSpendSurface"));
   assert.ok(issues.some((issue) => issue.category === "analyticsAdsRumSurface"));
   assert.ok(issues.some((issue) => issue.category === "hostingCdnSpendSurface"));
