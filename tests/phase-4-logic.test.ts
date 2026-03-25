@@ -582,14 +582,13 @@ test("design view model can show saved page count beyond current scan scope", ()
     insight,
     scope: "single",
     pageCount: 1,
-    savedPageCount: 2,
     answers: {},
     plusReport: null,
     requiredQuestionCount: 3
   });
 
-  assert.equal(viewModel.pagesSampledLabel, "Sampled 2 pages");
-  assert.equal(viewModel.sampledPagesCount, 2);
+  assert.equal(viewModel.pagesSampledLabel, "Sampled 1 page");
+  assert.equal(viewModel.sampledPagesCount, 1);
 });
 
 test("design view model adds stack fallback questions for missing groups", () => {

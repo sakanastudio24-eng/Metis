@@ -495,13 +495,12 @@ function createSnapshot(resources, overrides = {}) {
         insight,
         scope: "single",
         pageCount: 1,
-        savedPageCount: 2,
         answers: {},
         plusReport: null,
         requiredQuestionCount: 3
     });
-    assert.equal(viewModel.pagesSampledLabel, "Sampled 2 pages");
-    assert.equal(viewModel.sampledPagesCount, 2);
+    assert.equal(viewModel.pagesSampledLabel, "Sampled 1 page");
+    assert.equal(viewModel.sampledPagesCount, 1);
 });
 (0, node_test_1.test)("design view model adds stack fallback questions for missing groups", () => {
     const snapshot = createSnapshot([

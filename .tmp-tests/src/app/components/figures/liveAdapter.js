@@ -378,7 +378,7 @@ function buildFixRecommendationCards(issues) {
     })
         .slice(0, 5);
 }
-function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, scope, pageCount, savedPageCount, answers, plusReport, requiredQuestionCount }) {
+function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, scope, pageCount, answers, plusReport, requiredQuestionCount }) {
     const riskTone = scoreToRiskTone(score);
     const controlTone = controlToTone(control);
     const detectedStack = detectStack(snapshot, answers);
@@ -388,7 +388,7 @@ function buildMetisDesignViewModel({ snapshot, issues, control, score, insight, 
     const sessionCostValue = monthlyWaste / Math.max(250, visitCount / 4);
     const monthlyProjection = sessionCostValue * 10_000;
     const issuesForDisplay = issues.map(issueToDesignIssue);
-    const displayPageCount = Math.max(savedPageCount ?? 0, pageCount, 1);
+    const displayPageCount = Math.max(pageCount, 1);
     const sampledPagesLabel = displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
     // This adapter is the only place where the product core is translated into
     // report-ready language. If copy, estimate framing, or section ordering
