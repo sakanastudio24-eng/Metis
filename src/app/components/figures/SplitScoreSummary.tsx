@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, ArrowUpRight, Minus, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowUp, ChevronUp, Minus, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
@@ -38,9 +38,9 @@ function SummaryCard({
     label === "Healthy" || label === "Controlled"
       ? { icon: Minus, color: "#22c55e", background: "rgba(34,197,94,0.12)" }
       : label === "Moderate Risk" || label === "Mixed"
-        ? { icon: ArrowRight, color: "#f59e0b", background: "rgba(245,158,11,0.12)" }
+        ? { icon: ArrowUp, color: "#f59e0b", background: "rgba(245,158,11,0.12)" }
         : label === "High Risk" || label === "Uncontrolled"
-          ? { icon: ArrowUpRight, color: "#ef4444", background: "rgba(239,68,68,0.12)" }
+          ? { icon: ChevronUp, color: "#ef4444", background: "rgba(239,68,68,0.12)" }
           : { icon: Minus, color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.08)" };
   const TrendIcon = trend.icon;
 
@@ -96,17 +96,17 @@ function SummaryCard({
         </div>
 
         <div
-          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+          className="inline-flex items-center justify-center rounded-full"
           style={{
             background: trend.background,
             color: trend.color,
-            fontFamily: "Inter, sans-serif",
-            fontSize: compact ? 10 : 11,
-            fontWeight: 700
+            width: compact ? 28 : 32,
+            height: compact ? 28 : 32
           }}
+          aria-label={label}
+          title={label}
         >
-          <TrendIcon size={compact ? 11 : 12} />
-          <AcronymText text={label} />
+          <TrendIcon size={compact ? 13 : 15} />
         </div>
       </div>
 
