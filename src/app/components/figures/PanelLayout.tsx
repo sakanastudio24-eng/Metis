@@ -175,11 +175,11 @@ export function PanelLayout({
         <div
           className="flex items-center gap-3 px-5 py-4"
           style={{
-            background: "rgba(99,102,241,0.09)",
-            borderTop: "1px solid rgba(99,102,241,0.18)"
+            background: "rgba(249,115,22,0.09)",
+            borderTop: "1px solid rgba(249,115,22,0.18)"
           }}
         >
-          <Zap size={15} style={{ color: "#a5b4fc" }} />
+          <Zap size={15} style={{ color: "#f97316" }} />
           <div
             style={{
               color: "rgba(255,255,255,0.55)",
@@ -191,7 +191,7 @@ export function PanelLayout({
           </div>
           <div
             style={{
-              color: "#aeb5ff",
+              color: "#ff9c48",
               fontFamily: "Jua, sans-serif",
               fontSize: compact ? 18 : 20
             }}

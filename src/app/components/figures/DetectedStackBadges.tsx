@@ -10,15 +10,15 @@ function chipStyle(tone: DesignStackChip["tone"]) {
   switch (tone) {
     case "provider":
       return {
-        background: "rgba(99,102,241,0.12)",
-        border: "1px solid rgba(99,102,241,0.25)",
-        color: "#aeb5ff"
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        color: "rgba(255,255,255,0.82)"
       };
     case "ai":
       return {
-        background: "rgba(16,163,127,0.15)",
-        border: "1px solid rgba(16,163,127,0.3)",
-        color: "#18c59a"
+        background: "rgba(249,115,22,0.12)",
+        border: "1px solid rgba(249,115,22,0.25)",
+        color: "#f97316"
       };
     case "warning":
       return {

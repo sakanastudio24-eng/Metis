@@ -180,8 +180,8 @@ function scoreToRiskTone(score: ScoreBreakdown) {
     case "high risk":
       return {
         label: "High Risk",
-        color: "#ef4444",
-        bg: "rgba(239,68,68,0.2)"
+        color: "#dc5e5e",
+        bg: "rgba(220,94,94,0.2)"
       };
     case "watch":
       return {
@@ -215,15 +215,15 @@ function controlToTone(control: ControlAssessment) {
     case "Mixed":
       return {
         label: "Mixed",
-        color: "#f59e0b",
-        bg: "rgba(245,158,11,0.16)"
+        color: "#f97316",
+        bg: "rgba(249,115,22,0.16)"
       };
     case "Uncontrolled":
     default:
       return {
         label: "Uncontrolled",
-        color: "#ef4444",
-        bg: "rgba(239,68,68,0.16)"
+        color: "#dc5e5e",
+        bg: "rgba(220,94,94,0.16)"
       };
   }
 }
@@ -293,10 +293,10 @@ function issueToDesignIssue(issue: DetectedIssue): DesignIssue {
           : "low",
     color:
       issue.severity === "high"
-        ? "#ef4444"
+        ? "#dc5e5e"
         : issue.severity === "medium"
           ? "#f97316"
-          : "#eab308"
+          : "#f97316"
   };
 }
 
@@ -363,12 +363,12 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
     {
       label: "Bandwidth",
       amount: `~${formatMonthly(bandwidthValue)}/mo`,
-      accent: "#9cc3ff"
+      accent: "rgba(255,255,255,0.82)"
     },
     {
       label: "Requests / Compute",
       amount: `~${formatMonthly(requestsValue)}/mo`,
-      accent: "#ffb366"
+      accent: "#f97316"
     },
     {
       label:
@@ -376,7 +376,10 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
           ? "AI API Usage"
           : "Third-Party / APIs",
       amount: `~${formatMonthly(aiValue)}/mo`,
-      accent: answers.aiUsage && answers.aiUsage !== "no" ? "#17c690" : "#a5b4fc"
+      accent:
+        answers.aiUsage && answers.aiUsage !== "no"
+          ? "#22c55e"
+          : "rgba(255,255,255,0.82)"
     }
   ];
 }
@@ -582,10 +585,10 @@ function buildFixRecommendationCards(
         issue.severity === "high" ? "critical" : issue.severity === "medium" ? "moderate" : "low";
       const color =
         severityLabel === "critical"
-          ? "#ef4444"
+          ? "#dc5e5e"
           : severityLabel === "moderate"
             ? "#f97316"
-            : "#eab308";
+            : "#f97316";
       const library = FIX_LIBRARY[issue.category] ?? {};
       const savingsValue = Math.max(1, Math.round((recoveryBudget * weight) / totalWeight));
 

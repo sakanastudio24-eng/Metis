@@ -108,7 +108,7 @@ function ScaleSimulationSection({
           }}
         >
           <div className="flex items-center gap-2">
-            <Bot size={14} style={{ color: "#17c690" }} />
+            <Bot size={14} style={{ color: "#f97316" }} />
             <div
               style={{
                 color: "rgba(255,255,255,0.72)",
@@ -308,7 +308,7 @@ function FixRecommendationsSection({
                   className="rounded-full px-3 py-1"
                   style={{
                     background: "rgba(34,197,94,0.14)",
-                    color: "#4ade80",
+                    color: "#22c55e",
                     fontFamily: "Inter, sans-serif",
                     fontSize: 11,
                     fontWeight: 700
@@ -676,11 +676,11 @@ export function FullReportLayout({
                 <div
                   className="flex flex-wrap items-center gap-3 px-5 py-4"
                   style={{
-                    background: "rgba(99,102,241,0.10)",
-                    borderTop: "1px solid rgba(99,102,241,0.18)"
+                    background: "rgba(249,115,22,0.10)",
+                    borderTop: "1px solid rgba(249,115,22,0.18)"
                   }}
                 >
-                  <Zap size={15} style={{ color: "#a5b4fc" }} />
+                  <Zap size={15} style={{ color: "#f97316" }} />
                   <div
                     style={{
                       color: "rgba(255,255,255,0.55)",
@@ -693,7 +693,7 @@ export function FullReportLayout({
                   <div
                     className="metis-display"
                     style={{
-                      color: "#aeb5ff",
+                      color: "#ff9c48",
                       fontSize: 22
                     }}
                   >

@@ -276,9 +276,9 @@ export function LocalSettingsModal({
                     onClick={onClearSavedScans}
                     className="inline-flex items-center gap-2 rounded-full px-4 py-2"
                     style={{
-                      background: "rgba(239,68,68,0.12)",
-                      border: "1px solid rgba(239,68,68,0.2)",
-                      color: "#fda4af",
+                      background: "rgba(220,94,94,0.12)",
+                      border: "1px solid rgba(220,94,94,0.2)",
+                      color: "#dc8d72",
                       fontFamily: "Inter, sans-serif",
                       fontSize: 12,
                       fontWeight: 700

@@ -9,8 +9,8 @@ import { AcronymText } from "./AcronymTooltipText";
 function summaryToneStyle(tone: DesignSummaryPill["tone"]) {
   if (tone === "critical") {
     return {
-      background: "rgba(239,68,68,0.16)",
-      color: "#ff5d55"
+      background: "rgba(220,94,94,0.16)",
+      color: "#dc5e5e"
     };
   }
 
@@ -22,16 +22,16 @@ function summaryToneStyle(tone: DesignSummaryPill["tone"]) {
   }
 
   return {
-    background: "rgba(234,179,8,0.16)",
-    color: "#facc15"
+    background: "rgba(249,115,22,0.1)",
+    color: "#f97316"
   };
 }
 
 function severityPillStyle(severity: DesignIssue["severityLabel"]) {
   if (severity === "critical") {
     return {
-      background: "rgba(239,68,68,0.14)",
-      color: "#ff5d55"
+      background: "rgba(220,94,94,0.14)",
+      color: "#dc5e5e"
     };
   }
 
@@ -43,8 +43,8 @@ function severityPillStyle(severity: DesignIssue["severityLabel"]) {
   }
 
   return {
-    background: "rgba(234,179,8,0.14)",
-    color: "#facc15"
+    background: "rgba(249,115,22,0.1)",
+    color: "#f97316"
   };
 }
 

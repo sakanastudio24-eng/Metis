@@ -38,9 +38,9 @@ function SummaryCard({
     label === "Healthy" || label === "Controlled"
       ? { icon: Minus, color: "#22c55e", background: "rgba(34,197,94,0.12)" }
       : label === "Moderate Risk" || label === "Mixed"
-        ? { icon: ArrowUp, color: "#f59e0b", background: "rgba(245,158,11,0.12)" }
-        : label === "High Risk" || label === "Uncontrolled"
-          ? { icon: ChevronUp, color: "#ef4444", background: "rgba(239,68,68,0.12)" }
+        ? { icon: ArrowUp, color: "#f97316", background: "rgba(249,115,22,0.12)" }
+      : label === "High Risk" || label === "Uncontrolled"
+          ? { icon: ChevronUp, color: "#dc5e5e", background: "rgba(220,94,94,0.12)" }
           : { icon: Minus, color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.08)" };
   const TrendIcon = trend.icon;
 
@@ -48,8 +48,8 @@ function SummaryCard({
     <motion.div
       className="rounded-[22px] px-4 py-4"
       style={{
-        background: "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(255,255,255,0.08)"
+        background,
+        border: `1px solid ${color}22`
       }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -155,8 +155,8 @@ export function SplitScoreSummary({
     viewModel.combinedScore >= 65
       ? "#22c55e"
       : viewModel.combinedScore >= 40
-        ? "#f59e0b"
-        : "#ef4444";
+        ? "#f97316"
+        : "#dc5e5e";
 
   return (
     <motion.div
