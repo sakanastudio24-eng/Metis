@@ -87,6 +87,41 @@ chrome.runtime.onStartup.addListener(() => {
   void primeOpenTabsWithBridge();
 });
 
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "metis-sidepanel-presence") {
+    return;
+  }
+
+  let activeTabId: number | null = null;
+
+  port.onMessage.addListener((message: unknown) => {
+    if (
+      message &&
+      typeof message === "object" &&
+      "tabId" in message &&
+      typeof message.tabId === "number"
+    ) {
+      activeTabId = message.tabId;
+    }
+  });
+
+  port.onDisconnect.addListener(() => {
+    if (!activeTabId) {
+      return;
+    }
+
+    const closedTabId = activeTabId;
+
+    void patchMetisTabSession(closedTabId, {
+      isSidePanelOpen: false
+    }).then((session) => {
+      if (session) {
+        return broadcastSessionChange(closedTabId);
+      }
+    });
+  });
+});
+
 async function broadcastSessionChange(tabId: number) {
   const session = await getMetisTabSession(tabId);
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { AlertTriangle, FileText, RefreshCcw } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -300,6 +300,7 @@ function ReconnectState({
 }
 
 export default function App() {
+  const sidePanelPresencePortRef = useRef<chrome.runtime.Port | null>(null);
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
   const [session, setSession] = useState<MetisTabSessionState | null>(null);
   const [panelMode, setPanelMode] = useState<MetisSessionPanelMode>("mini");
@@ -422,6 +423,29 @@ export default function App() {
       patch
     });
   };
+
+  useEffect(() => {
+    const port = chrome.runtime.connect({
+      name: "metis-sidepanel-presence"
+    });
+
+    sidePanelPresencePortRef.current = port;
+
+    return () => {
+      sidePanelPresencePortRef.current = null;
+      port.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeTabId || !sidePanelPresencePortRef.current) {
+      return;
+    }
+
+    sidePanelPresencePortRef.current.postMessage({
+      tabId: activeTabId
+    });
+  }, [activeTabId]);
 
   useEffect(() => {
     let cancelled = false;
