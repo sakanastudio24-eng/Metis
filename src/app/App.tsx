@@ -454,6 +454,26 @@ export default function App() {
   }, [settings, settingsReady]);
 
   useEffect(() => {
+    if (!activeTabId) {
+      return;
+    }
+
+    void sendRuntimeMessage({
+      type: "METIS_SET_PANEL_VISIBILITY",
+      tabId: activeTabId,
+      isOpen: true
+    });
+
+    return () => {
+      void sendRuntimeMessage({
+        type: "METIS_SET_PANEL_VISIBILITY",
+        tabId: activeTabId,
+        isOpen: false
+      });
+    };
+  }, [activeTabId]);
+
+  useEffect(() => {
     const handleRuntimeMessage = (message: unknown) => {
       if (!message || typeof message !== "object" || !("type" in message)) {
         return;

@@ -14,6 +14,7 @@ export interface MetisTabSessionState {
   windowId: number;
   currentUrl: string;
   isActive: boolean;
+  isSidePanelOpen: boolean;
   bridgeStatus: MetisBridgeStatus;
   lastUpdatedAt: number | null;
   rawSnapshot: RawScanSnapshot | null;
@@ -38,6 +39,7 @@ export type MetisRuntimeMessage =
   | { type: "METIS_RECONNECT_ACTIVE_TAB" }
   | { type: "METIS_SCAN_UPDATE"; payload: MetisScanUpdatePayload }
   | { type: "METIS_GET_ACTIVE_TAB_SESSION" }
+  | { type: "METIS_SET_PANEL_VISIBILITY"; tabId: number; isOpen: boolean }
   | { type: "METIS_PATCH_TAB_SESSION"; patch: Partial<MetisSessionUiState> }
   | { type: "METIS_SESSION_CHANGED"; tabId: number; session: MetisTabSessionState | null }
   | { type: "METIS_RECONNECT_REQUIRED"; tabId: number };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { detectIssues } from "../features/detection";
 import { buildScanDebugSummary, collectRawScanSnapshot } from "../features/scan";
 import { scoreSnapshot } from "../features/scoring";
@@ -36,16 +36,19 @@ async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | 
 export function PageBridgeApp() {
   const [hovered, setHovered] = useState(false);
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [riskLabel, setRiskLabel] = useState<string>("Ready");
   const [isUpdating, setIsUpdating] = useState(false);
-  const [lastSyncedLabel, setLastSyncedLabel] = useState<string>("Waiting");
   const scanTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    void sendRuntimeMessage<{ ok: boolean; session?: { isActive: boolean } | null }>({
+    void sendRuntimeMessage<{
+      ok: boolean;
+      session?: { isActive: boolean; isSidePanelOpen?: boolean } | null;
+    }>({
       type: "METIS_BRIDGE_READY",
       href: window.location.href
     }).then((response) => {
@@ -56,6 +59,8 @@ export function PageBridgeApp() {
       if (response?.session?.isActive) {
         setIsSessionActive(true);
       }
+
+      setIsPanelOpen(response?.session?.isSidePanelOpen ?? false);
     });
 
     const listener = (
@@ -76,6 +81,13 @@ export function PageBridgeApp() {
 
       if (runtimeMessage.type === "METIS_ACTIVATE_FROM_TOOLBAR") {
         setIsSessionActive(true);
+        sendResponse({ ok: true });
+        return true;
+      }
+
+      if (runtimeMessage.type === "METIS_SESSION_CHANGED") {
+        setIsSessionActive(runtimeMessage.session?.isActive ?? false);
+        setIsPanelOpen(runtimeMessage.session?.isSidePanelOpen ?? false);
         sendResponse({ ok: true });
         return true;
       }
@@ -177,10 +189,6 @@ export function PageBridgeApp() {
 
         setScore(Math.round(scoreBreakdown.score));
         setRiskLabel(scoreBreakdown.label);
-        setLastSyncedLabel(new Date().toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "2-digit"
-        }));
 
         console.info("[Metis] scan summary", buildScanDebugSummary(snapshot));
         console.info("[Metis] raw scan snapshot", snapshot);
@@ -255,107 +263,115 @@ export function PageBridgeApp() {
 
   const handleActivate = async () => {
     setIsSessionActive(true);
+    setIsPanelOpen(true);
+    setHovered(false);
 
     await sendRuntimeMessage({ type: "METIS_START_TAB_SESSION" });
     await sendRuntimeMessage({ type: "METIS_OPEN_SIDE_PANEL" });
   };
 
-  if (isSessionActive) {
-    return null;
-  }
-
   return (
-    <div className="fixed right-0 z-[2147483647]" style={{ bottom: "5rem" }}>
-      {hovered && (
+    <AnimatePresence>
+      {!isPanelOpen && (
         <motion.div
-          className="absolute right-[68px] top-1/2 inline-flex h-[34px] -translate-y-1/2 items-center rounded-full px-4"
-          style={{
-            background: "#0d1825",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 20px 46px rgba(0,0,0,0.42)"
+          className="fixed right-0 z-[2147483647]"
+          style={{ bottom: "5rem" }}
+          initial={{ opacity: 0, x: 18, scale: 0.92 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 20, scale: 0.92 }}
+          transition={{
+            opacity: { duration: 0.22, ease: "easeOut" },
+            x: { type: "spring", stiffness: 240, damping: 26, mass: 0.9 },
+            scale: { type: "spring", stiffness: 240, damping: 26, mass: 0.9 }
           }}
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 12 }}
-          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="flex items-center gap-2.5 whitespace-nowrap leading-none">
+          <AnimatePresence>
+            {hovered && (
+              <motion.div
+                className="absolute right-[68px] top-1/2 inline-flex h-[34px] -translate-y-1/2 items-center rounded-full px-4"
+                style={{
+                  background: "#0d1825",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  boxShadow: "0 20px 46px rgba(0,0,0,0.42)"
+                }}
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="flex items-center gap-2.5 whitespace-nowrap leading-none">
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.38)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase"
+                    }}
+                  >
+                    Metis
+                  </div>
+                  <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
+                  <div
+                    style={{
+                      color: "white",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
+                      fontWeight: 600
+                    }}
+                  >
+                    Cost Risk: {score ?? "…"}
+                  </div>
+                  <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.66)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
+                      fontWeight: 500
+                    }}
+                  >
+                    {isSessionActive ? riskLabel : "Open Metis"}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.button
+            type="button"
+            onClick={() => {
+              void handleActivate();
+            }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            className="group flex min-w-[48px] items-center justify-center px-3 py-4 shadow-2xl"
+            style={{
+              background: "#0d1825",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "14px 0 0 14px",
+              borderRight: "none",
+              boxShadow: "0 18px 44px rgba(0,0,0,0.32)"
+            }}
+            title="Open Metis"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <div
+              className="flex h-7 w-7 items-center justify-center rounded-full"
               style={{
-                color: "rgba(255,255,255,0.38)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase"
+                background: isUpdating ? "rgba(34,197,94,0.16)" : "rgba(220,94,94,0.18)",
+                color: isUpdating ? "#22c55e" : "#ffffff",
+                fontFamily: "Jua, sans-serif",
+                fontSize: 15
               }}
             >
-              Metis
+              M
             </div>
-            <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
-            <div
-              style={{
-                color: "white",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 12,
-                fontWeight: 600
-              }}
-            >
-              Cost Risk: {score ?? "…"}
-            </div>
-            <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
-            <div
-              style={{
-                color: "rgba(255,255,255,0.66)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 12,
-                fontWeight: 500
-              }}
-            >
-              Open Metis
-            </div>
-          </div>
+          </motion.button>
         </motion.div>
       )}
-
-      <motion.button
-        type="button"
-        onClick={() => {
-          void handleActivate();
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className="group flex min-w-[48px] items-center justify-center px-3 py-4 shadow-2xl"
-        style={{
-          background: "#0d1825",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "14px 0 0 14px",
-          borderRight: "none",
-          boxShadow: "0 18px 44px rgba(0,0,0,0.32)"
-        }}
-        title="Open Metis"
-        initial={{ opacity: 0, x: 18, scale: 0.9 }}
-        animate={{ opacity: 1, x: 0, scale: 1 }}
-        transition={{
-          opacity: { duration: 0.28, ease: "easeOut" },
-          x: { type: "spring", stiffness: 240, damping: 24, mass: 0.9 },
-          scale: { type: "spring", stiffness: 240, damping: 24, mass: 0.9 }
-        }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <div
-          className="flex h-7 w-7 items-center justify-center rounded-full"
-          style={{
-            background: "rgba(220,94,94,0.18)",
-            color: "#ffffff",
-            fontFamily: "Jua, sans-serif",
-            fontSize: 15
-          }}
-        >
-          M
-        </div>
-      </motion.button>
-    </div>
+    </AnimatePresence>
   );
 }

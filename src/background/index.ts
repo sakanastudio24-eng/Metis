@@ -99,6 +99,16 @@ async function broadcastSessionChange(tabId: number) {
   } catch {
     // No side panel listeners is a normal case while the user is not looking at Metis.
   }
+
+  try {
+    await chrome.tabs.sendMessage(tabId, {
+      type: "METIS_SESSION_CHANGED",
+      tabId,
+      session
+    } satisfies MetisRuntimeMessage);
+  } catch {
+    // The page bridge may not exist yet for this tab.
+  }
 }
 
 async function openMetisSidePanel(windowId: number) {
@@ -159,6 +169,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           windowId: senderTab.windowId,
           currentUrl: runtimeMessage.href,
           isActive: current?.isActive ?? false,
+          isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: "ready",
           lastUpdatedAt: current?.lastUpdatedAt ?? null,
           rawSnapshot: current?.rawSnapshot ?? null,
@@ -198,6 +209,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           windowId: senderTab.windowId,
           currentUrl: current?.currentUrl ?? sender.tab?.url ?? "",
           isActive: true,
+          isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: current?.bridgeStatus ?? "ready",
           lastUpdatedAt: current?.lastUpdatedAt ?? null,
           rawSnapshot: current?.rawSnapshot ?? null,
@@ -224,6 +236,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           windowId: senderTab.windowId,
           currentUrl: runtimeMessage.payload.currentUrl,
           isActive: current?.isActive ?? true,
+          isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: "ready",
           lastUpdatedAt: Date.now(),
           rawSnapshot: runtimeMessage.payload.rawSnapshot,
@@ -242,6 +255,19 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           ok: true,
           ...(await getActiveTabSession())
         });
+        return;
+      }
+
+      case "METIS_SET_PANEL_VISIBILITY": {
+        const session = await patchMetisTabSession(runtimeMessage.tabId, {
+          isSidePanelOpen: runtimeMessage.isOpen
+        });
+
+        if (session) {
+          await broadcastSessionChange(runtimeMessage.tabId);
+        }
+
+        sendResponse({ ok: Boolean(session), session });
         return;
       }
 
