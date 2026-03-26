@@ -24,7 +24,7 @@ Nothing in the product should depend on horizontal scrolling.
 
 ## Core Principles
 
-- one connected Metis surface from launcher to side panel to full report
+- one connected Metis surface from launcher to compact side panel to page fullscreen report
 - stable dark shell that does not drift across websites
 - score-first hierarchy with compact density
 - status meaning that stays consistent across surfaces
@@ -37,10 +37,11 @@ Metis has four primary surfaces:
 
 1. launcher
 2. side panel
-3. side-panel full report mode
+3. page fullscreen report
 4. utility modals like settings and export
 
 The full report is not a detached product.
+It opens in the page DOM, but it should still feel like the larger expression of the same Metis system.
 It should read like the detailed mode of the same side-panel workspace.
 
 That means:

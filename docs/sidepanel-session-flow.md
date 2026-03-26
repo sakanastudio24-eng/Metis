@@ -5,7 +5,7 @@ This is the runtime split that now powers Metis.
 The short version:
 
 - the page bridge is disposable
-- the side panel is the stable workspace
+- the side panel is the stable compact workspace
 - the background service worker brokers state between them
 
 ## The Three Layers
@@ -21,6 +21,7 @@ Responsibilities:
 - watch route changes
 - collect snapshots
 - post live updates to the extension
+- open the fullscreen report overlay in the page when asked
 
 This layer dies on full reload and comes back with the page.
 
@@ -42,8 +43,9 @@ Lives in extension context.
 Responsibilities:
 
 - render the main Metis UI
+- keep the compact dashboard available across tab changes
 - read the active tab session
-- keep refinement, settings, export, and Plus shell inside the side panel
+- keep refinement, settings, export, and Plus shell close to the compact workspace
 - show reconnect state when the page bridge is gone
 
 ## Session Lifecycle
@@ -56,6 +58,13 @@ Responsibilities:
 4. background opens the side panel
 5. scans begin flowing into the tab session store
 6. side panel renders the latest session
+
+### Full report open
+
+1. side panel stays focused on compact reading
+2. user clicks `Full Report`
+3. background relays that request to the page bridge
+4. page bridge opens the fullscreen DOM report for the current tab
 
 ### SPA route change
 
@@ -76,10 +85,10 @@ Responsibilities:
 ## Why This Split Is Better
 
 - less page-layout fragility
-- fewer site-specific fullscreen bugs
-- more stable Metis workspace
+- fewer site-specific compact-panel bugs
+- more stable Metis compact workspace
 - easier compare/history/settings/export flow
-- cleaner browser-native product shape
+- cleaner split between compact dashboard and page-owned deep read
 
 ## Main Files
 

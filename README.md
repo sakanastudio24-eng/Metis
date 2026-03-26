@@ -34,7 +34,7 @@ What is working now:
 - React + TypeScript + Tailwind extension scaffold
 - always-visible on-page hover on normal web pages
 - on-demand Metis scan after the page hover is clicked
-- Chrome side panel workspace for the compact panel and full report
+- Chrome side panel workspace for the compact panel
 - split `Cost Risk` and `Control` summaries in both panel and full report
 - tab-session bridge between page state and the side panel
 - filtered resource pipeline with duplicate, third-party, and top-offender signals
@@ -69,14 +69,15 @@ What is not finished yet:
 
 ## Product Direction
 
-Metis should feel like a lightweight layer on top of a site, with the stable workspace living in the browser side panel instead of inside the page DOM.
+Metis should feel like a lightweight layer on top of a site, with the stable compact workspace living in the browser side panel and the fullscreen report opening back inside the page DOM.
 
 The live implementation uses:
 
 - an always-mounted hover bridge on normal web pages
 - a Shadow DOM mount to isolate extension styles from host page styles
 - a content-script bridge for scan lifecycle and route awareness
-- a side panel app for the stable Metis workspace
+- a side panel app for the stable compact Metis workspace
+- a page-owned fullscreen report overlay for deeper reading
 - a deterministic scan -> detect -> score -> insight pipeline
 - a parallel control layer so heaviness and justification are shown separately
 - a fingerprint-based stack detector for cost-relevant vendors

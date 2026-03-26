@@ -1,6 +1,6 @@
 # Extension Runtime Flow
 
-This is the simple version of how Metis shows up on a page and keeps its data fresh now that the main UI lives in Chrome's side panel.
+This is the simple version of how Metis shows up on a page and keeps its data fresh now that the compact workspace lives in Chrome's side panel and the fullscreen report lives back in the page DOM.
 
 ## Flow
 
@@ -14,6 +14,7 @@ This is the simple version of how Metis shows up on a page and keeps its data fr
 8. After that, it keeps a light rescan loop and page-change checks alive while the tab session stays active.
 9. The background service worker stores live tab-session state in `chrome.storage.session`.
 10. `src/app/App.tsx` reads the active tab session and renders the stable side panel workspace.
+11. When the user asks for the full report, the side panel tells the page bridge to open the fullscreen DOM overlay on the current tab.
 
 ## Why It Works This Way
 
@@ -22,7 +23,8 @@ Metis is now a hybrid product.
 That means:
 
 - the page bridge stays close to the page
-- the stable UI lives in extension context
+- the compact stable UI lives in extension context
+- the fullscreen report stays close to the page it is describing
 - the scan still waits for explicit user intent
 
 The page-facing behavior should still:
@@ -44,7 +46,7 @@ Once the user opens Metis from the hover, the page bridge should:
 
 ## Current Rule
 
-Keep page-facing logic small and disposable. Move stable coordination and the main UI into extension surfaces when Chrome gives Metis a better lifecycle.
+Keep page-facing logic small and disposable, but let the page still own the fullscreen report surface when that gives a clearer product shape than forcing everything into the side panel.
 
 ## UI Isolation Rule
 
