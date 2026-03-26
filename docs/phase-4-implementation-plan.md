@@ -11,7 +11,7 @@ Implement a deterministic insight layer that converts score output into short, c
 - `src/features/insights/index.ts`
 - `src/features/insights/config.ts`
 - `src/shared/types/audit.ts`
-- `src/app/components/PhaseOneShell.tsx`
+- `src/app/components/figures/liveAdapter.ts`
 
 ## Implemented Foundation
 

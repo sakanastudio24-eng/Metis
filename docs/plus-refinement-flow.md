@@ -16,8 +16,8 @@ Keep the default Metis report instant, then let a user answer a few high-value q
 
 - `src/features/refinement/config.ts`
 - `src/features/refinement/index.ts`
-- `src/app/useMetisState.ts`
-- `src/app/components/PhaseOneShell.tsx`
+- `src/content/PageBridgeApp.tsx`
+- `src/app/App.tsx`
 - `src/shared/types/audit.ts`
 
 ## Flow

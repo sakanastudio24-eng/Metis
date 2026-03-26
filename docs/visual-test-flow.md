@@ -16,7 +16,7 @@ pnpm build
 3. Open a local fixture page
 4. Refresh the page
 5. Check launcher, mini panel, floating full panel, centered report modal, overlap, and scroll behavior
-6. Compare against the zip-backed fixture rather than the older `PhaseOneShell` layout
+6. Compare against the live design system and current runtime surfaces rather than removed legacy shells
 
 ## Pages
 

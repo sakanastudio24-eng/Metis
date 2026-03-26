@@ -9,7 +9,7 @@ This flow shows how Metis turns normalized scan data into one deterministic insi
 - `src/features/scoring/index.ts`
 - `src/features/insights/config.ts`
 - `src/features/insights/index.ts`
-- `src/app/components/PhaseOneShell.tsx`
+- `src/app/components/figures/liveAdapter.ts`
 
 ## Flow
 
