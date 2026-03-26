@@ -18,7 +18,7 @@ import type {
   PlusRefinementAnswers,
   RawScanSnapshot
 } from "../shared/types/audit";
-import type { ScanScope } from "./useMetisState";
+import type { ScanScope } from "./types/scanScope";
 import {
   clearPageScanStore,
   getPageScanStoreSummary

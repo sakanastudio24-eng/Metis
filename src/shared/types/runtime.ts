@@ -1,10 +1,8 @@
 import type { PlusRefinementAnswers, RawScanSnapshot } from "./audit";
 
-export type MetisSessionPanelMode = "mini" | "full";
 export type MetisBridgeStatus = "ready" | "reconnecting" | "missing";
 export type MetisSessionUiState = {
   scanScope: "single" | "multi";
-  panelMode: MetisSessionPanelMode;
   plusAnswers: PlusRefinementAnswers;
   isPlusRefinementOpen: boolean;
 };
@@ -47,7 +45,6 @@ export type MetisRuntimeMessage =
 
 export const DEFAULT_METIS_SESSION_UI_STATE: MetisSessionUiState = {
   scanScope: "single",
-  panelMode: "mini",
   plusAnswers: {},
   isPlusRefinementOpen: false
 };

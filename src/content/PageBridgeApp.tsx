@@ -30,7 +30,7 @@ import type {
   PlusRefinementAnswers,
   RawScanSnapshot
 } from "../shared/types/audit";
-import type { ScanScope } from "../app/useMetisState";
+import type { ScanScope } from "../app/types/scanScope";
 import type {
   MetisRuntimeMessage,
   MetisTabSessionState

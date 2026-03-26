@@ -18,7 +18,7 @@ import type {
   RawScanSnapshot,
   ScoreBreakdown
 } from "../../../shared/types/audit";
-import type { ScanScope } from "../../useMetisState";
+import type { ScanScope } from "../../types/scanScope";
 
 export interface DesignIssue {
   id: string;

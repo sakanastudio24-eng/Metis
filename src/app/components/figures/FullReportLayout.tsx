@@ -7,7 +7,7 @@
 import type { ReactNode } from "react";
 import { ArrowLeft, Bot, Check, Copy, Download, Target, X, Zap } from "lucide-react";
 import { motion } from "motion/react";
-import type { ScanScope } from "../../useMetisState";
+import type { ScanScope } from "../../types/scanScope";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type { PlusRefinementAnswers } from "../../../shared/types/audit";
 import type { MetisDesignViewModel } from "./liveAdapter";

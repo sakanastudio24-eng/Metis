@@ -24,7 +24,7 @@
  *   3. Optional: server-side model comparing against baseline benchmarks
  *
  *   For the prototype, this pure function is sufficient and runs
- *   synchronously in the render body of MetisExtension — zero latency.
+ *   synchronously in the legacy demo shell — zero latency.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
