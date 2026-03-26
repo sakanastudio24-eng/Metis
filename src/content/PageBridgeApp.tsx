@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, ChevronRight } from "lucide-react";
 import { detectIssues } from "../features/detection";
 import { buildScanDebugSummary, collectRawScanSnapshot } from "../features/scan";
 import { scoreSnapshot } from "../features/scoring";
@@ -261,6 +260,10 @@ export function PageBridgeApp() {
     await sendRuntimeMessage({ type: "METIS_OPEN_SIDE_PANEL" });
   };
 
+  if (isSessionActive) {
+    return null;
+  }
+
   return (
     <div className="fixed right-0 z-[2147483647]" style={{ bottom: "5rem" }}>
       {hovered && (
@@ -309,7 +312,7 @@ export function PageBridgeApp() {
                 fontWeight: 500
               }}
             >
-              {isSessionActive ? riskLabel : "Open side panel"}
+              Open Metis
             </div>
           </div>
         </motion.div>
@@ -341,31 +344,16 @@ export function PageBridgeApp() {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-full"
-            style={{
-              background: isSessionActive ? "rgba(34,197,94,0.16)" : "rgba(220,94,94,0.18)"
-            }}
-          >
-            {isUpdating ? (
-              <Activity size={13} style={{ color: "#22c55e" }} />
-            ) : (
-              <ChevronRight size={13} style={{ color: isSessionActive ? "#22c55e" : "#dc5e5e" }} />
-            )}
-          </div>
-          {isSessionActive && (
-            <div
-              style={{
-                color: "rgba(255,255,255,0.5)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 10,
-                fontWeight: 700
-              }}
-            >
-              {lastSyncedLabel}
-            </div>
-          )}
+        <div
+          className="flex h-7 w-7 items-center justify-center rounded-full"
+          style={{
+            background: "rgba(220,94,94,0.18)",
+            color: "#ffffff",
+            fontFamily: "Jua, sans-serif",
+            fontSize: 15
+          }}
+        >
+          M
         </div>
       </motion.button>
     </div>
