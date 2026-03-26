@@ -31,10 +31,8 @@ import {
 } from "../shared/lib/metisLocalSettings";
 import type {
   MetisRuntimeMessage,
-  MetisSessionPanelMode,
   MetisTabSessionState
 } from "../shared/types/runtime";
-import { FullReportLayout } from "./components/figures/FullReportLayout";
 import { buildExportOutlineText, buildExportReportDocument } from "./components/figures/exportDocument";
 import {
   ExportArchitectureModal,
@@ -303,7 +301,6 @@ export default function App() {
   const sidePanelPresencePortRef = useRef<chrome.runtime.Port | null>(null);
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
   const [session, setSession] = useState<MetisTabSessionState | null>(null);
-  const [panelMode, setPanelMode] = useState<MetisSessionPanelMode>("mini");
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
@@ -400,12 +397,10 @@ export default function App() {
 
     const uiState = response.session?.uiState ?? null;
     if (uiState) {
-      setPanelMode(uiState.panelMode);
       setScanScope(uiState.scanScope);
       setPlusAnswers(uiState.plusAnswers);
       setIsPlusRefinementOpen(uiState.isPlusRefinementOpen);
     } else {
-      setPanelMode("mini");
       setScanScope(settings.preferredScanScope);
       setPlusAnswers({});
       setIsPlusRefinementOpen(false);
@@ -413,7 +408,6 @@ export default function App() {
   };
 
   const patchSessionUi = async (patch: {
-    panelMode?: MetisSessionPanelMode;
     scanScope?: ScanScope;
     plusAnswers?: PlusRefinementAnswers;
     isPlusRefinementOpen?: boolean;
@@ -536,11 +530,6 @@ export default function App() {
     void refreshSavedPageSummary();
   }, [session?.lastUpdatedAt]);
 
-  const handleSetPanelMode = (mode: MetisSessionPanelMode) => {
-    setPanelMode(mode);
-    void patchSessionUi({ panelMode: mode });
-  };
-
   const handleSetScanScope = (scope: ScanScope) => {
     setScanScope(scope);
     void patchSessionUi({ scanScope: scope });
@@ -586,6 +575,19 @@ export default function App() {
 
   const handleOpenSettings = () => {
     setIsSettingsOpen(true);
+  };
+
+  const handleOpenPageReport = async () => {
+    if (!activeTabId) {
+      return;
+    }
+
+    // The side panel is the stable compact workspace. The large report opens
+    // back inside the tab so it can use the full page viewport.
+    await sendRuntimeMessage({
+      type: "METIS_OPEN_PAGE_REPORT",
+      tabId: activeTabId
+    });
   };
 
   const handleOpenExport = () => {
@@ -666,47 +668,13 @@ export default function App() {
 
       {!session?.isActive ? (
         <ReconnectState ready={Boolean(session?.bridgeStatus === "ready")} onReconnect={() => void handleReconnect()} />
-      ) : panelMode === "full" ? (
-        <div className="h-full">
-          <FullReportLayout
-            viewModel={viewModel}
-            scanScope={scanScope}
-            onSetScanScope={handleSetScanScope}
-            currentQuestion={currentQuestion}
-            plusAnswers={plusAnswers}
-            isRefinementOpen={isPlusRefinementOpen}
-            setIsRefinementOpen={(value) => {
-              setIsPlusRefinementOpen(value);
-              void patchSessionUi({ isPlusRefinementOpen: value });
-            }}
-            onAnswer={handleAnswer}
-            onBackQuestion={handleBackQuestion}
-            canGoBack={previousQuestion !== null}
-            onCopyReport={() => {
-              void handleCopyReport();
-            }}
-            onUpgrade={() => setIsPlusModalOpen(true)}
-            isPlusUser={isPlusUser}
-            headerAccessory={
-              <ProfileButton
-                onUpgrade={() => setIsPlusModalOpen(true)}
-                onSettings={handleOpenSettings}
-                isPlusUser={isPlusUser}
-                onDark
-              />
-            }
-            refreshTick={0}
-            onClose={() => handleSetPanelMode("mini")}
-            showSampleProgress={settings.showSampleProgress}
-            onOpenExport={handleOpenExport}
-            attachedLayout={false}
-          />
-        </div>
       ) : (
         <>
           <SidePanelHeader
             hostname={viewModel?.hostname ?? session.currentUrl}
-            onOpenReport={() => handleSetPanelMode("full")}
+            onOpenReport={() => {
+              void handleOpenPageReport();
+            }}
             onUpgrade={() => setIsPlusModalOpen(true)}
             onSettings={handleOpenSettings}
             isPlusUser={isPlusUser}
@@ -731,7 +699,9 @@ export default function App() {
             <div className="flex gap-2">
               <motion.button
                 type="button"
-                onClick={() => handleSetPanelMode("full")}
+                onClick={() => {
+                  void handleOpenPageReport();
+                }}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 font-bold"
                 style={{
                   background: "#dc5e5e",
