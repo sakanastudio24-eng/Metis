@@ -26,6 +26,7 @@ import {
 } from "../shared/lib/metisLocalSettings";
 import type {
   MetisRuntimeMessage,
+  MetisSessionUiState,
   MetisTabSessionState
 } from "../shared/types/runtime";
 import { buildExportOutlineText, buildExportReportDocument } from "./components/figures/exportDocument";
@@ -35,7 +36,6 @@ import {
 import { PanelLayout } from "./components/figures/PanelLayout";
 import {
   CopyReportButton,
-  PlusUpgradeModal,
   ProfileButton,
   WhatJustHappened
 } from "./components/figures/PrototypeChrome";
@@ -286,8 +286,6 @@ export default function App() {
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
-  const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
-  const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const [settingsReady, setSettingsReady] = useState(false);
@@ -353,6 +351,7 @@ export default function App() {
     [plusAnswers, questionDefinitions]
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
+  const isPlusUser = session?.uiState.isPlusEnabled ?? false;
 
   const refreshActiveSession = async () => {
     const response = await sendRuntimeMessage<{
@@ -382,11 +381,7 @@ export default function App() {
     }
   };
 
-  const patchSessionUi = async (patch: {
-    scanScope?: ScanScope;
-    plusAnswers?: PlusRefinementAnswers;
-    isPlusRefinementOpen?: boolean;
-  }) => {
+  const patchSessionUi = async (patch: Partial<MetisSessionUiState>) => {
     await sendRuntimeMessage({
       type: "METIS_PATCH_TAB_SESSION",
       patch
@@ -576,6 +571,17 @@ export default function App() {
     });
   };
 
+  const handleOpenPagePlusOverlay = async () => {
+    if (!activeTabId) {
+      return;
+    }
+
+    await sendRuntimeMessage({
+      type: "METIS_OPEN_PAGE_PLUS_OVERLAY",
+      tabId: activeTabId
+    });
+  };
+
   const handleOpenExport = () => {
     if (!viewModel) {
       return;
@@ -646,7 +652,9 @@ export default function App() {
             onOpenReport={() => {
               void handleOpenPageReport();
             }}
-            onUpgrade={() => setIsPlusModalOpen(true)}
+            onUpgrade={() => {
+              void handleOpenPagePlusOverlay();
+            }}
             onSettings={handleOpenSettings}
             isPlusUser={isPlusUser}
           />
@@ -702,19 +710,6 @@ export default function App() {
           onClose={() => setIsExportOpen(false)}
           onCopyOutline={() => {
             void handleCopyExportOutline();
-          }}
-        />
-      )}
-
-      {isPlusModalOpen && (
-        <PlusUpgradeModal
-          onClose={() => setIsPlusModalOpen(false)}
-          onConfirm={() => {
-            setIsPlusUser(true);
-            setIsPlusModalOpen(false);
-            toast.success("Metis+ unlocked", {
-              description: "The prototype Plus experience is now enabled in this session."
-            });
           }}
         />
       )}

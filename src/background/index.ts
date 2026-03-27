@@ -262,6 +262,21 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         return;
       }
 
+      case "METIS_OPEN_PAGE_PLUS_OVERLAY": {
+        if (!runtimeMessage.tabId) {
+          sendResponse({ ok: false });
+          return;
+        }
+
+        await ensureContentBridge(runtimeMessage.tabId);
+        await chrome.tabs.sendMessage(runtimeMessage.tabId, {
+          type: "METIS_OPEN_PAGE_PLUS_OVERLAY",
+          tabId: runtimeMessage.tabId
+        } satisfies MetisRuntimeMessage);
+        sendResponse({ ok: true });
+        return;
+      }
+
       case "METIS_START_TAB_SESSION": {
         const senderTab = getSenderTab(sender);
 

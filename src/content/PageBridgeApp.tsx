@@ -38,6 +38,7 @@ import type {
 import type { ScanScope } from "../app/types/scanScope";
 import type {
   MetisRuntimeMessage,
+  MetisSessionUiState,
   MetisTabSessionState
 } from "../shared/types/runtime";
 
@@ -177,7 +178,6 @@ export function PageBridgeApp() {
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
-  const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const scanTimeoutRef = useRef<number | null>(null);
@@ -206,6 +206,7 @@ export function PageBridgeApp() {
     activeSnapshot && scoreBreakdown && insight
       ? buildPlusOptimizationReport(insight, activeSnapshot, issues, scoreBreakdown, effectiveAnswers)
       : null;
+  const isPlusUser = session?.uiState.isPlusEnabled ?? false;
   const pageCount = Math.max(visitedSnapshots.length, 1);
   const viewModel =
     activeSnapshot && scoreBreakdown && control
@@ -245,11 +246,7 @@ export function PageBridgeApp() {
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
 
-  const patchSessionUi = async (patch: {
-    scanScope?: ScanScope;
-    plusAnswers?: PlusRefinementAnswers;
-    isPlusRefinementOpen?: boolean;
-  }) => {
+  const patchSessionUi = async (patch: Partial<MetisSessionUiState>) => {
     await sendRuntimeMessage({
       type: "METIS_PATCH_TAB_SESSION",
       patch
@@ -317,6 +314,13 @@ export function PageBridgeApp() {
       if (runtimeMessage.type === "METIS_OPEN_PAGE_REPORT") {
         setHovered(false);
         setIsReportOpen(true);
+        sendResponse({ ok: true });
+        return true;
+      }
+
+      if (runtimeMessage.type === "METIS_OPEN_PAGE_PLUS_OVERLAY") {
+        setHovered(false);
+        setIsPlusModalOpen(true);
         sendResponse({ ok: true });
         return true;
       }
@@ -790,7 +794,7 @@ export function PageBridgeApp() {
           <PlusUpgradeModal
             onClose={() => setIsPlusModalOpen(false)}
             onConfirm={() => {
-              setIsPlusUser(true);
+              void patchSessionUi({ isPlusEnabled: true });
               setIsPlusModalOpen(false);
               toast.success("Metis+ unlocked", {
                 description: "The prototype Plus experience is now enabled in this session."
