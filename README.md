@@ -47,7 +47,6 @@ What is working now:
 - deterministic insight generation from score + issue output
 - optional Plus report refinement questions and stack-aware guidance
 - logic tests for normalization, scoring, and insights
-- local visual test pages for layout checks
 - public flow docs for scanning, normalization, stack detection, pricing, capture, and UI mapping
 - internal pricing reference layer for provider-aware estimate wording
 - local settings for scan behavior, motion, layout, and saved-scan management
