@@ -411,19 +411,3 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   await removeMetisTabSession(tabId);
   await broadcastSessionChange(tabId);
 });
-
-chrome.action.onClicked.addListener(async (tab) => {
-  if (!tab.id || tab.windowId === undefined || isRestrictedUrl(tab.url)) {
-    return;
-  }
-
-  try {
-    await ensureContentBridge(tab.id);
-    await chrome.tabs.sendMessage(tab.id, {
-      type: "METIS_ACTIVATE_FROM_TOOLBAR"
-    } satisfies MetisRuntimeMessage);
-    await openMetisSidePanel(tab.windowId);
-  } catch (error) {
-    console.error("[Metis] failed to inject into tab", error);
-  }
-});

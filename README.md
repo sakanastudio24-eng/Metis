@@ -167,7 +167,6 @@ Current manifest values:
 
 The extension currently requests:
 
-- `activeTab`
 - `storage`
 - `scripting`
 - `sidePanel`
@@ -179,7 +178,7 @@ This is the current hover-plus-side-panel permission model:
 - `storage` for captures, history, and refinement state
 - `host_permissions` and `content_scripts` so the Metis hover stays visible on normal pages
 - `sidePanel` so the main Metis workspace lives in extension context
-- `activeTab` and `scripting` as a fallback if the toolbar action needs to re-establish the bridge for the current tab
+- `scripting` so Metis can re-establish the page bridge for the current tab when reconnect flows need it
 
 ## Roadmap
 
