@@ -26,7 +26,6 @@ import {
   DEFAULT_METIS_SETTINGS,
   getMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
-import { buildSettingsAssumptionAnswers } from "../shared/lib/settingsAssumptions";
 import {
   getOrCreateSiteBaseline,
   upsertVisitedSiteSnapshot
@@ -189,17 +188,12 @@ export function PageBridgeApp() {
     () => buildAutoRefinementAnswers(activeSnapshot),
     [activeSnapshot]
   );
-  const settingsAnswers = useMemo(
-    () => buildSettingsAssumptionAnswers(settings),
-    [settings]
-  );
   const effectiveAnswers = useMemo(
     () => ({
-      ...settingsAnswers,
       ...inferredAnswers,
       ...plusAnswers
     }),
-    [inferredAnswers, plusAnswers, settingsAnswers]
+    [inferredAnswers, plusAnswers]
   );
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;

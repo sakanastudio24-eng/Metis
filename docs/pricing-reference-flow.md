@@ -14,8 +14,8 @@ This layer exists to make estimates more believable without turning Metis into a
 
 That means Metis can say things like:
 
-- `~ Based on AWS CloudFront assumptions last verified 2026-03`
-- `~ Based on Vercel Pro assumptions last verified 2026-03`
+- `~ Based on the AWS CloudFront pricing reference last verified 2026-03`
+- `~ Based on the Vercel Pro pricing reference last verified 2026-03`
 
 It should not say:
 
@@ -112,7 +112,7 @@ So:
 - session cost uses `~`
 - monthly projection uses `~`
 - scale simulation uses `~`
-- provider estimate notes explicitly mention assumptions
+- provider estimate notes explicitly mention the pricing reference
 
 ## Update Workflow
 

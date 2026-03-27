@@ -108,7 +108,7 @@ This layer does not try to be a billing engine.
 
 It exists to make estimates more believable by using:
 
-- approved provider pricing assumptions
+- approved provider pricing references
 - normalized plan tiers
 - provider-aware wording
 

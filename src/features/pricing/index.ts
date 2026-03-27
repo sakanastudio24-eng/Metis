@@ -71,7 +71,7 @@ function buildEstimateSourceNote(provider: ResolvedPricingProvider | null) {
     return null;
   }
 
-  return `~ Based on ${provider.displayName} ${provider.rawPlanLabel} assumptions last verified ${provider.lastVerifiedAt}.`;
+  return `~ Based on the ${provider.displayName} ${provider.rawPlanLabel} pricing reference last verified ${provider.lastVerifiedAt}.`;
 }
 
 export function resolvePricingContext(

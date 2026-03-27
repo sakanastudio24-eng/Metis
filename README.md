@@ -23,7 +23,7 @@ The live path now covers:
 - score breakdowns
 - deterministic insight copy
 - stack fingerprint resolution
-- provider-aware pricing assumptions
+- provider-aware pricing references
 - capture history
 - Plus refinement
 - side panel workspace rendering

@@ -305,8 +305,6 @@ export interface ControlAssessment {
 export type MetisRefreshMode = "smart" | "steady";
 export type MetisMotionPreference = "full" | "reduced";
 export type MetisScanDelayProfile = "fast" | "balanced" | "thorough";
-export type MetisDefaultHostingAssumption = "auto" | "cloudflare" | "vercel" | "aws";
-export type MetisTrafficBaselineOverride = "auto" | MonthlyVisitsBand;
 
 export interface MetisLocalSettings {
   preferredScanScope: "single" | "multi";
@@ -314,8 +312,6 @@ export interface MetisLocalSettings {
   motionPreference: MetisMotionPreference;
   autoRescanWhilePanelOpen: boolean;
   scanDelayProfile: MetisScanDelayProfile;
-  defaultHostingAssumption: MetisDefaultHostingAssumption;
-  trafficBaselineOverride: MetisTrafficBaselineOverride;
   attachedReport: boolean;
   showSampleProgress: boolean;
 }

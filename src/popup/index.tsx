@@ -1,14 +1,6 @@
 import { StrictMode, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import {
-  BadgeInfo,
-  Database,
-  ExternalLink,
-  Gauge,
-  Shield,
-  Sparkles,
-  Trash2
-} from "lucide-react";
+import { Database, ExternalLink, Gauge, Shield, Sparkles, Trash2 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "../styles/tailwind.css";
 import { clearPageScanStore, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
@@ -437,69 +429,6 @@ function PopupApp() {
             </div>
             <div style={{ color: "rgba(255,255,255,0.56)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "16px", marginTop: 5 }}>
               The page hover is visible on normal sites, but Metis does not begin scanning until you click it.
-            </div>
-          </div>
-        </Section>
-
-        <Section
-          icon={BadgeInfo}
-          title="Assumptions"
-          detail="Use these only when the page itself does not give Metis enough context."
-        >
-          <div className="space-y-2">
-            <div className="text-white/55" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
-              Default hosting
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { value: "auto", label: "Auto" },
-                { value: "cloudflare", label: "Cloudflare" },
-                { value: "vercel", label: "Vercel" },
-                { value: "aws", label: "AWS" }
-              ].map((option) => (
-                <PillButton
-                  key={option.value}
-                  active={settings.defaultHostingAssumption === option.value}
-                  onClick={() =>
-                    setSettings({
-                      ...settings,
-                      defaultHostingAssumption:
-                        option.value as MetisLocalSettings["defaultHostingAssumption"]
-                    })
-                  }
-                >
-                  {option.label}
-                </PillButton>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-white/55" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
-              Traffic baseline
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { value: "auto", label: "Auto" },
-                { value: "under1k", label: "Under 1k" },
-                { value: "1kTo10k", label: "1k to 10k" },
-                { value: "10kTo100k", label: "10k to 100k" },
-                { value: "100kPlus", label: "100k plus" }
-              ].map((option) => (
-                <PillButton
-                  key={option.value}
-                  active={settings.trafficBaselineOverride === option.value}
-                  onClick={() =>
-                    setSettings({
-                      ...settings,
-                      trafficBaselineOverride:
-                        option.value as MetisLocalSettings["trafficBaselineOverride"]
-                    })
-                  }
-                >
-                  {option.label}
-                </PillButton>
-              ))}
             </div>
           </div>
         </Section>

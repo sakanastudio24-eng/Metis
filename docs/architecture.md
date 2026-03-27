@@ -47,7 +47,7 @@ Separated on purpose so each phase can evolve cleanly:
 - `src/features/insights`
 - `src/features/pricing`
 
-This separation prevents scan cleanup, stack inference, issue logic, pricing assumptions, and scoring heuristics from getting mixed together.
+This separation prevents scan cleanup, stack inference, issue logic, pricing references, and scoring heuristics from getting mixed together.
 
 ## Current Phase 3 Configuration
 

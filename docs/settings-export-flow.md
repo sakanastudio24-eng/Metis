@@ -15,7 +15,6 @@ Current settings groups:
 - scan behavior
 - storage cleanup
 - permissions note
-- estimate fallback assumptions
 - about and feedback
 
 The stored settings contract lives in:
