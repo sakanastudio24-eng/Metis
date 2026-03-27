@@ -9,9 +9,7 @@
     "build": "tsc --noEmit && vite build && node scripts/build-content.mjs",
     "typecheck": "tsc --noEmit",
     "test:logic": "rm -rf .tmp-tests && tsc -p tsconfig.tests.json && node -e \"require('node:fs').writeFileSync('.tmp-tests/package.json', JSON.stringify({ type: 'commonjs' }))\" && node --test .tmp-tests/tests/metis-core.logic.test.js",
-    "clean": "rm -rf dist",
-    "visual:test": "node scripts/serve-visual-test.mjs",
-    "visual:test:extension": "pnpm build"
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "lucide-react": "^0.487.0",

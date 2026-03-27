@@ -101,7 +101,6 @@ src/
     types/              Shared contracts
   styles/               Tailwind entry and design tokens
 
-visual-test/            Local pages for extension UI checks
 docs/                   Architecture and testing notes
 ```
 
@@ -148,8 +147,6 @@ Important:
 pnpm dev
 pnpm build
 pnpm typecheck
-pnpm visual:test:extension
-pnpm visual:test
 ```
 
 What they do:
@@ -158,28 +155,6 @@ What they do:
 - `pnpm build` creates a fresh production build in `dist/`
 - `pnpm typecheck` runs TypeScript checks
 - `pnpm test:logic` runs the deterministic Phase 4 logic suite
-- `pnpm visual:test:extension` rebuilds the extension for UI testing
-- `pnpm visual:test` serves the local visual fixture pages at `http://127.0.0.1:4173`
-
-## Visual Testing
-
-Use the local fixtures to validate the injected UI against stable layouts:
-
-- `http://127.0.0.1:4173/`
-- `http://127.0.0.1:4173/sites/marketing/`
-- `http://127.0.0.1:4173/sites/dashboard/`
-- `http://127.0.0.1:4173/sites/media-heavy/`
-
-Recommended loop:
-
-1. Run `pnpm visual:test`
-2. Run `pnpm build`
-3. Reload the unpacked extension in `chrome://extensions`
-4. Refresh one of the local test pages
-5. Check the idle button, mini panel, full panel, overlap, and mobile width behavior
-
-See [docs/visual-testing.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visual-testing.md)
-and [docs/visual-test-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/visual-test-flow.md).
 
 ## Manifest Notes
 

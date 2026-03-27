@@ -32,7 +32,7 @@ The next polish pass should still review the output against:
 
 - Google Search
 - YouTube
-- local visual fixtures
+- browser-based manual QA on representative live pages
 
 Tune for:
 
