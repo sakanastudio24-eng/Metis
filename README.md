@@ -51,6 +51,7 @@ What is working now:
 - public flow docs for scanning, normalization, stack detection, pricing, capture, and UI mapping
 - internal pricing reference layer for provider-aware estimate wording
 - local settings for scan behavior, motion, layout, and saved-scan management
+- browser-native Settings page through the extension icon
 - export document shell for future PDF/report output
 
 What is not finished yet:

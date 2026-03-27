@@ -17,6 +17,7 @@
       "48": "icons/icon-48.png"
     }
   },
+  "options_page": "options.html",
   "permissions": [
     "activeTab",
     "storage",

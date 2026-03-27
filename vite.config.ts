@@ -6,6 +6,7 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 const backgroundEntry = fileURLToPath(
   new URL("./src/background/index.ts", import.meta.url)
 );
+const optionsEntry = fileURLToPath(new URL("./options.html", import.meta.url));
 const sidePanelEntry = fileURLToPath(new URL("./sidepanel.html", import.meta.url));
 
 export default defineConfig({
@@ -25,6 +26,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         background: backgroundEntry,
+        options: optionsEntry,
         sidepanel: sidePanelEntry
       },
       output: {

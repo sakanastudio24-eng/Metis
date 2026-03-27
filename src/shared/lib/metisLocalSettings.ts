@@ -6,6 +6,10 @@ export const DEFAULT_METIS_SETTINGS: MetisLocalSettings = {
   preferredScanScope: "single",
   refreshMode: "smart",
   motionPreference: "full",
+  autoRescanWhilePanelOpen: true,
+  scanDelayProfile: "balanced",
+  defaultHostingAssumption: "auto",
+  trafficBaselineOverride: "auto",
   attachedReport: true,
   showSampleProgress: true
 };
@@ -79,6 +83,29 @@ function isScanScope(value: unknown): value is MetisLocalSettings["preferredScan
   return value === "single" || value === "multi";
 }
 
+function isScanDelayProfile(value: unknown): value is MetisLocalSettings["scanDelayProfile"] {
+  return value === "fast" || value === "balanced" || value === "thorough";
+}
+
+function isDefaultHostingAssumption(
+  value: unknown
+): value is MetisLocalSettings["defaultHostingAssumption"] {
+  return value === "auto" || value === "cloudflare" || value === "vercel" || value === "aws";
+}
+
+function isTrafficBaselineOverride(
+  value: unknown
+): value is MetisLocalSettings["trafficBaselineOverride"] {
+  return (
+    value === "auto" ||
+    value === "under1k" ||
+    value === "1kTo10k" ||
+    value === "10kTo100k" ||
+    value === "100kPlus" ||
+    value === "notSure"
+  );
+}
+
 function normalizeSettings(value: unknown): MetisLocalSettings {
   if (!isRecord(value)) {
     return DEFAULT_METIS_SETTINGS;
@@ -94,6 +121,19 @@ function normalizeSettings(value: unknown): MetisLocalSettings {
     motionPreference: isMetisMotionPreference(value.motionPreference)
       ? value.motionPreference
       : DEFAULT_METIS_SETTINGS.motionPreference,
+    autoRescanWhilePanelOpen:
+      typeof value.autoRescanWhilePanelOpen === "boolean"
+        ? value.autoRescanWhilePanelOpen
+        : DEFAULT_METIS_SETTINGS.autoRescanWhilePanelOpen,
+    scanDelayProfile: isScanDelayProfile(value.scanDelayProfile)
+      ? value.scanDelayProfile
+      : DEFAULT_METIS_SETTINGS.scanDelayProfile,
+    defaultHostingAssumption: isDefaultHostingAssumption(value.defaultHostingAssumption)
+      ? value.defaultHostingAssumption
+      : DEFAULT_METIS_SETTINGS.defaultHostingAssumption,
+    trafficBaselineOverride: isTrafficBaselineOverride(value.trafficBaselineOverride)
+      ? value.trafficBaselineOverride
+      : DEFAULT_METIS_SETTINGS.trafficBaselineOverride,
     attachedReport:
       typeof value.attachedReport === "boolean"
         ? value.attachedReport

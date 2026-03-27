@@ -2,6 +2,11 @@
 // It also validates stored records so stale snapshot shapes do not crash newer panel code.
 import type { RawScanSnapshot } from "../types/audit";
 
+export interface SiteHistorySummary {
+  baselineOriginCount: number;
+  visitedOriginCount: number;
+}
+
 function getBaselineStorageKey(origin: string) {
   return `metis:baseline:${origin}`;
 }
@@ -224,6 +229,76 @@ export async function clearVisitedSiteSnapshots(origin: string): Promise<void> {
     try {
       storage.set({ [key]: {} }, () => {
         resolveStorageValue(undefined, resolve, undefined);
+      });
+    } catch {
+      resolve();
+    }
+  });
+}
+
+export async function getSiteHistorySummary(): Promise<SiteHistorySummary> {
+  const storage = getStorageArea();
+
+  if (!storage) {
+    return {
+      baselineOriginCount: 0,
+      visitedOriginCount: 0
+    };
+  }
+
+  return new Promise((resolve) => {
+    try {
+      storage.get(null, (result) => {
+        const keys = Object.keys(result);
+        resolveStorageValue(
+          {
+            baselineOriginCount: 0,
+            visitedOriginCount: 0
+          },
+          resolve,
+          {
+            baselineOriginCount: keys.filter((key) => key.startsWith("metis:baseline:")).length,
+            visitedOriginCount: keys.filter((key) => key.startsWith("metis:pages:")).length
+          }
+        );
+      });
+    } catch {
+      resolve({
+        baselineOriginCount: 0,
+        visitedOriginCount: 0
+      });
+    }
+  });
+}
+
+export async function clearAllSiteHistory(): Promise<void> {
+  const storage = getStorageArea();
+
+  if (!storage) {
+    return;
+  }
+
+  const summary = await getSiteHistorySummary();
+
+  if (summary.baselineOriginCount === 0 && summary.visitedOriginCount === 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    try {
+      storage.get(null, (result) => {
+        const keys = Object.keys(result).filter(
+          (key) => key.startsWith("metis:baseline:") || key.startsWith("metis:pages:")
+        );
+
+        if (keys.length === 0) {
+          resolveStorageValue(undefined, resolve, undefined);
+          return;
+        }
+
+        storage.remove(keys, () => {
+          resolveStorageValue(undefined, resolve, undefined);
+        });
       });
     } catch {
       resolve();

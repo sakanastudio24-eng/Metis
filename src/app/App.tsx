@@ -20,23 +20,18 @@ import type {
 } from "../shared/types/audit";
 import type { ScanScope } from "./types/scanScope";
 import {
-  clearPageScanStore,
-  getPageScanStoreSummary
-} from "../shared/lib/pageScanHistory";
-import { clearVisitedSiteSnapshots } from "../shared/lib/siteBaseline";
-import {
   DEFAULT_METIS_SETTINGS,
   getMetisLocalSettings,
   saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
+import { buildSettingsAssumptionAnswers } from "../shared/lib/settingsAssumptions";
 import type {
   MetisRuntimeMessage,
   MetisTabSessionState
 } from "../shared/types/runtime";
 import { buildExportOutlineText, buildExportReportDocument } from "./components/figures/exportDocument";
 import {
-  ExportArchitectureModal,
-  LocalSettingsModal
+  ExportArchitectureModal
 } from "./components/figures/MetisUtilityModals";
 import { PanelLayout } from "./components/figures/PanelLayout";
 import {
@@ -152,18 +147,6 @@ async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | 
     return (await chrome.runtime.sendMessage(message)) as T;
   } catch {
     return null;
-  }
-}
-
-function deriveOrigin(url: string | null) {
-  if (!url) {
-    return window.location.origin;
-  }
-
-  try {
-    return new URL(url).origin;
-  } catch {
-    return window.location.origin;
   }
 }
 
@@ -306,11 +289,9 @@ export default function App() {
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const [settingsReady, setSettingsReady] = useState(false);
-  const [savedPageCount, setSavedPageCount] = useState(0);
 
   const rawSnapshot = session?.rawSnapshot ?? null;
   const visitedSnapshots = session?.visitedSnapshots ?? [];
@@ -319,12 +300,17 @@ export default function App() {
     () => buildAutoRefinementAnswers(activeSnapshot),
     [activeSnapshot]
   );
+  const settingsAnswers = useMemo(
+    () => buildSettingsAssumptionAnswers(settings),
+    [settings]
+  );
   const effectiveAnswers = useMemo(
     () => ({
+      ...settingsAnswers,
       ...inferredAnswers,
       ...plusAnswers
     }),
-    [inferredAnswers, plusAnswers]
+    [inferredAnswers, plusAnswers, settingsAnswers]
   );
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
@@ -373,11 +359,6 @@ export default function App() {
     [plusAnswers, questionDefinitions]
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
-
-  const refreshSavedPageSummary = async () => {
-    const summary = await getPageScanStoreSummary();
-    setSavedPageCount(summary.savedPageCount);
-  };
 
   const refreshActiveSession = async () => {
     const response = await sendRuntimeMessage<{
@@ -444,14 +425,12 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
 
-    void Promise.all([getMetisLocalSettings(), getPageScanStoreSummary()]).then(
-      ([storedSettings, summary]) => {
+    void getMetisLocalSettings().then((storedSettings) => {
         if (cancelled) {
           return;
         }
 
         setSettings(storedSettings);
-        setSavedPageCount(summary.savedPageCount);
         setSettingsReady(true);
       }
     );
@@ -460,6 +439,25 @@ export default function App() {
 
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== "local" || !changes["metis:settings"]) {
+        return;
+      }
+
+      void getMetisLocalSettings().then(setSettings);
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
     };
   }, []);
 
@@ -522,14 +520,6 @@ export default function App() {
     };
   }, [activeTabId]);
 
-  useEffect(() => {
-    if (!session?.lastUpdatedAt) {
-      return;
-    }
-
-    void refreshSavedPageSummary();
-  }, [session?.lastUpdatedAt]);
-
   const handleSetScanScope = (scope: ScanScope) => {
     setScanScope(scope);
     void patchSessionUi({ scanScope: scope });
@@ -574,7 +564,7 @@ export default function App() {
   };
 
   const handleOpenSettings = () => {
-    setIsSettingsOpen(true);
+    void chrome.runtime.openOptionsPage();
   };
 
   const handleOpenPageReport = async () => {
@@ -607,21 +597,6 @@ export default function App() {
     await navigator.clipboard.writeText(buildExportOutlineText(document));
     toast.success("Export outline copied", {
       description: "The current export document shape is now on your clipboard."
-    });
-  };
-
-  const handleClearSavedScans = async () => {
-    await clearPageScanStore();
-    await refreshSavedPageSummary();
-    toast.success("Saved scan history cleared", {
-      description: "Metis removed stored page snapshots from this device."
-    });
-  };
-
-  const handleResetCurrentSiteProgress = async () => {
-    await clearVisitedSiteSnapshots(deriveOrigin(session?.currentUrl ?? null));
-    toast.success("Current-site progress reset", {
-      description: "Metis will rebuild sampled-page progress for this origin from the next scan."
     });
   };
 
@@ -723,25 +698,6 @@ export default function App() {
             </div>
           </div>
         </>
-      )}
-
-      {isSettingsOpen && (
-        <LocalSettingsModal
-          settings={settings}
-          scanSummary={{
-            savedPageCount,
-            latestCapturedSnapshot: null
-          }}
-          currentSitePages={Math.max(visitedSnapshots.length, 1)}
-          onClose={() => setIsSettingsOpen(false)}
-          onChange={setSettings}
-          onClearSavedScans={() => {
-            void handleClearSavedScans();
-          }}
-          onResetCurrentSiteProgress={() => {
-            void handleResetCurrentSiteProgress();
-          }}
-        />
       )}
 
       {isExportOpen && exportDocument && (

@@ -23,10 +23,16 @@ import {
   savePageScanAndCompare
 } from "../shared/lib/pageScanHistory";
 import {
+  DEFAULT_METIS_SETTINGS,
+  getMetisLocalSettings
+} from "../shared/lib/metisLocalSettings";
+import { buildSettingsAssumptionAnswers } from "../shared/lib/settingsAssumptions";
+import {
   getOrCreateSiteBaseline,
   upsertVisitedSiteSnapshot
 } from "../shared/lib/siteBaseline";
 import type {
+  MetisLocalSettings,
   PlusRefinementAnswers,
   RawScanSnapshot
 } from "../shared/types/audit";
@@ -174,6 +180,7 @@ export function PageBridgeApp() {
   const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const scanTimeoutRef = useRef<number | null>(null);
 
   const visitedSnapshots = session?.visitedSnapshots ?? [];
@@ -182,12 +189,17 @@ export function PageBridgeApp() {
     () => buildAutoRefinementAnswers(activeSnapshot),
     [activeSnapshot]
   );
+  const settingsAnswers = useMemo(
+    () => buildSettingsAssumptionAnswers(settings),
+    [settings]
+  );
   const effectiveAnswers = useMemo(
     () => ({
+      ...settingsAnswers,
       ...inferredAnswers,
       ...plusAnswers
     }),
-    [inferredAnswers, plusAnswers]
+    [inferredAnswers, plusAnswers, settingsAnswers]
   );
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
@@ -252,6 +264,14 @@ export function PageBridgeApp() {
 
   useEffect(() => {
     let isMounted = true;
+
+    void getMetisLocalSettings().then((storedSettings) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setSettings(storedSettings);
+    });
 
     void sendRuntimeMessage<{
       ok: boolean;
@@ -334,10 +354,37 @@ export function PageBridgeApp() {
   }, []);
 
   useEffect(() => {
+    const handleStorageChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== "local" || !changes["metis:settings"]) {
+        return;
+      }
+
+      void getMetisLocalSettings().then(setSettings);
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
     let lastHref = window.location.href;
     let isStopped = false;
     let intervalId: number | null = null;
     let navigationCheckId: number | null = null;
+
+    const initialScanDelay =
+      settings.scanDelayProfile === "fast"
+        ? 400
+        : settings.scanDelayProfile === "thorough"
+          ? 1800
+          : PANEL_OPEN_SCAN_DELAY_MS;
+    const postLoadDelay = Math.max(350, Math.round(initialScanDelay / 2));
 
     const clearScheduledScan = () => {
       if (scanTimeoutRef.current !== null) {
@@ -346,7 +393,7 @@ export function PageBridgeApp() {
       }
     };
 
-    const scheduleScan = (delay = PANEL_OPEN_SCAN_DELAY_MS) => {
+    const scheduleScan = (delay = initialScanDelay) => {
       if (isStopped || !isSessionActive) {
         return;
       }
@@ -369,7 +416,7 @@ export function PageBridgeApp() {
         return;
       }
 
-      scheduleScan(PANEL_OPEN_SCAN_DELAY_MS);
+      scheduleScan(initialScanDelay);
     };
 
     const handlePostLoadSync = () => {
@@ -377,7 +424,7 @@ export function PageBridgeApp() {
         return;
       }
 
-      scheduleScan(POST_LOAD_SCAN_DELAY_MS);
+      scheduleScan(postLoadDelay);
     };
 
     const stopSync = () => {
@@ -466,7 +513,7 @@ export function PageBridgeApp() {
     };
 
     if (isSessionActive) {
-      scheduleScan(PANEL_OPEN_SCAN_DELAY_MS);
+      scheduleScan(initialScanDelay);
     }
 
     if (isSessionActive && document.readyState !== "complete") {
@@ -474,13 +521,15 @@ export function PageBridgeApp() {
     }
 
     if (isSessionActive) {
-      intervalId = window.setInterval(() => {
-        void syncSnapshots();
-      }, SCAN_REFRESH_INTERVAL_MS);
-
       navigationCheckId = window.setInterval(() => {
         handlePageChange();
       }, NAVIGATION_CHECK_INTERVAL_MS);
+
+      if (settings.autoRescanWhilePanelOpen) {
+        intervalId = window.setInterval(() => {
+          void syncSnapshots();
+        }, SCAN_REFRESH_INTERVAL_MS);
+      }
     }
 
     window.addEventListener("popstate", handlePageChange);
@@ -489,7 +538,7 @@ export function PageBridgeApp() {
     return () => {
       stopSync();
     };
-  }, [isSessionActive]);
+  }, [isSessionActive, settings.autoRescanWhilePanelOpen, settings.scanDelayProfile]);
 
   useEffect(() => {
     if (!(isReportOpen || isPlusModalOpen || isExportOpen)) {

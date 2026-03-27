@@ -13,18 +13,22 @@ The settings surface exists to make the extension feel persistent without preten
 Current settings groups:
 
 - scan behavior
-- motion and refresh behavior
-- layout behavior
-- saved scan management
+- storage cleanup
+- permissions note
+- estimate fallback assumptions
+- about and feedback
 
 The stored settings contract lives in:
 
 - [src/shared/lib/metisLocalSettings.ts](/Users/zech/Downloads/The-Big-One/Metis/src/shared/lib/metisLocalSettings.ts)
 - [src/shared/types/audit.ts](/Users/zech/Downloads/The-Big-One/Metis/src/shared/types/audit.ts)
 
-The UI lives in:
+The main settings UI lives in:
 
-- [src/app/components/figures/MetisUtilityModals.tsx](/Users/zech/Downloads/The-Big-One/Metis/src/app/components/figures/MetisUtilityModals.tsx)
+- [options.html](/Users/zech/Downloads/The-Big-One/Metis/options.html)
+- [src/options/index.tsx](/Users/zech/Downloads/The-Big-One/Metis/src/options/index.tsx)
+
+The side panel settings action now hands off to Chrome's native extension settings page instead of opening a second local settings modal.
 
 ## Saved scans
 
