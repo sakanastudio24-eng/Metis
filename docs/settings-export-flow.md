@@ -23,12 +23,12 @@ The stored settings contract lives in:
 - [src/shared/lib/metisLocalSettings.ts](/Users/zech/Downloads/The-Big-One/Metis/src/shared/lib/metisLocalSettings.ts)
 - [src/shared/types/audit.ts](/Users/zech/Downloads/The-Big-One/Metis/src/shared/types/audit.ts)
 
-The main settings UI lives in:
+The main settings UI now lives in:
 
-- [options.html](/Users/zech/Downloads/The-Big-One/Metis/options.html)
-- [src/options/index.tsx](/Users/zech/Downloads/The-Big-One/Metis/src/options/index.tsx)
+- [popup.html](/Users/zech/Downloads/The-Big-One/Metis/popup.html)
+- [src/popup/index.tsx](/Users/zech/Downloads/The-Big-One/Metis/src/popup/index.tsx)
 
-The side panel settings action now hands off to Chrome's native extension settings page instead of opening a second local settings modal.
+The side panel settings action now opens the same toolbar popup instead of redirecting to a separate options page.
 
 ## Saved scans
 

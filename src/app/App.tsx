@@ -564,7 +564,9 @@ export default function App() {
   };
 
   const handleOpenSettings = () => {
-    void chrome.runtime.openOptionsPage();
+    void sendRuntimeMessage({
+      type: "METIS_OPEN_TOOLBAR_SETTINGS"
+    });
   };
 
   const handleOpenPageReport = async () => {

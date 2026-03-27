@@ -150,6 +150,15 @@ async function openMetisSidePanel(windowId: number) {
   await chrome.sidePanel.open({ windowId });
 }
 
+async function openMetisToolbarSettings(windowId?: number) {
+  if (windowId) {
+    await chrome.action.openPopup({ windowId });
+    return;
+  }
+
+  await chrome.action.openPopup();
+}
+
 function getSenderTab(
   sender: chrome.runtime.MessageSender
 ): { tabId: number; windowId: number } | null {
@@ -227,6 +236,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         }
 
         await openMetisSidePanel(senderTab.windowId);
+        sendResponse({ ok: true });
+        return;
+      }
+
+      case "METIS_OPEN_TOOLBAR_SETTINGS": {
+        const senderTab = getSenderTab(sender);
+        await openMetisToolbarSettings(senderTab?.windowId);
         sendResponse({ ok: true });
         return;
       }
