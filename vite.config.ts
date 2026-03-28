@@ -8,6 +8,8 @@ const backgroundEntry = fileURLToPath(
 );
 const popupEntry = fileURLToPath(new URL("./popup.html", import.meta.url));
 const sidePanelEntry = fileURLToPath(new URL("./sidepanel.html", import.meta.url));
+const privacyEntry = fileURLToPath(new URL("./privacy.html", import.meta.url));
+const termsEntry = fileURLToPath(new URL("./terms.html", import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -27,7 +29,9 @@ export default defineConfig({
       input: {
         background: backgroundEntry,
         popup: popupEntry,
-        sidepanel: sidePanelEntry
+        sidepanel: sidePanelEntry,
+        privacy: privacyEntry,
+        terms: termsEntry
       },
       output: {
         entryFileNames: "assets/[name].js",

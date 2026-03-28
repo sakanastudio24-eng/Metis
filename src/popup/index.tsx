@@ -229,6 +229,8 @@ function PopupApp() {
   });
 
   const extensionVersion = useMemo(() => chrome.runtime.getManifest().version, []);
+  const privacyUrl = useMemo(() => chrome.runtime.getURL("privacy.html"), []);
+  const termsUrl = useMemo(() => chrome.runtime.getURL("terms.html"), []);
 
   const refreshStorageState = async () => {
     const [pageSummary, siteSummary] = await Promise.all([
@@ -445,9 +447,14 @@ function PopupApp() {
               detail="Product overview and roadmap."
             />
             <LinkCard
-              href="https://ward.studio/privacy"
+              href={privacyUrl}
               title="Privacy"
               detail="Current privacy policy."
+            />
+            <LinkCard
+              href={termsUrl}
+              title="Terms"
+              detail="Current terms of use."
             />
             <LinkCard
               href="https://ward.studio/metis#feedback"
