@@ -4,6 +4,15 @@ This document is the central copy reference for the current Metis product surfac
 
 Use it to review product wording before editing UI files.
 
+## Copy roles
+
+- `Header`: the main title or strongest label in a surface
+- `Subheader`: the supporting label directly under or next to a header
+- `Body`: explanatory copy, helper text, details, and longer responses
+- `CTA`: action text on buttons and links
+- `Toast`: short feedback after an action
+- `Tag`: compact status or premium label
+
 ## Brand and product names
 
 - Product name: `Metis`
@@ -14,24 +23,24 @@ Use it to review product wording before editing UI files.
 
 ## Core action copy
 
-- launcher tooltip: `Open Metis`
-- reconnect CTA: `Reconnect`
-- full report CTA: `Full Report`
-- settings entry: `Settings`
-- copy report action: `Copy report`
-- export action: `Export`
-- premium CTA: `Get Plus`
+- CTA, launcher tooltip: `Open Metis`
+- CTA, reconnect: `Reconnect`
+- CTA, full report: `Full Report`
+- CTA, settings entry: `Settings`
+- CTA, copy report: `Copy report`
+- CTA, export: `Export`
+- CTA, premium: `Get Plus`
 
 ## Launcher and compact workspace copy
 
-- hover inactive status: `Open Metis`
-- side panel reconnect title, ready: `Start Metis on this page`
-- side panel reconnect title, disconnected: `Reconnect to this page`
-- side panel reconnect body, ready:
+- Body, hover inactive status: `Open Metis`
+- Header, side panel reconnect, ready: `Start Metis on this page`
+- Header, side panel reconnect, disconnected: `Reconnect to this page`
+- Body, side panel reconnect, ready:
   `Click the page hover or reconnect here to start the tab session and stream live scan data into the side panel.`
-- side panel reconnect body, disconnected:
+- Body, side panel reconnect, disconnected:
   `The page bridge is not ready yet. Reconnect Metis to refresh the current tab and resume live updates.`
-- latest activity module label: `Latest scan activity`
+- Header, latest activity module: `Latest scan activity`
 
 ## Settings popup copy
 
@@ -44,9 +53,9 @@ Use it to review product wording before editing UI files.
 
 ### Scan behavior
 
-- title: `Auto-rescan while panel open`
-- detail: `Route changes still rescan even when steady refresh is off.`
-- sublabel: `Scan delay`
+- Header: `Auto-rescan while panel open`
+- Body: `Route changes still rescan even when steady refresh is off.`
+- Subheader: `Scan delay`
 - delay options:
   - `Fast`
   - `Balanced`
@@ -54,46 +63,46 @@ Use it to review product wording before editing UI files.
 
 ### Data
 
-- stat label: `Saved snapshots`
-- stat label: `Site history`
-- action: `Clear snapshots`
-- action: `Clear history`
-- success toast: `Saved snapshots cleared`
-- success toast: `Site history cleared`
+- Header, stat label: `Saved snapshots`
+- Header, stat label: `Site history`
+- CTA: `Clear snapshots`
+- CTA: `Clear history`
+- Toast, success: `Saved snapshots cleared`
+- Toast, success: `Site history cleared`
 
 ### Permissions
 
-- title: `Current mode`
-- body:
+- Header: `Current mode`
+- Body:
   `The page hover is visible on normal sites, but Metis does not begin scanning until you click it.`
 
 ### About
 
-- link title: `Metis site`
-- link detail: `Product overview and roadmap.`
-- link title: `Privacy`
-- link detail: `Current privacy policy.`
-- link title: `Terms`
-- link detail: `Current terms of use.`
-- link title: `Report an issue`
-- link detail: `Send beta feedback.`
-- link title: `Join Metis+ early`
-- link detail: `Register interest for deeper reports.`
+- Header, link title: `Metis site`
+- Body, link detail: `Product overview and roadmap.`
+- Header, link title: `Privacy`
+- Body, link detail: `Current privacy policy.`
+- Header, link title: `Terms`
+- Body, link detail: `Current terms of use.`
+- Header, link title: `Report an issue`
+- Body, link detail: `Send beta feedback.`
+- Header, link title: `Join Metis+ early`
+- Body, link detail: `Register interest for deeper reports.`
 
 ## Report and insight copy
 
-- fallback summary:
+- Body, fallback summary:
   `Metis is still building a clean read of this page.`
-- score copy prefix:
+- Header, score copy prefix:
   `Metis Cost Report`
-- export copy footer:
+- Body, export footer:
   `Scanned by Metis (ward.studio/metis)`
 
 ## Plus and refinement copy
 
-- refinement fallback label: `Plus suggestion`
-- upgrade success toast title: `Metis+ unlocked`
-- upgrade success toast body:
+- Tag: `Plus suggestion`
+- Toast, success title: `Metis+ unlocked`
+- Toast, success body:
   `The prototype Plus experience is now enabled in this session.`
 
 ## Export shell copy
@@ -105,20 +114,20 @@ Use it to review product wording before editing UI files.
 
 ### Reconnect
 
-- error title: `Reconnect failed`
-- error body: `Metis could not reattach to the current tab.`
-- success title: `Reconnecting`
-- success body: `Metis is rebuilding the page bridge for this tab.`
+- Header, error title: `Reconnect failed`
+- Body, error message: `Metis could not reattach to the current tab.`
+- Header, success title: `Reconnecting`
+- Body, success message: `Metis is rebuilding the page bridge for this tab.`
 
 ### Report copy
 
-- success title: `Report copied`
-- success body: `Metis copied the current report summary to your clipboard.`
+- Toast, success title: `Report copied`
+- Toast, success body: `Metis copied the current report summary to your clipboard.`
 
 ### Export
 
-- success title: `Export outline copied`
-- success body: `The current export document shape is now on your clipboard.`
+- Toast, success title: `Export outline copied`
+- Toast, success body: `The current export document shape is now on your clipboard.`
 
 ### Generic fallback rules
 
@@ -130,7 +139,7 @@ Use it to review product wording before editing UI files.
 ## Legal page copy
 
 - legal/product descriptor: `Metis extension`
-- page title: `Privacy Policy`
-- page title: `Terms of Use`
+- Header, page title: `Privacy Policy`
+- Header, page title: `Terms of Use`
 - both pages should stay basic, readable, and beta-appropriate
 - do not imply legal review or enterprise guarantees when none exist
