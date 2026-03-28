@@ -120,6 +120,7 @@ If you want the shortest path through the repo:
 6. read [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
 7. read [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
 8. read [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
+9. read [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
 
 ## Setup
 
