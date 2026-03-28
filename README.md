@@ -11,6 +11,8 @@ The product goal is still simple:
 
 This repo keeps one project `README.md` at the root. Everything else in `docs/` is a named flow or reference note, not another project README.
 
+If you need the shortest repo-context note for an AI/code agent, read [AI.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/AI.md).
+
 ## Current Status
 
 Phase 4 is functionally in place.
