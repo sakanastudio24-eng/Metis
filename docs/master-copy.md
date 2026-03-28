@@ -7,6 +7,7 @@ Use it to review product wording before editing UI files.
 ## Brand and product names
 
 - Product name: `Metis`
+- Product identity in descriptive copy: `Metis extension`
 - Premium name: `Metis+`
 - Settings title: `Settings`
 - Main summary labels: `Combined Score`, `Cost Risk`, `Control`
@@ -128,6 +129,7 @@ Use it to review product wording before editing UI files.
 
 ## Legal page copy
 
+- legal/product descriptor: `Metis extension`
 - page title: `Privacy Policy`
 - page title: `Terms of Use`
 - both pages should stay basic, readable, and beta-appropriate
