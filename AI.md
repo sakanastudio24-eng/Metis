@@ -69,10 +69,30 @@ Important implementation boundaries:
 ## Working rules
 
 - prefer focused commits by subsystem
+- every implemented feature or meaningful change should call out git segmentation clearly
 - keep version bumps isolated in their own commit
+- frontend changes should stay humanized, intentional, and readable, not generic scaffold output
 - use `dist/` when loading the unpacked extension in Chrome
 - reload the extension in `chrome://extensions` after manifest or background changes
 - refresh the host page after content-script changes
+
+## Agent operating rules
+
+- before adding a new flow doc, check the existing docs first
+- only add or update docs when they add real value to future work
+- if a doc feels redundant or should be merged into another doc, ask the user before removing or merging it
+- when a flow changes, update the matching flow doc instead of creating overlapping notes
+- never inspect `.env` files directly
+- if environment shape matters, ask the user or provide an example env layout instead
+- when reporting work back, include the git segmentation for the feature that was added or changed
+
+## Security rules
+
+- keep least-privilege permissions in mind before adding Chrome capabilities
+- do not hide user-provided context in settings when it should be gathered through explicit questions
+- keep auth, entitlement, and trust boundaries explicit in code and copy
+- prefer local-first behavior unless a backend is clearly required
+- avoid security-blind convenience changes that widen access, persistence, or hidden state without product justification
 
 ## Permissions in use
 
