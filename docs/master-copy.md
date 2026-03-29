@@ -152,7 +152,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Header, fairness question:
   `What type of page is this route on?`
 - Header, fairness question:
-  `Is this route part of the main public experience?`
+  `Is this the main public page?`
 - CTA option:
   `Marketing / landing page`
 - CTA option:
@@ -170,7 +170,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Body, fairness helper:
   `This answer applies to the current page. It helps Metis judge whether the route looks justified here.`
 - Body, fairness helper:
-  `This answer stays tied to the current page, not the whole site.`
+  `Choose this once for the main page. Other routes are treated as separate from it.`
 - Body rule:
   `Fairness answers for page type and route role should be stored by normalized page key, not once for the whole tab session.`
 - Body, fairness framing:

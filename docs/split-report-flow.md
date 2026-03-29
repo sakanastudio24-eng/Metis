@@ -55,11 +55,11 @@ The control layer reads:
 The fairness layer now starts with two lightweight questions:
 
 - what type of page is this route on
-- is this route part of the main public experience
+- is this the main public page
 
 Those answers help Metis judge a route more fairly without pretending the raw scan changed.
 
-The page-type and route-role answers are stored by normalized page key. They should follow the current route, not bleed across the whole tab session.
+The page-type answer is stored by normalized page key. The main-page answer also starts from the current route, but once one route is marked as the main page, other routes should be treated as separate routes from it instead of asking that question again.
 
 There is also a light-route safeguard in the insight layer.
 
