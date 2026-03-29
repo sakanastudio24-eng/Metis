@@ -20,6 +20,20 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.4.0
+
+Release type: Minor
+
+This release retunes Metis so waste drives the score harder than raw complexity, while control leans more clearly toward justified modern routes.
+
+What changed
+
+- Raised request, payload, and duplicate thresholds so normal modern complexity is less likely to look wasteful by default.
+- Reweighted score so duplicate work, oversized images, and vendor stacking lead the read more than raw request or payload volume.
+- Rebased control upward, strengthened justified-complexity credits, and kept strong penalties for real waste.
+- Gated hosting and CDN issues so they only surface when paired with heavier transfer or repeated work.
+- Added homepage anchor tests for Vercel-like, Stripe-like, and Notion-like routes to keep the tuning believable.
+
 ## 0.3.1
 
 Release type: Patch
