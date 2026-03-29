@@ -16,7 +16,12 @@ import {
   migrateLegacyFairnessAnswers,
   setPageScopedFairnessAnswer
 } from "../src/features/refinement/pageScopedFairness";
-import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } from "../src/features/scan";
+import {
+  buildMultipageEvidence,
+  buildMultipageSnapshot,
+  buildResourceMetrics,
+  buildScanDebugSummary
+} from "../src/features/scan";
 import { scoreSnapshot } from "../src/features/scoring";
 import { detectMoneyStack } from "../src/features/stack";
 import { PRICING_ENTRIES } from "../src/config/pricing";
@@ -194,6 +199,85 @@ test("buildMultipageSnapshot aggregates visited pages and debug summary stays st
   assert.equal(summary.totalRequests, 2);
   assert.equal(summary.imageCount, 1);
   assert.equal(summary.filteredCount, 2);
+});
+
+test("buildMultipageEvidence compares sampled routes without changing the current route read", () => {
+  const current = createSnapshot([
+    createResource("https://example.com/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 180_000
+    })
+  ]);
+  const visited = [
+    current,
+    createSnapshot([
+      createResource("https://example.com/api/feed", {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 90_000
+      }),
+      createResource("https://example.com/api/feed?slot=2", {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 90_000
+      }),
+      createResource("https://cdn.example.com/hero.webp", {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 1_300_000,
+        isMeaningfulImage: true
+      })
+    ], {
+      page: {
+        ...defaultPage,
+        href: "https://example.com/pricing",
+        pathname: "/pricing"
+      }
+    })
+  ];
+
+  const evidence = buildMultipageEvidence(current, visited);
+
+  assert.equal(evidence.sampledPagesCount, 2);
+  assert.equal(evidence.sampledPagesLabel, "Sampled pages: 2");
+  assert.equal(
+    evidence.comparisonSummary,
+    "Other sampled pages show higher cost pressure than this page."
+  );
+});
+
+test("buildMultipageEvidence highlights duplicate patterns across sampled routes", () => {
+  const current = createSnapshot(
+    Array.from({ length: 22 }, (_, index) =>
+      createResource(`https://example.com/api/search?slot=${index + 1}`, {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 70_000
+      })
+    )
+  );
+  const visited = [
+    current,
+    createSnapshot(Array.from({ length: 24 }, (_, index) =>
+      createResource(`https://example.com/api/usage?slot=${index + 1}`, {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 80_000
+      })
+    ), {
+      page: {
+        ...defaultPage,
+        href: "https://example.com/dashboard",
+        pathname: "/dashboard"
+      }
+    })
+  ];
+
+  const evidence = buildMultipageEvidence(current, visited);
+
+  assert.equal(evidence.patternNote, "Duplicate requests appear across sampled pages.");
+  assert.equal(evidence.hasMultipageEvidence, true);
 });
 
 test("page-scoped fairness answers follow the normalized route key", () => {
@@ -1242,7 +1326,7 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   });
 
   assert.equal(viewModel.hostname, "example.com");
-  assert.equal(viewModel.pagesSampledLabel, "Sampled 5 pages");
+  assert.equal(viewModel.pagesSampledLabel, "Sampled pages: 5");
   assert.equal(viewModel.sampledPagesCount, 5);
   assert.equal(viewModel.routeKey, "https://example.com/");
   assert.match(viewModel.snapshotKey, /https:\/\/example.com\/::/);
@@ -1335,6 +1419,92 @@ test("plus report stays additive and does not replace the base report read", () 
   assert.ok(plusViewModel.questionState.summary);
 });
 
+test("single and multipage scope keep the same report numbers for the same route", () => {
+  const snapshot = createSnapshot([
+    createResource("https://example.com/_next/static/chunks/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 220_000
+    }),
+    createResource("https://example.com/api/feed", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 80_000
+    })
+  ]);
+  const visited = [
+    snapshot,
+    createSnapshot([
+      createResource("https://example.com/api/pricing", {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 90_000
+      }),
+      createResource("https://cdn.example.com/hero.webp", {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 1_200_000,
+        isMeaningfulImage: true
+      })
+    ], {
+      page: {
+        ...defaultPage,
+        href: "https://example.com/pricing",
+        pathname: "/pricing"
+      }
+    })
+  ];
+  const answers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const score = scoreSnapshot(snapshot, issues, answers);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence, answers);
+  const control = assessControl(snapshot, issues, answers);
+  const multipageEvidence = buildMultipageEvidence(snapshot, visited);
+
+  const singleViewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    control,
+    confidence,
+    score,
+    insight,
+    scope: "single",
+    pageCount: visited.length,
+    multipageEvidence,
+    answers,
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  const multiViewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    control,
+    confidence,
+    score,
+    insight,
+    scope: "multi",
+    pageCount: visited.length,
+    multipageEvidence,
+    answers,
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  assert.equal(singleViewModel.score, multiViewModel.score);
+  assert.equal(singleViewModel.controlScore, multiViewModel.controlScore);
+  assert.equal(singleViewModel.confidenceLabel, multiViewModel.confidenceLabel);
+  assert.equal(singleViewModel.estimateRange, multiViewModel.estimateRange);
+  assert.deepEqual(
+    singleViewModel.topIssues.map((issue) => issue.title),
+    multiViewModel.topIssues.map((issue) => issue.title)
+  );
+});
+
 test("design view model can show current-site sampled progress beyond single-page mode", () => {
   const snapshot = createSnapshot([]);
   const { issues, score, confidence, insight } = buildInsightForSnapshot(snapshot);
@@ -1353,7 +1523,7 @@ test("design view model can show current-site sampled progress beyond single-pag
     requiredQuestionCount: 3
   });
 
-  assert.equal(viewModel.pagesSampledLabel, "Sampled 2 pages");
+  assert.equal(viewModel.pagesSampledLabel, "Sampled pages: 2");
   assert.equal(viewModel.sampledPagesCount, 2);
 });
 

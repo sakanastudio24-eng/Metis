@@ -19,8 +19,11 @@ import {
   stripPageScopedFairnessAnswers,
   type PageScopedFairnessMap
 } from "../features/refinement/pageScopedFairness";
-import { buildScanDebugSummary, collectRawScanSnapshot } from "../features/scan";
-import { buildMultipageSnapshot } from "../features/scan";
+import {
+  buildMultipageEvidence,
+  buildScanDebugSummary,
+  collectRawScanSnapshot
+} from "../features/scan";
 import { scoreSnapshot } from "../features/scoring";
 import { detectMoneyStack } from "../features/stack";
 import { buildExportOutlineText, buildExportReportDocument } from "../app/components/figures/exportDocument";
@@ -72,17 +75,9 @@ async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | 
   }
 }
 
-function buildCurrentSnapshot(
-  rawSnapshot: RawScanSnapshot | null,
-  visitedSnapshots: RawScanSnapshot[],
-  scanScope: ScanScope
-) {
+function buildCurrentSnapshot(rawSnapshot: RawScanSnapshot | null) {
   if (!rawSnapshot) {
     return null;
-  }
-
-  if (scanScope === "multi") {
-    return buildMultipageSnapshot(rawSnapshot, visitedSnapshots);
   }
 
   return rawSnapshot;
@@ -236,7 +231,11 @@ export function PageBridgeApp() {
   };
 
   const visitedSnapshots = session?.visitedSnapshots ?? [];
-  const activeSnapshot = buildCurrentSnapshot(session?.rawSnapshot ?? null, visitedSnapshots, scanScope);
+  const activeSnapshot = buildCurrentSnapshot(session?.rawSnapshot ?? null);
+  const multipageEvidence = useMemo(
+    () => (activeSnapshot ? buildMultipageEvidence(activeSnapshot, visitedSnapshots) : null),
+    [activeSnapshot, visitedSnapshots]
+  );
   const inferredAnswers = useMemo(
     () => buildAutoRefinementAnswers(activeSnapshot),
     [activeSnapshot]
@@ -285,6 +284,7 @@ export function PageBridgeApp() {
           insight,
           scope: scanScope,
           pageCount,
+          multipageEvidence,
           answers: effectiveAnswers,
           plusReport,
           requiredQuestionCount: PLUS_CORE_KEYS.length

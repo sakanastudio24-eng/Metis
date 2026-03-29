@@ -7,6 +7,7 @@ import {
   buildStackFallbackQuestionDefinitions
 } from "../../../features/refinement/config";
 import { resolvePricingContext } from "../../../features/pricing";
+import type { MultipageEvidence } from "../../../features/scan";
 import { detectMoneyStack } from "../../../features/stack";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type {
@@ -109,9 +110,11 @@ export interface MetisDesignViewModel {
   hostname: string;
   pathname: string;
   scannedAt: string;
-  scopeLabel: string;
   pagesSampledLabel: string;
   sampledPagesCount: number;
+  multipageComparisonSummary: string;
+  multipagePatternNote: string | null;
+  hasMultipageEvidence: boolean;
   score: number;
   riskLabel: string;
   riskColor: string;
@@ -543,8 +546,7 @@ function buildBaseReportCore({
   control,
   insight,
   answers,
-  pageCount,
-  scope
+  pageCount
 }: {
   snapshot: RawScanSnapshot;
   score: ScoreBreakdown;
@@ -552,7 +554,6 @@ function buildBaseReportCore({
   insight: { summary: string; supportingDetail: string } | null;
   answers: PlusRefinementAnswers;
   pageCount: number;
-  scope: ScanScope;
 }) {
   const riskTone = scoreToRiskTone(score);
   const controlTone = controlToTone(control);
@@ -561,7 +562,7 @@ function buildBaseReportCore({
   const roundedControlScore = Math.round(control.score);
   const displayPageCount = Math.max(pageCount, 1);
   const sampledPagesLabel =
-    displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
+    displayPageCount === 1 ? "Sampled pages: 1" : `Sampled pages: ${displayPageCount}`;
 
   return {
     riskTone,
@@ -596,8 +597,23 @@ function buildBaseReportCore({
         summary: "Whether the route weight looks justified for the product context Metis can see.",
         reasons: control.reasons
       }
-    },
-    scopeLabel: scope === "multi" ? "Multipage" : "Single Page"
+    }
+  };
+}
+
+function buildDefaultMultipageEvidence(pageCount: number): MultipageEvidence {
+  const sampledPagesCount = Math.max(pageCount, 1);
+
+  return {
+    sampledPagesCount,
+    sampledPagesLabel:
+      sampledPagesCount === 1 ? "Sampled pages: 1" : `Sampled pages: ${sampledPagesCount}`,
+    comparisonSummary:
+      sampledPagesCount > 1
+        ? "Similar cost patterns were observed across sampled pages."
+        : "Visit a few more routes to compare this page against the rest of the site.",
+    patternNote: null,
+    hasMultipageEvidence: sampledPagesCount > 1
   };
 }
 
@@ -739,6 +755,7 @@ export function buildMetisDesignViewModel({
   insight,
   scope,
   pageCount,
+  multipageEvidence,
   answers,
   plusReport,
   requiredQuestionCount
@@ -751,6 +768,7 @@ export function buildMetisDesignViewModel({
   insight: { summary: string; supportingDetail: string } | null;
   scope: ScanScope;
   pageCount: number;
+  multipageEvidence?: MultipageEvidence | null;
   answers: PlusRefinementAnswers;
   plusReport: PlusOptimizationReport | null;
   requiredQuestionCount: number;
@@ -763,9 +781,9 @@ export function buildMetisDesignViewModel({
     control,
     insight,
     answers,
-    pageCount,
-    scope
+    pageCount
   });
+  const multipageRead = multipageEvidence ?? buildDefaultMultipageEvidence(pageCount);
   const monthlyWaste = baseReportCore.monthlyWaste * pricingContext.providerMultiplier;
   const fixRecommendations = buildFixRecommendationCards(issues, monthlyWaste);
   const visitCount = pricingContext.monthlyVisitBaseline ?? visitEstimate(answers);
@@ -786,9 +804,11 @@ export function buildMetisDesignViewModel({
     hostname: snapshot.page.hostname,
     pathname: snapshot.page.pathname,
     scannedAt: new Date(snapshot.scannedAt).toLocaleString(),
-    scopeLabel: baseReportCore.scopeLabel,
-    pagesSampledLabel: baseReportCore.sampledPagesLabel,
-    sampledPagesCount: baseReportCore.displayPageCount,
+    pagesSampledLabel: multipageRead.sampledPagesLabel,
+    sampledPagesCount: multipageRead.sampledPagesCount,
+    multipageComparisonSummary: multipageRead.comparisonSummary,
+    multipagePatternNote: multipageRead.patternNote,
+    hasMultipageEvidence: multipageRead.hasMultipageEvidence,
     score: baseReportCore.roundedRiskScore,
     riskLabel: baseReportCore.riskTone.label,
     riskColor: baseReportCore.riskTone.color,

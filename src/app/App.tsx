@@ -21,7 +21,7 @@ import {
   stripPageScopedFairnessAnswers,
   type PageScopedFairnessMap
 } from "../features/refinement/pageScopedFairness";
-import { buildMultipageSnapshot } from "../features/scan";
+import { buildMultipageEvidence } from "../features/scan";
 import { scoreSnapshot } from "../features/scoring";
 import { detectMoneyStack } from "../features/stack";
 import type {
@@ -56,17 +56,9 @@ import {
 } from "./components/figures/PrototypeChrome";
 import { buildMetisDesignViewModel } from "./components/figures/liveAdapter";
 
-function buildCurrentSnapshot(
-  rawSnapshot: RawScanSnapshot | null,
-  visitedSnapshots: RawScanSnapshot[],
-  scanScope: ScanScope
-) {
+function buildCurrentSnapshot(rawSnapshot: RawScanSnapshot | null) {
   if (!rawSnapshot) {
     return null;
-  }
-
-  if (scanScope === "multi") {
-    return buildMultipageSnapshot(rawSnapshot, visitedSnapshots);
   }
 
   return rawSnapshot;
@@ -348,7 +340,11 @@ export default function App() {
 
   const rawSnapshot = session?.rawSnapshot ?? null;
   const visitedSnapshots = session?.visitedSnapshots ?? [];
-  const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
+  const activeSnapshot = buildCurrentSnapshot(rawSnapshot);
+  const multipageEvidence = useMemo(
+    () => (activeSnapshot ? buildMultipageEvidence(activeSnapshot, visitedSnapshots) : null),
+    [activeSnapshot, visitedSnapshots]
+  );
   const inferredAnswers = useMemo(
     () => buildAutoRefinementAnswers(activeSnapshot),
     [activeSnapshot]
@@ -397,6 +393,7 @@ export default function App() {
           insight,
           scope: scanScope,
           pageCount,
+          multipageEvidence,
           answers: effectiveAnswers,
           plusReport,
           requiredQuestionCount: PLUS_CORE_KEYS.length
