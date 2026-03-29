@@ -356,7 +356,9 @@ export default function App() {
           requiredQuestionCount: PLUS_CORE_KEYS.length
         })
       : null;
-  const exportDocument = viewModel ? buildExportReportDocument(viewModel) : null;
+  const exportDocument = viewModel
+    ? buildExportReportDocument(viewModel, { isPlusUser })
+    : null;
   const questionDefinitions = useMemo(() => {
     const baseDefinitions = PLUS_QUESTION_DEFINITIONS.filter((definition) => {
       if (!definition.dependsOn) {
@@ -636,7 +638,7 @@ export default function App() {
       return;
     }
 
-    const document = buildExportReportDocument(viewModel);
+    const document = buildExportReportDocument(viewModel, { isPlusUser });
     await navigator.clipboard.writeText(buildExportOutlineText(document));
     toast.success("Export outline copied", {
       description: "The current export document shape is now on your clipboard."

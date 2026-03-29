@@ -244,7 +244,9 @@ export function PageBridgeApp() {
           requiredQuestionCount: PLUS_CORE_KEYS.length
         })
       : null;
-  const exportDocument = viewModel ? buildExportReportDocument(viewModel) : null;
+  const exportDocument = viewModel
+    ? buildExportReportDocument(viewModel, { isPlusUser })
+    : null;
   const questionDefinitions = useMemo(() => {
     const baseDefinitions = PLUS_QUESTION_DEFINITIONS.filter((definition) => {
       if (!definition.dependsOn) {
@@ -642,7 +644,9 @@ export function PageBridgeApp() {
       return;
     }
 
-    await navigator.clipboard.writeText(buildExportOutlineText(buildExportReportDocument(viewModel)));
+    await navigator.clipboard.writeText(
+      buildExportOutlineText(buildExportReportDocument(viewModel, { isPlusUser }))
+    );
 
     toast.success("Export outline copied", {
       description: "The current export document shape is now on your clipboard."
@@ -797,7 +801,10 @@ export function PageBridgeApp() {
                   refreshTick={0}
                   onClose={() => setIsReportOpen(false)}
                   showSampleProgress
-                  onOpenExport={() => setIsExportOpen(true)}
+                  onOpenExport={() => {
+                    setIsReportOpen(false);
+                    setIsExportOpen(true);
+                  }}
                   attachedLayout={false}
                 />
               </div>

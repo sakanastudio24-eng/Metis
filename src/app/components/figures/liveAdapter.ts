@@ -57,6 +57,13 @@ export interface DesignCostRow {
   accent: string;
 }
 
+export interface DesignEndpointRow {
+  label: string;
+  categoryLabel: string;
+  requestCountLabel: string;
+  sizeLabel: string;
+}
+
 export interface DesignQuestionState {
   answeredCount: number;
   requiredCount: number;
@@ -138,6 +145,7 @@ export interface MetisDesignViewModel {
   stackChips: DesignStackChip[];
   stackGroups: DesignStackGroup[];
   costRows: DesignCostRow[];
+  plusEndpointRows: DesignEndpointRow[];
   questionState: DesignQuestionState;
   scaleSimulationRows: DesignScaleSimulationRow[];
   aiCostPerRequestEstimate: string | null;
@@ -389,6 +397,37 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
           : "rgba(255,255,255,0.82)"
     }
   ];
+}
+
+function buildEndpointRows(snapshot: RawScanSnapshot): DesignEndpointRow[] {
+  return snapshot.metrics.topOffenders.slice(0, 5).map((offender) => {
+    const sampleUrl = new URL(offender.sampleUrl);
+    const pathname = sampleUrl.pathname;
+    let label = pathname || offender.hostname;
+
+    if (offender.isThirdParty) {
+      label =
+        pathname && pathname !== "/"
+          ? `${offender.hostname}${pathname}`
+          : offender.hostname;
+    }
+
+    const categoryLabel =
+      offender.category === "api"
+        ? "API"
+        : offender.category === "image"
+          ? "Image"
+          : offender.category === "script"
+            ? "Script"
+            : "Asset";
+
+    return {
+      label,
+      categoryLabel,
+      requestCountLabel: `${offender.requestCount} hits`,
+      sizeLabel: formatBytes(offender.totalEncodedBodySize)
+    };
+  });
 }
 
 function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) {
@@ -778,6 +817,7 @@ export function buildMetisDesignViewModel({
     stackChips: buildStackChips(snapshot, score, scope, pageCount, detectedStack),
     stackGroups: detectedStack.groups,
     costRows: buildCostRows(score, snapshot, answers),
+    plusEndpointRows: buildEndpointRows(snapshot),
     questionState: buildQuestionState(plusReport, requiredQuestionCount),
     scaleSimulationRows: buildScaleSimulationRows(monthlyWaste),
     aiCostPerRequestEstimate:

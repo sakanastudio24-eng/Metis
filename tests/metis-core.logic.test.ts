@@ -761,6 +761,7 @@ test("plus report stays additive and does not replace the base report read", () 
     plusViewModel.topIssues.map((issue) => issue.title),
     freeViewModel.topIssues.map((issue) => issue.title)
   );
+  assert.ok(plusViewModel.plusEndpointRows.length > 0);
   assert.ok(plusViewModel.questionState.summary);
 });
 
@@ -1374,15 +1375,36 @@ test("export document builder keeps report sections deterministic", () => {
     requiredQuestionCount: 3
   });
 
-  const document = buildExportReportDocument(viewModel);
-  const outline = buildExportOutlineText(document);
+  const freeDocument = buildExportReportDocument(viewModel);
+  const freeOutline = buildExportOutlineText(freeDocument);
+  const plusDocument = buildExportReportDocument(viewModel, { isPlusUser: true });
 
-  assert.equal(document.title, "Metis report for example.com");
-  assert.equal(document.confidenceLabel, viewModel.confidenceLabel);
-  assert.equal(document.sections[0]?.title, "Overview");
-  assert.match(document.sections[0]?.lines[0] ?? "", /Cost Risk:/);
-  assert.match(document.sections[0]?.lines[2] ?? "", /Confidence:/);
-  assert.equal(document.sections.at(-1)?.title, "Recommendations");
-  assert.equal(outline.includes("\n- "), false);
-  assert.equal(outline.includes(" · "), false);
+  assert.equal(freeDocument.title, "Metis report for example.com");
+  assert.equal(freeDocument.confidenceLabel, viewModel.confidenceLabel);
+  assert.equal(freeDocument.sections[0]?.title, "Overview");
+  assert.match(freeDocument.sections[0]?.lines[0] ?? "", /Cost Risk:/);
+  assert.match(freeDocument.sections[0]?.lines[2] ?? "", /Confidence:/);
+  assert.equal(
+    freeDocument.sections.some((section) => section.title === "Fix Priority"),
+    false
+  );
+  assert.equal(plusDocument.title, "Metis+ report for example.com");
+  assert.equal(
+    plusDocument.sections.some((section) => section.title === "Cost Breakdown"),
+    true
+  );
+  assert.equal(
+    plusDocument.sections.some((section) => section.title === "Endpoint Detail"),
+    true
+  );
+  assert.equal(
+    plusDocument.sections.some((section) => section.title === "Scale Modeling"),
+    true
+  );
+  assert.equal(
+    plusDocument.sections.some((section) => section.title === "Fix Priority"),
+    true
+  );
+  assert.equal(freeOutline.includes("\n- "), false);
+  assert.equal(freeOutline.includes(" · "), false);
 });

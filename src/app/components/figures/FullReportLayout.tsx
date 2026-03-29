@@ -360,6 +360,103 @@ function FixRecommendationsSection({
   );
 }
 
+function EndpointDetailSection({
+  rows
+}: {
+  rows: MetisDesignViewModel["plusEndpointRows"];
+}) {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return (
+    <motion.div
+      className="rounded-[24px] px-5 py-5"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.06)"
+      }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.26, ease: "easeOut" }}
+    >
+      <div
+        style={{
+          color: "rgba(255,255,255,0.3)",
+          fontFamily: "Inter, sans-serif",
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase"
+        }}
+      >
+        Endpoint Detail
+      </div>
+      <div
+        style={{
+          color: "rgba(255,255,255,0.46)",
+          fontFamily: "Inter, sans-serif",
+          fontSize: 12,
+          lineHeight: "18px",
+          marginTop: 10
+        }}
+      >
+        The busiest requests Metis saw on this route.
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {rows.map((row) => (
+          <div
+            key={`${row.label}-${row.requestCountLabel}`}
+            className="rounded-[20px] px-4 py-4"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.06)"
+            }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div
+                  style={{
+                    color: "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 14,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text={row.label} />
+                </div>
+                <div
+                  className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.62)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700
+                  }}
+                >
+                  <span>{row.categoryLabel}</span>
+                  <span>{row.requestCountLabel}</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  color: "white",
+                  fontFamily: "Jua, sans-serif",
+                  fontSize: 16
+                }}
+              >
+                {row.sizeLabel}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 interface FullReportLayoutProps {
   viewModel: MetisDesignViewModel | null;
   scanScope: ScanScope;
@@ -427,6 +524,22 @@ export function FullReportLayout({
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.72)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 12,
+              fontWeight: 700
+            }}
+          >
+            <ArrowLeft size={13} />
+            Back
+          </button>
           <div
             className="flex h-[52px] w-[52px] items-center justify-center rounded-[18px]"
             style={{
@@ -752,13 +865,24 @@ export function FullReportLayout({
                 title="Problems · Sorted by Severity"
                 showSummaryPills={false}
               />
-              <CostBreakdown rows={viewModel.costRows} />
             </div>
 
             <div className="space-y-6">
               <DetectedStackBadges chips={viewModel.stackChips} groups={viewModel.stackGroups} />
             </div>
           </motion.div>
+
+          {isPlusUser && (
+            <motion.div
+              className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+              initial={{ opacity: 0.9, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.32, delay: 0.1, ease: "easeOut" }}
+            >
+              <CostBreakdown rows={viewModel.costRows} />
+              <EndpointDetailSection rows={viewModel.plusEndpointRows} />
+            </motion.div>
+          )}
 
           <motion.div
             className="rounded-[28px] p-6"
