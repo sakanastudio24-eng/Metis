@@ -20,6 +20,18 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.2.0
+
+Release type: Minor
+
+This release makes the fairness questions route-scoped so Metis asks what kind of page the current route belongs to, then uses that answer to judge whether the route feels justified.
+
+What changed
+
+- Moved the page-type fairness answers onto the normalized page key instead of the whole tab session.
+- Kept deeper refinement answers session-wide while making the route-justification read page-specific.
+- Updated the fairness question wording and flow docs so it is clear the answer applies to the current page.
+
 ## 0.1.0
 
 Release type: Minor
