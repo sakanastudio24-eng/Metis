@@ -273,7 +273,7 @@ test("controlled snapshots produce a low-waste insight", () => {
 });
 
 test("duplicate-heavy snapshots prioritize duplicate waste in the insight", () => {
-  const resources = Array.from({ length: 9 }, (_, index) =>
+  const resources = Array.from({ length: 25 }, (_, index) =>
     createResource(`https://example.com/api/feed?slot=${index}`, {
       category: "api",
       initiatorType: "fetch",
@@ -296,7 +296,7 @@ test("image-heavy snapshots produce a moderate or heavy image-focused insight", 
     createResource(`https://images.example.net/gallery-${index}.jpg`, {
       category: "image",
       initiatorType: "img",
-      encodedBodySize: 300_000,
+      encodedBodySize: 600_000,
       isThirdParty: true,
       isMeaningfulImage: true
     })
@@ -428,7 +428,7 @@ test("control keeps AI-heavy dynamic routes out of the uncontrolled bucket", () 
 });
 
 test("control lowers static high-request pages without app context", () => {
-  const resources = Array.from({ length: 130 }, (_, index) =>
+  const resources = Array.from({ length: 420 }, (_, index) =>
     createResource(`https://example.com/chunk-${index}.js`, {
       category: "script",
       initiatorType: "script",
@@ -448,8 +448,8 @@ test("control lowers static high-request pages without app context", () => {
 });
 
 test("control penalizes duplicate-heavy routes regardless of stack", () => {
-  const resources = Array.from({ length: 20 }, (_, index) =>
-    createResource(`https://example.com/api/feed?slot=${index}`, {
+  const resources = Array.from({ length: 45 }, (_, index) =>
+    createResource(`https://example.com/api/feed-${index % 15}?slot=${index}`, {
       category: "api",
       initiatorType: "fetch",
       encodedBodySize: 50_000
@@ -464,7 +464,7 @@ test("control penalizes duplicate-heavy routes regardless of stack", () => {
 });
 
 test("control credits large payloads that have CDN and media context", () => {
-  const resources = Array.from({ length: 6 }, (_, index) =>
+  const resources = Array.from({ length: 14 }, (_, index) =>
     createResource(`https://cdn.example.net/gallery-${index}.jpg`, {
       category: "image",
       initiatorType: "img",
@@ -660,7 +660,7 @@ test("low confidence softens insight wording without changing score", () => {
 
 test("dashboard context softens score and lifts control without hiding duplicate waste", () => {
   const resources = [
-    ...Array.from({ length: 14 }, (_, index) =>
+    ...Array.from({ length: 30 }, (_, index) =>
       createResource(`https://example.com/api/dashboard?slot=${index}`, {
         category: "api",
         initiatorType: "fetch",
@@ -686,7 +686,7 @@ test("dashboard context softens score and lifts control without hiding duplicate
   const neutralControl = assessControl(snapshot, neutralIssues, {});
   const contextualControl = assessControl(snapshot, contextualIssues, contextualAnswers);
 
-  assert.equal(snapshot.metrics.requestCount, 15);
+  assert.equal(snapshot.metrics.requestCount, 31);
   assert.ok(neutralIssues.some((issue) => issue.category === "duplicateRequests"));
   assert.ok(contextualIssues.some((issue) => issue.category === "duplicateRequests"));
   assert.ok(contextualScore.score > neutralScore.score);
@@ -717,7 +717,7 @@ test("not sure context keeps scoring neutral", () => {
 
 test("context framing stays fair for specific dashboard routes", () => {
   const resources = [
-    ...Array.from({ length: 10 }, (_, index) =>
+    ...Array.from({ length: 30 }, (_, index) =>
       createResource(`https://example.com/api/table?slot=${index}`, {
         category: "api",
         initiatorType: "fetch",
@@ -741,7 +741,7 @@ test("context framing stays fair for specific dashboard routes", () => {
   const confidence = buildConfidenceForSnapshot(snapshot, score);
   const insight = buildInsight(snapshot, issues, score, confidence, answers);
 
-  assert.match(insight.summary, /expected for a dashboard/i);
+  assert.match(insight.summary, /specific and dynamic/i);
   assert.match(insight.supportingDetail, /specific route/i);
 });
 
@@ -772,7 +772,7 @@ test("light marketing routes stay controlled and avoid heavy framing", () => {
 
 test("AI context lifts the same heavy route more than dashboard context", () => {
   const resources = [
-    ...Array.from({ length: 18 }, (_, index) =>
+    ...Array.from({ length: 30 }, (_, index) =>
       createResource(`https://example.com/api/search?slot=${index}`, {
         category: "api",
         initiatorType: "fetch",
@@ -815,6 +815,210 @@ test("AI context lifts the same heavy route more than dashboard context", () => 
   assert.ok(aiIssues.some((issue) => issue.category === "duplicateRequests"));
   assert.ok(aiScore.score > dashboardScore.score);
   assert.ok(aiControl.score > dashboardControl.score);
+});
+
+test("Vercel-like marketing routes stay healthy while complexity reads as justified", () => {
+  const resources = [
+    ...Array.from({ length: 187 }, (_, index) =>
+      createResource(`https://example.com/_next/static/chunks/page-${index}.js`, {
+        category: "script",
+        initiatorType: "script",
+        encodedBodySize: 20_000
+      })
+    ),
+    createResource("https://www.googletagmanager.com/gtm.js?id=GTM-TEST", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 25_000,
+      isThirdParty: true
+    }),
+    createResource("https://www.google-analytics.com/g/collect?v=2&tid=G-TEST", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 25_000,
+      isThirdParty: true
+    }),
+    createResource("https://connect.facebook.net/en_US/fbevents.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 25_000,
+      isThirdParty: true
+    }),
+    createResource("https://cdn.example.net/hero.avif", {
+      category: "image",
+      initiatorType: "img",
+      encodedBodySize: 300_000,
+      isThirdParty: true,
+      isMeaningfulImage: true
+    })
+  ];
+  const snapshot = createSnapshot(resources, {
+    page: {
+      href: "https://vercel.example/",
+      origin: "https://vercel.example",
+      hostname: "vercel.example",
+      pathname: "/"
+    },
+    stackSignals: [
+      {
+        name: "https://vercel.example/_next/static/chunks/app.js",
+        hostname: "vercel.example",
+        pathname: "/_next/static/chunks/app.js",
+        source: "resource"
+      },
+      {
+        name: "https://vercel.live/edge-config",
+        hostname: "vercel.live",
+        pathname: "/edge-config",
+        source: "resource"
+      },
+      {
+        name: "https://www.googletagmanager.com/gtm.js?id=GTM-TEST",
+        hostname: "www.googletagmanager.com",
+        pathname: "/gtm.js",
+        source: "resource"
+      },
+      {
+        name: "https://www.google-analytics.com/g/collect",
+        hostname: "www.google-analytics.com",
+        pathname: "/g/collect",
+        source: "resource"
+      },
+      {
+        name: "https://connect.facebook.net/en_US/fbevents.js",
+        hostname: "connect.facebook.net",
+        pathname: "/en_US/fbevents.js",
+        source: "resource"
+      }
+    ]
+  });
+  const answers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const score = scoreSnapshot(snapshot, issues, answers);
+  const control = assessControl(snapshot, issues, answers);
+
+  assert.ok(score.score >= 72 && score.score <= 84);
+  assert.equal(score.label, "healthy");
+  assert.ok(control.score >= 76 && control.score <= 90);
+});
+
+test("Stripe-like marketing routes stay light, healthy, and controlled", () => {
+  const resources = [
+    ...Array.from({ length: 29 }, (_, index) =>
+      createResource(`https://example.com/assets/light-${index}.js`, {
+        category: index < 24 ? "script" : "stylesheet",
+        initiatorType: index < 24 ? "script" : "link",
+        encodedBodySize: 5_500
+      })
+    ),
+    createResource("https://www.googletagmanager.com/gtm.js?id=GTM-TEST", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 45_000,
+      isThirdParty: true
+    }),
+    createResource("https://js.vendor-one.example/sdk.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 8_000,
+      isThirdParty: true
+    }),
+    createResource("https://js.vendor-two.example/sdk.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 8_000,
+      isThirdParty: true
+    }),
+    createResource("https://js.vendor-three.example/sdk.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 8_000,
+      isThirdParty: true
+    })
+  ];
+  const snapshot = createSnapshot(resources, {
+    page: {
+      href: "https://stripe.example/",
+      origin: "https://stripe.example",
+      hostname: "stripe.example",
+      pathname: "/"
+    }
+  });
+  const answers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const score = scoreSnapshot(snapshot, issues, answers);
+  const control = assessControl(snapshot, issues, answers);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence, answers);
+
+  assert.ok(score.score >= 82 && score.score <= 92);
+  assert.equal(score.label, "healthy");
+  assert.ok(control.score >= 84 && control.score <= 94);
+  assert.doesNotMatch(insight.summary, /heavy for a marketing page/i);
+});
+
+test("Notion-like marketing routes stay healthy while media and framework costs stay justified", () => {
+  const resources = [
+    ...Array.from({ length: 188 }, (_, index) =>
+      createResource(`https://example.com/_next/static/chunks/notion-${index}.js`, {
+        category: "script",
+        initiatorType: "script",
+        encodedBodySize: 18_000
+      })
+    ),
+    createResource("https://cdn.example.net/hero.avif", {
+      category: "image",
+      initiatorType: "img",
+      encodedBodySize: 650_000,
+      isThirdParty: true,
+      isMeaningfulImage: true
+    }),
+    createResource("https://www.googletagmanager.com/gtm.js?id=GTM-TEST", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 40_000,
+      isThirdParty: true
+    })
+  ];
+  const snapshot = createSnapshot(resources, {
+    page: {
+      href: "https://notion.example/",
+      origin: "https://notion.example",
+      hostname: "notion.example",
+      pathname: "/"
+    },
+    stackSignals: [
+      {
+        name: "https://notion.example/_next/static/chunks/app.js",
+        hostname: "notion.example",
+        pathname: "/_next/static/chunks/app.js",
+        source: "resource"
+      },
+      {
+        name: "https://vercel.live/edge-config",
+        hostname: "vercel.live",
+        pathname: "/edge-config",
+        source: "resource"
+      }
+    ]
+  });
+  const answers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const score = scoreSnapshot(snapshot, issues, answers);
+  const control = assessControl(snapshot, issues, answers);
+
+  assert.ok(score.score >= 74 && score.score <= 86);
+  assert.equal(score.label, "healthy");
+  assert.ok(control.score >= 78 && control.score <= 90);
 });
 
 test("design view model splits metadata and builds scale simulation rows", () => {
@@ -894,8 +1098,8 @@ test("design view model splits metadata and builds scale simulation rows", () =>
     viewModel.combinedBreakdown.costRisk + viewModel.combinedBreakdown.control
   );
   assert.match(
-    `Cost Risk ${viewModel.combinedBreakdown.costRisk}/100`,
-    /^Cost Risk \d+\/100$/
+    `Score ${viewModel.combinedBreakdown.costRisk}/100`,
+    /^Score \d+\/100$/
   );
   assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
   assert.ok(["Low", "Moderate", "High"].includes(viewModel.confidenceLabel));
@@ -1114,16 +1318,13 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
       encodedBodySize: 40_000,
       isThirdParty: true
     }),
-    createResource("https://example.com/api/feed?slot=1", {
-      category: "api",
-      initiatorType: "fetch",
-      encodedBodySize: 90_000
-    }),
-    createResource("https://example.com/api/feed?slot=2", {
-      category: "api",
-      initiatorType: "fetch",
-      encodedBodySize: 90_000
-    })
+    ...Array.from({ length: 25 }, (_, index) =>
+      createResource(`https://example.com/api/feed?slot=${index}`, {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 90_000
+      })
+    )
   ]);
   const issues = detectIssues(snapshot, {
     aiUsage: "yesOften",

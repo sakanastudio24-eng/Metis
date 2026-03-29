@@ -8,17 +8,19 @@ export const SCORE_CONFIG = {
     high: 15
   },
   categoryMultiplier: {
-    requestCount: 1,
-    duplicateRequests: 1.25,
-    pageWeight: 1.1,
-    largeImages: 1,
-    thirdPartySprawl: 0.9,
-    aiSpendSurface: 0.75,
-    analyticsAdsRumSurface: 0.6,
-    hostingCdnSpendSurface: 0.55
+    // Waste should lead. Complexity signals stay softer unless paired with
+    // stronger waste patterns elsewhere in the route.
+    requestCount: 0.4,
+    duplicateRequests: 1.65,
+    pageWeight: 0.55,
+    largeImages: 1.6,
+    thirdPartySprawl: 0.85,
+    aiSpendSurface: 0.7,
+    analyticsAdsRumSurface: 1.05,
+    hostingCdnSpendSurface: 0.2
   },
   labels: {
-    healthyMin: 85,
-    watchMin: 65
+    healthyMin: 72,
+    watchMin: 52
   }
 } as const;

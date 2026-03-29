@@ -301,7 +301,7 @@ export function SplitScoreSummary({
                   fontWeight: 700
                 }}
               >
-                <AcronymText text={`Cost Risk ${viewModel.combinedBreakdown.costRisk}/100`} />
+                <AcronymText text={`Score ${viewModel.combinedBreakdown.costRisk}/100`} />
               </div>
               <div
                 className="rounded-full px-3 py-1.5"

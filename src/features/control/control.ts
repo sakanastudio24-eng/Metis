@@ -117,7 +117,7 @@ export function assessControl(
   if (isContainedRoute(snapshot, issues)) {
     credits.push({
       id: "contained-route",
-      points: 30,
+      points: CONTROL_CONFIG.credits.containedRoute,
       reason: "This route stays light enough to look controlled on its own."
     });
   }
@@ -146,6 +146,14 @@ export function assessControl(
     });
   }
 
+  if (isModernFramework(frameworkIds)) {
+    credits.push({
+      id: "modern-framework-detected",
+      points: CONTROL_CONFIG.credits.modernFrameworkDetected,
+      reason: "A modern app framework is present, so some route complexity can be intentional."
+    });
+  }
+
   if (analyticsIds.length >= 1 && analyticsIds.length <= DETECTION_THRESHOLDS.analyticsAdsRumSurface.medium) {
     credits.push({
       id: "moderate-analytics",
@@ -165,7 +173,7 @@ export function assessControl(
   if (routeContext.pageClass === "dashboard") {
     credits.push({
       id: "app-context-support",
-      points: 15,
+      points: CONTROL_CONFIG.credits.dashboardContextSupport,
       reason: "The selected app type suggests this route can legitimately carry more work than a simple site."
     });
   }
@@ -173,7 +181,7 @@ export function assessControl(
   if (routeContext.pageClass === "docs") {
     credits.push({
       id: "docs-context-support",
-      points: 4,
+      points: CONTROL_CONFIG.credits.docsContextSupport,
       reason: "Content-heavy pages can carry more assets than a simple landing page without looking out of control."
     });
   }
@@ -181,7 +189,7 @@ export function assessControl(
   if (routeContext.pageClass === "ai") {
     credits.push({
       id: "ai-context-support",
-      points: 18,
+      points: CONTROL_CONFIG.credits.aiContextSupport,
       reason: "An interactive AI route can justify more request activity than a simple public page."
     });
   }
@@ -189,7 +197,7 @@ export function assessControl(
   if (hasSpecificRouteContext) {
     credits.push({
       id: "specific-route-context",
-      points: 10,
+      points: CONTROL_CONFIG.credits.specificRouteContext,
       reason: "This was marked as a specific route, so some extra route-level activity is more expected."
     });
   }

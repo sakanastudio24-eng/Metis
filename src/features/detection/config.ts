@@ -2,19 +2,19 @@
 // This file is meant to be tuned without rewriting the detection engine.
 export const DETECTION_THRESHOLDS = {
   requestCount: {
-    low: 50,
-    medium: 80,
-    high: 120
+    low: 80,
+    medium: 180,
+    high: 400
   },
   duplicateRequests: {
-    low: { duplicateRequestCount: 8, duplicateEndpointCount: 4 },
-    medium: { duplicateRequestCount: 20, duplicateEndpointCount: 8 },
-    high: { duplicateRequestCount: 45, duplicateEndpointCount: 16 }
+    low: { duplicateRequestCount: 20, duplicateEndpointCount: 6 },
+    medium: { duplicateRequestCount: 60, duplicateEndpointCount: 14 },
+    high: { duplicateRequestCount: 160, duplicateEndpointCount: 28 }
   },
   pageWeight: {
-    low: 750_000,
-    medium: 1_500_000,
-    high: 3_000_000
+    low: 1_500_000,
+    medium: 4_000_000,
+    high: 8_000_000
   },
   largeImages: {
     low: { meaningfulImageBytes: 500_000, meaningfulImageCount: 2 },

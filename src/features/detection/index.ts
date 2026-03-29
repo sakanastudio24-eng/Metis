@@ -10,6 +10,17 @@ const severityRank = {
   low: 1
 } as const;
 
+const issuePriority = {
+  duplicateRequests: 8,
+  largeImages: 7,
+  analyticsAdsRumSurface: 6,
+  thirdPartySprawl: 5,
+  pageWeight: 4,
+  requestCount: 3,
+  aiSpendSurface: 2,
+  hostingCdnSpendSurface: 1
+} as const;
+
 function formatBytes(bytes: number) {
   if (bytes >= 1_000_000) {
     return `${(bytes / 1_000_000).toFixed(1)} MB`;
@@ -24,6 +35,15 @@ function sortIssues(issues: DetectedIssue[]) {
 
     if (severityDifference !== 0) {
       return severityDifference;
+    }
+
+    // Severity still leads, but once issues tie, rank clear waste signals ahead
+    // of softer context signals so the report tells a cleaner story.
+    const priorityDifference =
+      issuePriority[right.category] - issuePriority[left.category];
+
+    if (priorityDifference !== 0) {
+      return priorityDifference;
     }
 
     return left.title.localeCompare(right.title);
@@ -376,15 +396,30 @@ export function detectIssues(
 
   const hostingVendors = moneyStack.groups.find((group) => group.id === "hostingCdn")?.vendors ?? [];
   const scoredHostingVendors = hostingVendors.filter(isScoredHostingVendor);
-  if (scoredHostingVendors.length > 0) {
+  // Hosting and CDN context matters financially, but it should only surface as
+  // an issue when the route is already showing real weight or repeated work.
+  const hasRepeatedWorkSignal =
+    metrics.duplicateRequestCount >= DETECTION_THRESHOLDS.duplicateRequests.low.duplicateRequestCount ||
+    metrics.duplicateEndpointCount >= DETECTION_THRESHOLDS.duplicateRequests.low.duplicateEndpointCount;
+
+  if (
+    scoredHostingVendors.length > 0 &&
+    (
+      metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumTransferBytes ||
+      metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumRequestCount ||
+      hasRepeatedWorkSignal
+    )
+  ) {
     const highHosting =
       scoredHostingVendors.length >= 2 &&
       (metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highTransferBytes ||
-        metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highRequestCount);
+        metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highRequestCount ||
+        metrics.duplicateRequestCount >= DETECTION_THRESHOLDS.duplicateRequests.medium.duplicateRequestCount);
     const mediumHosting =
       scoredHostingVendors.length >= 2 ||
       metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumTransferBytes ||
-      metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumRequestCount;
+      metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumRequestCount ||
+      hasRepeatedWorkSignal;
 
     issues.push({
       id: "hosting-cdn-spend-surface",

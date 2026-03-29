@@ -164,7 +164,14 @@ function applyContextFraming(
 
   const routeContext = normalizeRouteContext(answers);
 
-  if (routeContext.pageClass === "marketing") {
+  if (routeContext.routeRole === "specific" && routeContext.isDynamic) {
+    return {
+      ...insight,
+      summary: "This route is specific and dynamic, so some extra activity is expected."
+    };
+  }
+
+  if (routeContext.pageClass === "marketing" && routeContext.routeRole !== "specific") {
     return {
       ...insight,
       summary: "This route is heavy for a marketing page."
@@ -189,13 +196,6 @@ function applyContextFraming(
     return {
       ...insight,
       summary: "This route is active and interactive, so some extra activity is expected."
-    };
-  }
-
-  if (routeContext.routeRole === "specific" && routeContext.isDynamic) {
-    return {
-      ...insight,
-      summary: "This route is specific and dynamic, so some extra activity is expected."
     };
   }
 

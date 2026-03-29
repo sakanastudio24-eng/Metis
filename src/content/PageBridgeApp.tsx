@@ -759,7 +759,7 @@ export function PageBridgeApp() {
                         fontWeight: 600
                       }}
                     >
-                      Cost Risk: {score ?? "…"}
+                      Score: {score ?? "…"}
                     </div>
                     <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
                     <div
