@@ -85,6 +85,14 @@ The confidence layer reads:
 - missing cost groups
 - warming or sparse scan state
 
+If the route returns only a tiny amount of network activity, confidence should read `Limited` instead of `Moderate`.
+
+That state means:
+
+- Metis saw very little network activity
+- the route may be cached or idle
+- the read can still be useful, but it should sound more careful
+
 ## Why the split exists
 
 Before this change, Metis could sound too harsh.
@@ -148,8 +156,14 @@ Full report:
 - same split summary pattern
 - confidence sits with the score and control summary
 - quick insight and session cost remain nearby
+- tiny positive monthly projections should not round down to `$0/month`
 - page context questions sit below the summary once the first scan is ready
 - the report reads as `Score`, `Control`, and `Confidence`, instead of one mixed block
+
+Known stack:
+
+- if hosting or CDN is the only resolved group, keep the grouped stack block hidden
+- hosting can still appear in chips and supporting context
 
 ## Refresh behavior
 

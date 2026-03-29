@@ -107,6 +107,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Header: `Plus read`
 - Tag: `Metis+`
 - Tag: `Low`
+- Tag: `Limited`
 - Tag: `Moderate`
 - Tag: `High`
 - Body, fallback summary:
@@ -117,6 +118,10 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Based on available page data.`
 - Body, low confidence:
   `Metis could only see part of this route.`
+- Body, limited confidence:
+  `This route returned very little network activity.`
+- Body, limited confidence detail:
+  `Results may reflect a cached or idle state.`
 - Body, moderate confidence:
   `Metis has enough signal to guide the read, but not the full picture.`
 - Body, high confidence:
@@ -159,6 +164,8 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Hosting and CDN should stay supporting context unless heavier transfer or repeated work makes them part of the cost story.`
 - Body rule:
   `Score means avoidable cost pressure. Control means whether the route complexity looks justified.`
+- Body rule:
+  `If the current route only resolves hosting or CDN, keep the grouped stack section quiet instead of making the report look more complete than it is.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
 - Header: `Endpoint Detail`
