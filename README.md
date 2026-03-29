@@ -1,67 +1,39 @@
 # Metis
 
-Metis is a Chrome extension that keeps a lightweight bridge on the page and moves the main product workspace into Chrome's side panel.
+Metis is a Chrome extension for reading cost risk on the current page.
 
-The product goal is still simple:
+The product shape is simple.
 
-- open a site
-- click the Metis hover
-- stream the current route into the side panel
-- see a score, issues, stack context, and a rough waste read
+- the page keeps a light hover bridge
+- the side panel stays compact and stable
+- the fullscreen report opens back in the page DOM
 
-This repo keeps one project `README.md` at the root. Everything else in `docs/` is a named flow or reference note, not another project README.
+Metis is local first. It scans the current route, scores waste, explains what looks justified, and keeps the account boundary on the website.
 
-If you need the shortest repo-context note for an AI/code agent, read [AI.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/AI.md).
+If you want the shortest repo context note for an AI or code agent, start with [AI.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/AI.md).
 
-## Current Status
+## What works now
 
-Phase 4 is functionally in place.
+- Manifest V3 extension runtime
+- page hover activation on normal sites
+- compact side panel workspace
+- fullscreen report in the page DOM
+- deterministic scan to stack to issues to control to score pipeline
+- stack fingerprint detection
+- pricing reference layer for estimate framing
+- local history and saved snapshot storage
+- refinement questions for missing business context
+- toolbar settings popup
+- legal pages bundled inside the extension
 
-The live path now covers:
+## What still needs work
 
-- scan collection
-- normalization
-- issue detection
-- score breakdowns
-- deterministic insight copy
-- stack fingerprint resolution
-- provider-aware pricing references
-- capture history
-- Plus refinement
-- side panel workspace rendering
+- broader estimate calibration across more real sites
+- more copy tuning across edge cases
+- export output beyond the current document shell
+- store polish and review prep
 
-What is working now:
-
-- Chrome Extension Manifest V3 setup
-- React + TypeScript + Tailwind extension scaffold
-- always-visible on-page hover on normal web pages
-- on-demand Metis scan after the page hover is clicked
-- Chrome side panel workspace for the compact panel
-- split `Cost Risk` and `Control` summaries in both panel and full report
-- tab-session bridge between page state and the side panel
-- filtered resource pipeline with duplicate, third-party, and top-offender signals
-- per-origin baseline comparison
-- multipage accumulation across visited pages
-- page-change rescans and temporary polling during Phase 2
-- guaranteed post-load rescan for pages that are still settling
-- issue detection from normalized metrics
-- score labels and deduction breakdowns
-- deterministic insight generation from score + issue output
-- optional Plus report refinement questions and stack-aware guidance
-- logic tests for normalization, scoring, and insights
-- public flow docs for scanning, normalization, stack detection, pricing, capture, and UI mapping
-- internal pricing reference layer for provider-aware estimate wording
-- local settings for scan behavior, motion, layout, and saved-scan management
-- toolbar Settings popup through the extension icon
-- export document shell for future PDF/report output
-
-What is not finished yet:
-
-- final copy tuning across more sites
-- estimate calibration across more provider and traffic shapes
-- store-ready polish and review
-
-## Stack
+## Tech stack
 
 - React
 - TypeScript
@@ -69,58 +41,29 @@ What is not finished yet:
 - Vite
 - Chrome Extension Manifest V3
 
-## Product Direction
+## Runtime shape
 
-Metis should feel like a lightweight layer on top of a site, with the stable compact workspace living in the browser side panel and the fullscreen report opening back inside the page DOM.
+Metis uses four surfaces.
 
-The live implementation uses:
+- page DOM for the hover and fullscreen report
+- side panel for the compact working view
+- toolbar popup for local settings
+- background service worker for tab session coordination
 
-- an always-mounted hover bridge on normal web pages
-- a Shadow DOM mount to isolate extension styles from host page styles
-- a content-script bridge for scan lifecycle and route awareness
-- a side panel app for the stable compact Metis workspace
-- a page-owned fullscreen report overlay for deeper reading
-- a deterministic scan -> detect -> score -> insight pipeline
-- a parallel control layer so heaviness and justification are shown separately
-- a fingerprint-based stack detector for cost-relevant vendors
-- a local pricing reference layer for estimate framing
-- local-only settings and save management
+The scan path is deterministic.
 
-## Repo Structure
+`scan -> stack -> issues -> control -> score -> insight -> pricing -> UI`
 
-```text
-src/
-  app/                  Extension UI shell and panel state
-  background/           Manifest V3 service worker
-  content/              Content script bootstrap and DOM mount
-  features/
-    scan/               Implemented Phase 2 scan pipeline
-    detection/          Phase 3 issue detection
-    scoring/            Phase 3 scoring
-    insights/           Phase 4 cost insight output
-    refinement/         Plus question-based report refinement
-  shared/
-    types/              Shared contracts
-  styles/               Tailwind entry and design tokens
+## Start here
 
-docs/                   Architecture and testing notes
-```
+If you are getting oriented, read these in order.
 
-The repo uses named flow docs in [docs](/Users/zech/Downloads/The-Big-One/Metis/docs) instead of nested generic `README.md` files.
-
-## Start Here
-
-If you want the shortest path through the repo:
-
-1. read [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis/docs/flow-overview.md)
-2. read [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
-3. read [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/sidepanel-session-flow.md)
-4. read [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
-5. read [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
-6. read [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
-7. read [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
-8. read [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
-9. read [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
+1. [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/flow-overview.md)
+2. [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/extension-runtime-flow.md)
+3. [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/sidepanel-session-flow.md)
+4. [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-flow.md)
+5. [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md)
+6. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
 
 ## Setup
 
@@ -129,45 +72,38 @@ pnpm install
 pnpm build
 ```
 
-## Load In Chrome
+## Load in Chrome
 
 1. Run `pnpm build`
 2. Open `chrome://extensions`
 3. Turn on `Developer mode`
 4. Click `Load unpacked`
-5. Select [dist](/Users/zech/Downloads/The-Big-One/Metis/dist)
+5. Select [dist](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/dist)
 
-Important:
+Notes:
 
 - load `dist/`, not the repo root
-- reload the extension after code changes
-- after reloading, refresh the target page so the hover bridge mounts again
-- content scripts do not run on Chrome-internal pages like `chrome://`
+- reload the extension after manifest or background changes
+- refresh the host page after content script changes
+- content scripts do not run on Chrome internal pages such as `chrome://`
 
-## Development Commands
+## Development commands
 
 ```bash
 pnpm dev
 pnpm build
 pnpm typecheck
+pnpm test:logic
 ```
 
 What they do:
 
-- `pnpm dev` watches and rebuilds the extension into `dist/`
-- `pnpm build` creates a fresh production build in `dist/`
+- `pnpm dev` rebuilds into `dist/` while you work
+- `pnpm build` creates a fresh production build
 - `pnpm typecheck` runs TypeScript checks
-- `pnpm test:logic` runs the deterministic Phase 4 logic suite
+- `pnpm test:logic` runs the deterministic logic suite
 
-## Manifest Notes
-
-Current manifest values:
-
-- name: `Metis`
-- version: see [package.json](/Users/zech/Downloads/The-Big-One/Metis/package.json) and [manifest.json](/Users/zech/Downloads/The-Big-One/Metis/manifest.json)
-- description: `Surface cost-risk signals directly on the page.`
-
-The extension currently requests:
+## Permissions in use
 
 - `storage`
 - `scripting`
@@ -175,84 +111,33 @@ The extension currently requests:
 - `host_permissions: <all_urls>`
 - `content_scripts.matches: <all_urls>`
 
-This is the current hover-plus-side-panel permission model:
+Why they exist:
 
-- `storage` for captures, history, and refinement state
-- `host_permissions` and `content_scripts` so the Metis hover stays visible on normal pages
-- `sidePanel` so the main Metis workspace lives in extension context
-- `scripting` so Metis can re-establish the page bridge for the current tab when reconnect flows need it
+- `storage` keeps local settings and saved scan state
+- `scripting` helps reconnect the page bridge when needed
+- `sidePanel` powers the compact workspace
+- `host_permissions` and `content_scripts` keep the hover available on normal sites
 
-## Roadmap
+## Repo structure
 
-Phase 1
+```text
+src/
+  app/                  Side panel UI, fullscreen report wiring, shared view models
+  background/           Manifest V3 service worker
+  content/              Page bridge and DOM mount
+  features/             Scan, stack, control, score, insight, pricing, refinement
+  legal/                Internal extension legal pages
+  popup/                Toolbar settings popup
+  shared/               Shared contracts and runtime helpers
+  styles/               Tailwind entry
 
-- extension setup
-- UI injection
-- static panel flow
+docs/                   Flow notes and product references
+```
 
-Phase 2
+## Product boundary
 
-- real page scanning
-- Performance API resource collection
-- DOM inspection
-- URL and domain parsing
-- filtering, normalization, and stable signal aggregation
+Metis owns scanning, reporting, and local settings inside the extension.
 
-Phase 3
+Metis Web owns account access, beta access, and public website flows.
 
-- issue detection
-- score system
-- score-first panel UI
-
-Phase 4
-
-- insight generation
-- scan hardening
-- logic tests
-- plus report refinement layer
-- estimate refinement
-- polish and ship prep
-
-See [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architecture.md).
-
-## Flows
-
-If you want to understand the product quickly, these are the best docs to start with:
-
-- [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis/docs/flow-overview.md)
-- [docs/architecture.md](/Users/zech/Downloads/The-Big-One/Metis/docs/architecture.md)
-- [docs/scan-signal-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scan-signal-flow.md)
-- [docs/normalization-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/normalization-flow.md)
-- [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/extension-runtime-flow.md)
-- [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/sidepanel-session-flow.md)
-- [docs/capture-save-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/capture-save-flow.md)
-- [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/design-system-flow.md)
-- [docs/stack-fingerprint-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/stack-fingerprint-flow.md)
-- [docs/pricing-reference-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/pricing-reference-flow.md)
-- [docs/split-report-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/split-report-flow.md)
-- [docs/settings-export-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/settings-export-flow.md)
-
-Phase-based references live in:
-
-- [docs/phase-2-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-plan.md)
-- [docs/phase-2-review.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-2-review.md)
-- [docs/phase-3-logic-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-logic-flow.md)
-- [docs/phase-3-ui-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-3-ui-flow.md)
-- [docs/scoring-config-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/scoring-config-flow.md)
-- [docs/ui-panel-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/ui-panel-flow.md)
-
-Phase 4 planning now lives in:
-
-- [docs/phase-4-research-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-research-flow.md)
-- [docs/phase-4-implementation-plan.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-implementation-plan.md)
-- [docs/phase-4-insight-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/phase-4-insight-flow.md)
-- [docs/plus-refinement-flow.md](/Users/zech/Downloads/The-Big-One/Metis/docs/plus-refinement-flow.md)
-
-## Next Step
-
-The next cleanup pass after the current Phase 4 logic work is:
-
-- compare logic output against more real-site manual tests
-- keep tightening copy and estimate framing
-- reduce remaining UI drift across host pages
-- review permissions and bundle size before store submission
+If you touch account wording, website links, Plus copy, or legal wording, update [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md) on purpose.

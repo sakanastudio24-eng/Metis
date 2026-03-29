@@ -1,27 +1,26 @@
 # Metis Master Copy
 
-This document is the central copy reference for the current Metis product surfaces.
+This is the main copy reference for the Metis extension.
 
-Use it to review product wording before editing UI files.
+Use it before changing UI wording, fallback copy, or product labels.
 
 ## Copy roles
 
-- `Header`: the main title or strongest label in a surface
-- `Subheader`: the supporting label directly under or next to a header
-- `Body`: explanatory copy, helper text, details, and longer responses
-- `CTA`: action text on buttons and links
-- `Toast`: short feedback after an action
-- `Tag`: compact status or premium label
+- `Header` is the main label on a surface
+- `Subheader` supports the header
+- `Body` explains what is happening
+- `CTA` is action text
+- `Toast` is short feedback after an action
+- `Tag` is a compact status label
 
 ## Brand and product names
 
 - Product name: `Metis`
 - Product identity in descriptive copy: `Metis extension`
-- Premium name: `Metis+`
-- Settings title: `Settings`
-- Main summary labels: `Combined Score`, `Cost Risk`, `Control`
+- Premium label: `Metis+`
+- Main score labels: `Combined Score`, `Cost Risk`, `Control`
 
-## Core action copy
+## Core actions
 
 - CTA, launcher tooltip: `Open Metis`
 - CTA, reconnect: `Reconnect`
@@ -29,34 +28,36 @@ Use it to review product wording before editing UI files.
 - CTA, settings entry: `Settings`
 - CTA, copy report: `Copy report`
 - CTA, export: `Export`
-- CTA, premium: `Get Plus`
+- CTA, account handoff: `Manage account`
+- CTA, Plus handoff: `Upgrade`
 
-## Launcher and compact workspace copy
+## Page and side panel copy
 
-- Body, hover inactive status: `Open Metis`
-- Header, side panel reconnect, ready: `Start Metis on this page`
-- Header, side panel reconnect, disconnected: `Reconnect to this page`
-- Body, side panel reconnect, ready:
+- Body, hover idle state: `Open Metis`
+- Header, reconnect ready: `Start Metis on this page`
+- Header, reconnect disconnected: `Reconnect to this page`
+- Body, reconnect ready:
   `Click the page hover or reconnect here to start the tab session and stream live scan data into the side panel.`
-- Body, side panel reconnect, disconnected:
+- Body, reconnect disconnected:
   `The page bridge is not ready yet. Reconnect Metis to refresh the current tab and resume live updates.`
-- Header, latest activity module: `Latest scan activity`
+- Header, activity module: `Latest scan activity`
 
-## Settings popup copy
+## Toolbar settings copy
 
-### Top-level sections
+### Section titles
 
-- `Scan behavior`
-- `Data`
-- `Permissions`
-- `About`
+- Header: `Scan behavior`
+- Header: `Data`
+- Header: `Permissions`
+- Header: `About`
 
 ### Scan behavior
 
 - Header: `Auto-rescan while panel open`
-- Body: `Route changes still rescan even when steady refresh is off.`
+- Body:
+  `Route changes still rescan even when steady refresh is off.`
 - Subheader: `Scan delay`
-- delay options:
+- CTA options:
   - `Fast`
   - `Balanced`
   - `Thorough`
@@ -67,8 +68,8 @@ Use it to review product wording before editing UI files.
 - Header, stat label: `Site history`
 - CTA: `Clear snapshots`
 - CTA: `Clear history`
-- Toast, success: `Saved snapshots cleared`
-- Toast, success: `Site history cleared`
+- Toast: `Saved snapshots cleared`
+- Toast: `Site history cleared`
 
 ### Permissions
 
@@ -79,22 +80,23 @@ Use it to review product wording before editing UI files.
 ### About
 
 - Header, link title: `Metis site`
-- Body, link detail: `Product overview and roadmap.`
+- Body, link detail:
+  `Product overview, current direction, and website entry.`
 - Header, link title: `Privacy`
-- Body, link detail: `Current privacy policy.`
+- Body, link detail:
+  `Current privacy policy.`
 - Header, link title: `Terms`
-- Body, link detail: `Current terms of use.`
-- Header, link title: `Report an issue`
-- Body, link detail: `Send beta feedback.`
-- Header, link title: `Join Metis+ early`
-- Body, link detail: `Register interest for deeper reports.`
+- Body, link detail:
+  `Current terms of use.`
+- Header, link title: `Manage account`
+- Body, link detail:
+  `Open website account access and Plus Beta entry.`
 
-## Report and insight copy
+## Report copy
 
+- Header: `Metis Cost Report`
 - Body, fallback summary:
   `Metis is still building a clean read of this page.`
-- Header, score copy prefix:
-  `Metis Cost Report`
 - Body, export footer:
   `Scanned by Metis (metis.zward.studio)`
 
@@ -110,39 +112,45 @@ Use it to review product wording before editing UI files.
 
 ## Export shell copy
 
-- export shape should read as a report document, not a screenshot
-- export wording should stay approximate where pricing references are involved
+- Body rule:
+  `Export should read like a report document, not a screenshot.`
+- Body rule:
+  `Pricing wording should stay approximate when it uses reference pricing.`
 
 ## Error and catchall responses
 
 ### Reconnect
 
-- Header, error title: `Reconnect failed`
-- Body, error message: `Metis could not reattach to the current tab.`
-- Header, success title: `Reconnecting`
-- Body, success message: `Metis is rebuilding the page bridge for this tab.`
+- Header: `Reconnect failed`
+- Body:
+  `Metis could not reattach to the current tab.`
+- Header: `Reconnecting`
+- Body:
+  `Metis is rebuilding the page bridge for this tab.`
 
 ### Report copy
 
-- Toast, success title: `Report copied`
-- Toast, success body: `Metis copied the current report summary to your clipboard.`
+- Toast: `Report copied`
+- Body:
+  `Metis copied the current report summary to your clipboard.`
 
 ### Export
 
-- Toast, success title: `Export outline copied`
-- Toast, success body: `The current export document shape is now on your clipboard.`
+- Toast: `Export outline copied`
+- Body:
+  `The current export document shape is now on your clipboard.`
 
-### Generic fallback rules
+### Copy rules
 
-- avoid fake precision in pricing language
-- avoid blaming AI/provider presence by default
-- use questions for missing business context instead of hidden assumptions
-- prefer `Plus suggestion` as a tag instead of forcing `Plus` into a sentence
+- do not fake pricing precision
+- do not blame AI or provider presence by default
+- use questions for missing business context
+- keep `Plus suggestion` as a tag, not a sentence lead
 
-## Legal page copy
+## Legal copy
 
-- legal/product descriptor: `Metis extension`
-- Header, page title: `Privacy Policy`
-- Header, page title: `Terms of Use`
-- both pages should stay basic, readable, and beta-appropriate
-- do not imply legal review or enterprise guarantees when none exist
+- Product descriptor: `Metis extension`
+- Header: `Privacy Policy`
+- Header: `Terms of Use`
+- keep both pages basic, readable, and appropriate for beta
+- do not imply enterprise guarantees or legal review that do not exist
