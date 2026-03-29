@@ -165,6 +165,8 @@ function ConfidenceStrip({
   const tone =
     label === "High"
       ? { color: "#22c55e", background: "rgba(34,197,94,0.12)" }
+      : label === "Limited"
+        ? { color: "#facc15", background: "rgba(250,204,21,0.14)" }
       : label === "Moderate"
         ? { color: "#f97316", background: "rgba(249,115,22,0.12)" }
         : { color: "#dc5e5e", background: "rgba(220,94,94,0.12)" };

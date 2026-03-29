@@ -1,4 +1,8 @@
 export const CONFIDENCE_CONFIG = {
+  limited: {
+    requestCount: 5,
+    totalEncodedBodySize: 100_000
+  },
   requests: {
     moderate: 8,
     high: 18

@@ -171,6 +171,10 @@ function formatCurrency(value: number) {
 }
 
 function formatMonthly(value: number) {
+  if (value > 0 && value < 1) {
+    return "$1";
+  }
+
   if (value >= 10_000) {
     return `$${(value / 1_000).toFixed(1)}k`;
   }
@@ -439,6 +443,10 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
       brandColor: vendor.brandColor
     }))
   }));
+  // A lone hosting match is useful context, but it should not make the full
+  // stack section feel complete when the route did not resolve anything else.
+  const visibleGroups =
+    groups.length === 1 && groups[0]?.label === "Hosting / CDN" ? [] : groups;
 
   const chips: DesignStackChip[] = moneyStackDetection.groups.flatMap((group) =>
     group.vendors.slice(0, group.id === "framework" ? 2 : group.id === "hostingCdn" ? 2 : 1).map((vendor) => ({
@@ -467,7 +475,7 @@ function detectStack(snapshot: RawScanSnapshot, answers: PlusRefinementAnswers) 
     }
   });
 
-  return { chips, groups, missingGroups, detection: moneyStackDetection };
+  return { chips, groups: visibleGroups, missingGroups, detection: moneyStackDetection };
 }
 
 function buildStackChips(

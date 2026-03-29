@@ -284,7 +284,7 @@ export interface PricingContext {
 }
 
 export type ControlLabel = "Controlled" | "Mixed" | "Uncontrolled";
-export type ConfidenceLabel = "Low" | "Moderate" | "High";
+export type ConfidenceLabel = "Low" | "Limited" | "Moderate" | "High";
 
 export interface ControlCredit {
   id: string;

@@ -638,6 +638,22 @@ test("confidence is low when the page is still sparse or under-observed", () => 
   assert.match(confidence.detail, /limited page data/i);
 });
 
+test("confidence is limited when the route only returns a tiny amount of network activity", () => {
+  const snapshot = createSnapshot([
+    createResource("https://stripe.com/", {
+      category: "document",
+      initiatorType: "navigation",
+      encodedBodySize: 2_000
+    })
+  ]);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+
+  assert.equal(confidence.label, "Limited");
+  assert.match(confidence.detail, /cached or idle state/i);
+});
+
 test("low confidence softens insight wording without changing score", () => {
   const resources = Array.from({ length: 7 }, (_, index) =>
     createResource(`https://vendor-${index}.example.net/sdk.js`, {
@@ -1102,7 +1118,7 @@ test("design view model splits metadata and builds scale simulation rows", () =>
     /^Score \d+\/100$/
   );
   assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
-  assert.ok(["Low", "Moderate", "High"].includes(viewModel.confidenceLabel));
+  assert.ok(["Low", "Limited", "Moderate", "High"].includes(viewModel.confidenceLabel));
 });
 
 test("plus report stays additive and does not replace the base report read", () => {
@@ -1279,6 +1295,37 @@ test("design view model detects known stack from raw stack signals even when ret
     )
   );
   assert.ok(viewModel.stackGroups.some((group) => group.label === "Analytics / Ads / RUM"));
+});
+
+test("design view model hides grouped stack detail when hosting is the only resolved stack group", () => {
+  const snapshot = createSnapshot([], {
+    stackSignals: [
+      {
+        name: "https://gcp.example.net/static/app.js",
+        hostname: "gcp.example.net",
+        pathname: "/static/app.js",
+        source: "resource"
+      }
+    ]
+  });
+  const { issues, score, confidence, insight } = buildInsightForSnapshot(snapshot);
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    control: assessControl(snapshot, issues, {}),
+    confidence,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers: {},
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  assert.equal(viewModel.stackGroups.length, 0);
+  assert.ok(viewModel.stackChips.length > 0);
 });
 
 test("design view model keeps brand colors for detected stack and fix cards", () => {
@@ -1817,4 +1864,36 @@ test("export document builder keeps report sections deterministic", () => {
   );
   assert.equal(freeOutline.includes("\n- "), false);
   assert.equal(freeOutline.includes(" · "), false);
+});
+
+test("small positive monthly projections never round down to zero", () => {
+  const snapshot = createSnapshot([
+    createResource("https://stripe.com/", {
+      category: "document",
+      initiatorType: "navigation",
+      encodedBodySize: 2_000
+    })
+  ]);
+  const { issues, score, confidence, insight } = buildInsightForSnapshot(snapshot);
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    control: assessControl(snapshot, issues, {
+      monthlyVisits: "100kPlus"
+    }),
+    confidence,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers: {
+      monthlyVisits: "100kPlus"
+    },
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  assert.doesNotMatch(viewModel.monthlyProjection, /\$0\/month/);
+  assert.ok(viewModel.scaleSimulationRows.every((row) => !/\$0\/mo/.test(row.amount)));
 });

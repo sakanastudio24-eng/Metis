@@ -43,6 +43,10 @@ export function assessConfidence(
   score: ScoreBreakdown
 ): ConfidenceAssessment {
   const { metrics, dom } = snapshot;
+  const hasLimitedNetworkActivity =
+    metrics.requestCount > 0 &&
+    metrics.requestCount < CONFIDENCE_CONFIG.limited.requestCount &&
+    metrics.totalEncodedBodySize < CONFIDENCE_CONFIG.limited.totalEncodedBodySize;
   const hasStrongRequestSignal = metrics.requestCount >= CONFIDENCE_CONFIG.requests.high;
   const hasModerateRequestSignal = metrics.requestCount >= CONFIDENCE_CONFIG.requests.moderate;
   const hasStrongAssetSignal =
@@ -53,6 +57,17 @@ export function assessConfidence(
   const missingGroupCount = detection.missingCostGroups.length;
   const hasSparseResourceSignal =
     metrics.rawRequestCount === 0 || (metrics.requestCount === 0 && dom.scriptCount + dom.imageCount > 0);
+
+  if (hasLimitedNetworkActivity) {
+    // A near-idle or cached route can still look healthy. Confidence should
+    // reflect the thin signal set instead of overstating certainty.
+    return {
+      label: "Limited",
+      summary: "This route returned very little network activity.",
+      detail: "Results may reflect a cached or idle state.",
+      reasons: buildReasons(snapshot, detection)
+    };
+  }
 
   if (
     score.label === "warming up" ||
