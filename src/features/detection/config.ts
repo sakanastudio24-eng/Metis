@@ -17,9 +17,9 @@ export const DETECTION_THRESHOLDS = {
     high: 8_000_000
   },
   largeImages: {
-    low: { meaningfulImageBytes: 500_000, meaningfulImageCount: 2 },
-    medium: { meaningfulImageBytes: 1_000_000, meaningfulImageCount: 4 },
-    high: { meaningfulImageBytes: 2_000_000, meaningfulImageCount: 8 }
+    low: { meaningfulImageBytes: 1_000_000, meaningfulImageCount: 4 },
+    medium: { meaningfulImageBytes: 2_500_000, meaningfulImageCount: 8 },
+    high: { meaningfulImageBytes: 5_000_000, meaningfulImageCount: 16 }
   },
   thirdPartySprawl: {
     low: 4,

@@ -80,6 +80,60 @@ function isScoredHostingVendor(vendor: { id: string }) {
   return !["aws", "aws-s3", "aws-api-gateway", "cloudfront"].includes(vendor.id);
 }
 
+function isModernFrameworkVendor(vendorId: string) {
+  return ["react", "nextjs", "vue", "svelte"].includes(vendorId);
+}
+
+function getDuplicateSeverity(
+  snapshot: RawScanSnapshot,
+  hasModernFramework: boolean
+): "low" | "medium" | "high" | null {
+  const { duplicateRequestCount, duplicateEndpointCount } = snapshot.metrics;
+  const { duplicateRequests } = DETECTION_THRESHOLDS;
+
+  let severity: "low" | "medium" | "high" | null = null;
+
+  if (
+    duplicateEndpointCount >= duplicateRequests.high.duplicateEndpointCount ||
+    duplicateRequestCount >= duplicateRequests.high.duplicateRequestCount
+  ) {
+    severity = "high";
+  } else if (
+    duplicateEndpointCount >= duplicateRequests.medium.duplicateEndpointCount ||
+    duplicateRequestCount >= duplicateRequests.medium.duplicateRequestCount
+  ) {
+    severity = "medium";
+  } else if (
+    duplicateEndpointCount >= duplicateRequests.low.duplicateEndpointCount ||
+    duplicateRequestCount >= duplicateRequests.low.duplicateRequestCount
+  ) {
+    severity = "low";
+  }
+
+  if (!severity || !hasModernFramework) {
+    return severity;
+  }
+
+  // Framework routes can legitimately replay chunk and asset requests. Treat
+  // endpoint duplication as the stronger waste signal and soften raw-hit-only
+  // duplicate severity when the endpoint spread stays lower.
+  if (
+    severity === "high" &&
+    duplicateEndpointCount < duplicateRequests.high.duplicateEndpointCount
+  ) {
+    return "medium";
+  }
+
+  if (
+    severity === "medium" &&
+    duplicateEndpointCount < duplicateRequests.medium.duplicateEndpointCount
+  ) {
+    return "low";
+  }
+
+  return severity;
+}
+
 export function detectIssues(
   snapshot: RawScanSnapshot,
   answers: PlusRefinementAnswers = {}
@@ -87,6 +141,8 @@ export function detectIssues(
   const { metrics } = snapshot;
   const issues: DetectedIssue[] = [];
   const moneyStack = detectMoneyStack(snapshot, answers);
+  const frameworkVendors = moneyStack.groups.find((group) => group.id === "framework")?.vendors ?? [];
+  const hasModernFramework = frameworkVendors.some((vendor) => isModernFrameworkVendor(vendor.id));
 
   // Resource-shape issues stay primary because they explain what the route is
   // doing, not just which vendors happen to be present.
@@ -134,7 +190,9 @@ export function detectIssues(
     });
   }
 
-  if (meetsDuplicateThreshold(snapshot, DETECTION_THRESHOLDS.duplicateRequests.high)) {
+  const duplicateSeverity = getDuplicateSeverity(snapshot, hasModernFramework);
+
+  if (duplicateSeverity === "high") {
     issues.push({
       id: "duplicate-requests",
       title: "Duplicate requests suggest redundant loading",
@@ -145,9 +203,12 @@ export function detectIssues(
         duplicateRequestCount: metrics.duplicateRequestCount,
         duplicateEndpointCount: metrics.duplicateEndpointCount
       },
-      threshold: DETECTION_THRESHOLDS.duplicateRequests.high
+      threshold:
+        metrics.duplicateEndpointCount >= DETECTION_THRESHOLDS.duplicateRequests.high.duplicateEndpointCount
+          ? DETECTION_THRESHOLDS.duplicateRequests.high
+          : DETECTION_THRESHOLDS.duplicateRequests.medium
     });
-  } else if (meetsDuplicateThreshold(snapshot, DETECTION_THRESHOLDS.duplicateRequests.medium)) {
+  } else if (duplicateSeverity === "medium") {
     issues.push({
       id: "duplicate-requests",
       title: "Repeated requests are adding avoidable traffic",
@@ -160,7 +221,7 @@ export function detectIssues(
       },
       threshold: DETECTION_THRESHOLDS.duplicateRequests.medium
     });
-  } else if (meetsDuplicateThreshold(snapshot, DETECTION_THRESHOLDS.duplicateRequests.low)) {
+  } else if (duplicateSeverity === "low") {
     issues.push({
       id: "duplicate-requests",
       title: "Some duplicate requests are starting to show up",
@@ -396,30 +457,23 @@ export function detectIssues(
 
   const hostingVendors = moneyStack.groups.find((group) => group.id === "hostingCdn")?.vendors ?? [];
   const scoredHostingVendors = hostingVendors.filter(isScoredHostingVendor);
-  // Hosting and CDN context matters financially, but it should only surface as
-  // an issue when the route is already showing real weight or repeated work.
-  const hasRepeatedWorkSignal =
-    metrics.duplicateRequestCount >= DETECTION_THRESHOLDS.duplicateRequests.low.duplicateRequestCount ||
-    metrics.duplicateEndpointCount >= DETECTION_THRESHOLDS.duplicateRequests.low.duplicateEndpointCount;
+  const hasMediumDuplicateWork =
+    metrics.duplicateRequestCount >= DETECTION_THRESHOLDS.duplicateRequests.medium.duplicateRequestCount ||
+    metrics.duplicateEndpointCount >= DETECTION_THRESHOLDS.duplicateRequests.medium.duplicateEndpointCount;
 
   if (
     scoredHostingVendors.length > 0 &&
-    (
-      metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumTransferBytes ||
-      metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumRequestCount ||
-      hasRepeatedWorkSignal
-    )
+    metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.pageWeight.medium &&
+    hasMediumDuplicateWork
   ) {
     const highHosting =
       scoredHostingVendors.length >= 2 &&
       (metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highTransferBytes ||
-        metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.highRequestCount ||
         metrics.duplicateRequestCount >= DETECTION_THRESHOLDS.duplicateRequests.medium.duplicateRequestCount);
     const mediumHosting =
       scoredHostingVendors.length >= 2 ||
       metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumTransferBytes ||
-      metrics.requestCount >= DETECTION_THRESHOLDS.hostingCdnSpendSurface.mediumRequestCount ||
-      hasRepeatedWorkSignal;
+      hasMediumDuplicateWork;
 
     issues.push({
       id: "hosting-cdn-spend-surface",

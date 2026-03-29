@@ -292,11 +292,11 @@ test("duplicate-heavy snapshots prioritize duplicate waste in the insight", () =
 });
 
 test("image-heavy snapshots produce a moderate or heavy image-focused insight", () => {
-  const resources = Array.from({ length: 8 }, (_, index) =>
+  const resources = Array.from({ length: 12 }, (_, index) =>
     createResource(`https://images.example.net/gallery-${index}.jpg`, {
       category: "image",
       initiatorType: "img",
-      encodedBodySize: 600_000,
+      encodedBodySize: 800_000,
       isThirdParty: true,
       isMeaningfulImage: true
     })
@@ -916,9 +916,10 @@ test("Vercel-like marketing routes stay healthy while complexity reads as justif
   const score = scoreSnapshot(snapshot, issues, answers);
   const control = assessControl(snapshot, issues, answers);
 
-  assert.ok(score.score >= 72 && score.score <= 84);
+  assert.ok(score.score >= 73 && score.score <= 80);
   assert.equal(score.label, "healthy");
-  assert.ok(control.score >= 76 && control.score <= 90);
+  assert.ok(control.score >= 65 && control.score <= 82);
+  assert.equal(issues.some((issue) => issue.category === "hostingCdnSpendSurface"), false);
 });
 
 test("Stripe-like marketing routes stay light, healthy, and controlled", () => {
@@ -1032,9 +1033,149 @@ test("Notion-like marketing routes stay healthy while media and framework costs 
   const score = scoreSnapshot(snapshot, issues, answers);
   const control = assessControl(snapshot, issues, answers);
 
-  assert.ok(score.score >= 74 && score.score <= 86);
+  assert.ok(score.score >= 70 && score.score <= 86);
   assert.equal(score.label, "healthy");
-  assert.ok(control.score >= 78 && control.score <= 90);
+  assert.ok(control.score >= 70 && control.score <= 85);
+  assert.equal(issues.some((issue) => issue.category === "hostingCdnSpendSurface"), false);
+});
+
+test("Stripe-like docs routes keep image growth mostly in score instead of tanking control", () => {
+  const baseSnapshot = createSnapshot([
+    ...Array.from({ length: 26 }, (_, index) =>
+      createResource(`https://example.com/docs/chunk-${index}.js`, {
+        category: "script",
+        initiatorType: "script",
+        encodedBodySize: 8_000
+      })
+    ),
+    createResource("https://example.com/docs/layout.css", {
+      category: "stylesheet",
+      initiatorType: "link",
+      encodedBodySize: 15_000
+    })
+  ]);
+  const imageHeavySnapshot = createSnapshot([
+    ...baseSnapshot.resources,
+    ...Array.from({ length: 8 }, (_, index) =>
+      createResource(`https://cdn.example.net/docs-image-${index}.avif`, {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 180_000,
+        isThirdParty: true,
+        isMeaningfulImage: true
+      })
+    )
+  ]);
+  const answers = {
+    appType: "docsContent" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+
+  const baseIssues = detectIssues(baseSnapshot, answers);
+  const heavierIssues = detectIssues(imageHeavySnapshot, answers);
+  const baseScore = scoreSnapshot(baseSnapshot, baseIssues, answers);
+  const heavierScore = scoreSnapshot(imageHeavySnapshot, heavierIssues, answers);
+  const baseControl = assessControl(baseSnapshot, baseIssues, answers);
+  const heavierControl = assessControl(imageHeavySnapshot, heavierIssues, answers);
+
+  assert.equal(heavierIssues.some((issue) => issue.category === "largeImages"), true);
+  assert.ok(heavierScore.score < baseScore.score);
+  assert.ok(heavierControl.score < baseControl.score);
+  assert.ok(baseControl.score - heavierControl.score <= 15);
+  assert.ok(heavierControl.score >= 75);
+});
+
+test("marketing framing only says heavy when both request and payload pressure are elevated", () => {
+  const payloadOnlySnapshot = createSnapshot([
+    ...Array.from({ length: 40 }, (_, index) =>
+      createResource(`https://cdn.example.net/hero-${index}.avif`, {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 110_000,
+        isThirdParty: true,
+        isMeaningfulImage: true
+      })
+    )
+  ]);
+  const heavySnapshot = createSnapshot([
+    ...Array.from({ length: 220 }, (_, index) =>
+      createResource(`https://example.com/_next/static/chunks/route-${index}.js`, {
+        category: "script",
+        initiatorType: "script",
+        encodedBodySize: 22_000
+      })
+    ),
+    ...Array.from({ length: 12 }, (_, index) =>
+      createResource(`https://cdn.example.net/hero-${index}.avif`, {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 260_000,
+        isThirdParty: true,
+        isMeaningfulImage: true
+      })
+    )
+  ]);
+  const answers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+
+  const payloadOnlyIssues = detectIssues(payloadOnlySnapshot, answers);
+  const payloadOnlyScore = scoreSnapshot(payloadOnlySnapshot, payloadOnlyIssues, answers);
+  const payloadOnlyConfidence = buildConfidenceForSnapshot(payloadOnlySnapshot, payloadOnlyScore);
+  const payloadOnlyInsight = buildInsight(
+    payloadOnlySnapshot,
+    payloadOnlyIssues,
+    payloadOnlyScore,
+    payloadOnlyConfidence,
+    answers
+  );
+
+  const heavyIssues = detectIssues(heavySnapshot, answers);
+  const heavyScore = scoreSnapshot(heavySnapshot, heavyIssues, answers);
+  const heavyConfidence = buildConfidenceForSnapshot(heavySnapshot, heavyScore);
+  const heavyInsight = buildInsight(heavySnapshot, heavyIssues, heavyScore, heavyConfidence, answers);
+
+  assert.match(payloadOnlyInsight.summary, /moderate complexity for a marketing page/i);
+  assert.doesNotMatch(payloadOnlyInsight.summary, /heavy for a marketing page/i);
+  assert.match(heavyInsight.summary, /heavy for a marketing page/i);
+});
+
+test("modern framework routes soften duplicate chunk pressure without hiding duplicate waste", () => {
+  const neutralSnapshot = createSnapshot(
+    Array.from({ length: 90 }, (_, index) =>
+      createResource(`https://example.com/assets/chunk-${index % 12}.js`, {
+        category: "script",
+        initiatorType: "script",
+        encodedBodySize: 28_000
+      })
+    )
+  );
+  const frameworkSnapshot = createSnapshot(neutralSnapshot.resources, {
+    stackSignals: [
+      {
+        name: "https://example.com/_next/static/chunks/app.js",
+        hostname: "example.com",
+        pathname: "/_next/static/chunks/app.js",
+        source: "resource"
+      }
+    ]
+  });
+  const answers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+
+  const neutralIssues = detectIssues(neutralSnapshot, answers);
+  const frameworkIssues = detectIssues(frameworkSnapshot, answers);
+  const neutralScore = scoreSnapshot(neutralSnapshot, neutralIssues, answers);
+  const frameworkScore = scoreSnapshot(frameworkSnapshot, frameworkIssues, answers);
+  const neutralControl = assessControl(neutralSnapshot, neutralIssues, answers);
+  const frameworkControl = assessControl(frameworkSnapshot, frameworkIssues, answers);
+
+  assert.equal(frameworkIssues.some((issue) => issue.category === "duplicateRequests"), true);
+  assert.ok(frameworkScore.score > neutralScore.score);
+  assert.ok(frameworkControl.score > neutralControl.score);
 });
 
 test("design view model splits metadata and builds scale simulation rows", () => {
@@ -1408,7 +1549,7 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
   assert.match(viewModel.totalSavingsLabel, /^~\$\d+\/mo$/);
   assert.ok(issues.some((issue) => issue.category === "aiSpendSurface"));
   assert.ok(issues.some((issue) => issue.category === "analyticsAdsRumSurface"));
-  assert.ok(issues.some((issue) => issue.category === "hostingCdnSpendSurface"));
+  assert.equal(issues.some((issue) => issue.category === "hostingCdnSpendSurface"), false);
   assert.equal(issues.some((issue) => issue.category === "requestCount"), false);
 });
 

@@ -27,9 +27,21 @@ function isModernFramework(frameworkIds: string[]) {
 function isContainedRoute(snapshot: RawScanSnapshot, issues: DetectedIssue[]) {
   return (
     snapshot.metrics.requestCount < 50 &&
-    snapshot.metrics.totalEncodedBodySize < 500_000 &&
+    snapshot.metrics.totalEncodedBodySize < 1_000_000 &&
     !hasIssue(issues, "duplicateRequests")
   );
+}
+
+function getLargeImagePenaltyPoints(issue: DetectedIssue) {
+  if (issue.severity === "high") {
+    return CONTROL_CONFIG.penalties.largeImages.high;
+  }
+
+  if (issue.severity === "medium") {
+    return CONTROL_CONFIG.penalties.largeImages.medium;
+  }
+
+  return CONTROL_CONFIG.penalties.largeImages.low;
 }
 
 function buildLabel(score: number): ControlLabel {
@@ -186,6 +198,14 @@ export function assessControl(
     });
   }
 
+  if (routeContext.pageClass === "docs" && hasIssue(issues, "largeImages") && !hasIssue(issues, "duplicateRequests")) {
+    credits.push({
+      id: "docs-media-support",
+      points: CONTROL_CONFIG.credits.docsMediaSupport,
+      reason: "Media on a docs route can be meaningful product context, so image weight should not crater control on its own."
+    });
+  }
+
   if (routeContext.pageClass === "ai") {
     credits.push({
       id: "ai-context-support",
@@ -203,18 +223,41 @@ export function assessControl(
   }
 
   if (metrics.duplicateEndpointCount >= DETECTION_THRESHOLDS.duplicateRequests.low.duplicateEndpointCount) {
+    const duplicateEndpointPenalty = isModernFramework(frameworkIds)
+      ? Math.round(CONTROL_CONFIG.penalties.duplicateEndpoints * 0.6)
+      : CONTROL_CONFIG.penalties.duplicateEndpoints;
+
     penalties.push({
       id: "duplicate-endpoints",
-      points: CONTROL_CONFIG.penalties.duplicateEndpoints,
+      points: duplicateEndpointPenalty,
       reason: "Duplicate endpoints still point to repeated work that is hard to justify."
     });
   }
 
   if (metrics.duplicateRequestCount >= DETECTION_THRESHOLDS.duplicateRequests.low.duplicateRequestCount) {
+    const duplicateRequestPenalty = isModernFramework(frameworkIds)
+      ? Math.round(CONTROL_CONFIG.penalties.duplicateRequests * 0.6)
+      : CONTROL_CONFIG.penalties.duplicateRequests;
+
     penalties.push({
       id: "duplicate-requests",
-      points: CONTROL_CONFIG.penalties.duplicateRequests,
+      points: duplicateRequestPenalty,
       reason: "Repeated requests suggest avoidable waste instead of expected route complexity."
+    });
+  }
+
+  const largeImageIssue = issues.find((issue) => issue.category === "largeImages");
+  if (largeImageIssue) {
+    const basePenalty = getLargeImagePenaltyPoints(largeImageIssue);
+    const imagePenalty =
+      routeContext.pageClass === "docs"
+        ? Math.max(1, Math.round(basePenalty * 0.6))
+        : basePenalty;
+
+    penalties.push({
+      id: "large-images",
+      points: imagePenalty,
+      reason: "Image-heavy routes can still add weight, but image complexity should affect control less than direct waste."
     });
   }
 
@@ -240,9 +283,13 @@ export function assessControl(
     !hasSpecificRouteContext &&
     !hasIssue(issues, "duplicateRequests")
   ) {
+    const highRequestPenalty = isModernFramework(frameworkIds)
+      ? Math.round(CONTROL_CONFIG.penalties.staticHighRequestCount * 0.4)
+      : CONTROL_CONFIG.penalties.staticHighRequestCount;
+
     penalties.push({
       id: "static-high-request-count",
-      points: CONTROL_CONFIG.penalties.staticHighRequestCount,
+      points: highRequestPenalty,
       reason: "Request volume looks high for a relatively static route and is worth challenging."
     });
   }

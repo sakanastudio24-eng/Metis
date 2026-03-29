@@ -12,6 +12,15 @@ type ContextScoreProfile = {
   aiOrApi: number;
 };
 
+type ScoreContextSignals = {
+  frameworkIds?: string[];
+  duplicateEndpointCount?: number;
+};
+
+function hasModernFramework(frameworkIds: string[] = []) {
+  return frameworkIds.some((id) => ["react", "nextjs", "vue", "svelte"].includes(id));
+}
+
 function getBaseProfile(answers: PlusRefinementAnswers): ContextScoreProfile {
   const context = normalizeRouteContext(answers);
 
@@ -73,7 +82,8 @@ function applyRouteRoleMultiplier(multiplier: number, answers: PlusRefinementAns
 
 export function getContextScoreMultiplier(
   category: IssueCategory,
-  answers: PlusRefinementAnswers
+  answers: PlusRefinementAnswers,
+  signals: ScoreContextSignals = {}
 ) {
   const baseProfile = getBaseProfile(answers);
   let multiplier = 1;
@@ -92,8 +102,16 @@ export function getContextScoreMultiplier(
     multiplier = 1;
   }
 
+  if (category === "duplicateRequests" && hasModernFramework(signals.frameworkIds)) {
+    multiplier *= 0.8;
+
+    if ((signals.duplicateEndpointCount ?? 0) >= 50) {
+      multiplier *= 0.75;
+    }
+  }
+
   if (category === "duplicateRequests") {
-    return clamp(multiplier, 0.8, 1.02);
+    return clamp(multiplier, 0.6, 1.02);
   }
 
   if (category === "thirdPartySprawl") {

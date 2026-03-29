@@ -494,6 +494,7 @@ interface FullReportLayoutProps {
   headerAccessory?: ReactNode;
   refreshTick?: number;
   onClose?: () => void;
+  onDegradeToFree?: () => void;
   showSampleProgress?: boolean;
   onOpenExport?: () => void;
   attachedLayout?: boolean;
@@ -515,6 +516,7 @@ export function FullReportLayout({
   headerAccessory,
   refreshTick = 0,
   onClose,
+  onDegradeToFree,
   showSampleProgress = true,
   onOpenExport,
   attachedLayout = false
@@ -589,6 +591,23 @@ export function FullReportLayout({
         </div>
 
         <div className="flex items-center gap-3">
+          {isPlusUser && onDegradeToFree ? (
+            <button
+              type="button"
+              onClick={onDegradeToFree}
+              className="rounded-full px-4 py-2"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.74)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 700
+              }}
+            >
+              Degrade to free
+            </button>
+          ) : null}
           <div
             className="rounded-full px-4 py-2"
             style={{

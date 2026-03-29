@@ -9,6 +9,7 @@ import type {
 } from "../../shared/types/audit";
 import { SCORE_CONFIG } from "./config";
 import { getContextScoreMultiplier } from "./context";
+import { detectMoneyStack } from "../stack";
 
 function roundScoreValue(value: number) {
   return Math.round(value * 10) / 10;
@@ -19,18 +20,29 @@ export function scoreSnapshot(
   issues: DetectedIssue[],
   answers: PlusRefinementAnswers = {}
 ): ScoreBreakdown {
+  const frameworkIds =
+    detectMoneyStack(snapshot, answers)
+      .groups.find((group) => group.id === "framework")
+      ?.vendors.map((vendor) => vendor.id) ?? [];
+
   const deductions = issues.map((issue) => ({
     reason: issue.title,
     points: roundScoreValue(
       SCORE_CONFIG.severityPenalty[issue.severity] *
         SCORE_CONFIG.categoryMultiplier[issue.category] *
-        getContextScoreMultiplier(issue.category, answers)
+        getContextScoreMultiplier(issue.category, answers, {
+          frameworkIds,
+          duplicateEndpointCount: snapshot.metrics.duplicateEndpointCount
+        })
     ),
     category: issue.category,
     severity: issue.severity,
     multiplier:
       SCORE_CONFIG.categoryMultiplier[issue.category] *
-      getContextScoreMultiplier(issue.category, answers)
+      getContextScoreMultiplier(issue.category, answers, {
+        frameworkIds,
+        duplicateEndpointCount: snapshot.metrics.duplicateEndpointCount
+      })
   }));
 
   const totalDeduction = deductions.reduce((total, deduction) => total + deduction.points, 0);

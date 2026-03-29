@@ -679,6 +679,15 @@ export function PageBridgeApp() {
     void patchSessionUi({ plusAnswers: nextAnswers });
   };
 
+  const handleDegradeToFree = async () => {
+    setIsPlusUser(false);
+    setIsPlusRefinementOpen(false);
+    await patchSessionUi({
+      isPlusUser: false,
+      isPlusRefinementOpen: false
+    });
+  };
+
   const handleCopyReport = async () => {
     if (!viewModel) {
       return;
@@ -853,6 +862,9 @@ export function PageBridgeApp() {
                   isPlusUser={isPlusUser}
                   refreshTick={0}
                   onClose={() => setIsReportOpen(false)}
+                  onDegradeToFree={() => {
+                    void handleDegradeToFree();
+                  }}
                   showSampleProgress
                   onOpenExport={() => {
                     setIsReportOpen(false);

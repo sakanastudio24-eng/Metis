@@ -16,6 +16,7 @@ export const CONTROL_CONFIG = {
     moderateAnalytics: 3,
     highlyDynamicRoute: 6,
     docsContextSupport: 4,
+    docsMediaSupport: 14,
     dashboardContextSupport: 15,
     aiContextSupport: 18,
     specificRouteContext: 10
@@ -23,6 +24,11 @@ export const CONTROL_CONFIG = {
   penalties: {
     duplicateEndpoints: 18,
     duplicateRequests: 14,
+    largeImages: {
+      low: 2,
+      medium: 5,
+      high: 9
+    },
     heavyThirdPartySprawl: 12,
     unjustifiedPayload: 10,
     staticHighRequestCount: 10

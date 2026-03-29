@@ -18,6 +18,7 @@ import {
   INSIGHT_SUMMARY_TEMPLATES
 } from "./config";
 import { normalizeRouteContext } from "../refinement/normalizedContext";
+import { DETECTION_THRESHOLDS } from "../detection/config";
 
 const severityRank: Record<Severity, number> = {
   low: 1,
@@ -172,9 +173,21 @@ function applyContextFraming(
   }
 
   if (routeContext.pageClass === "marketing" && routeContext.routeRole !== "specific") {
+    const hasMediumRequestPressure =
+      snapshot.metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.medium;
+    const hasMediumPayloadPressure =
+      snapshot.metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.pageWeight.medium;
+
+    if (hasMediumRequestPressure && hasMediumPayloadPressure) {
+      return {
+        ...insight,
+        summary: "This route is heavy for a marketing page."
+      };
+    }
+
     return {
       ...insight,
-      summary: "This route is heavy for a marketing page."
+      summary: "This route shows moderate complexity for a marketing page."
     };
   }
 
