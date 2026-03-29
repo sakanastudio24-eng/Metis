@@ -105,6 +105,8 @@ Use it to review product wording before editing UI files.
   `Plus Beta access is managed on the Metis website.`
 - CTA:
   `Manage account`
+- CTA:
+  `Upgrade`
 
 ## Export shell copy
 

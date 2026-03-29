@@ -151,13 +151,13 @@ async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | 
 
 function SidePanelHeader({
   hostname,
-  onOpenReport,
   onManageAccount,
+  onUpgrade,
   onSettings,
 }: {
   hostname: string;
-  onOpenReport: () => void;
   onManageAccount: () => void;
+  onUpgrade: () => void;
   onSettings: () => void;
 }) {
   return (
@@ -185,28 +185,9 @@ function SidePanelHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <motion.button
-          type="button"
-          onClick={onOpenReport}
-          className="rounded-full px-3 py-2"
-          style={{
-            background: "rgba(220,94,94,0.12)",
-            border: "1px solid rgba(220,94,94,0.25)",
-            color: "#dc8d72",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 11,
-            fontWeight: 700
-          }}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-1.5">
-            <FileText size={12} />
-            Full Report
-          </div>
-        </motion.button>
         <ProfileButton
           onManageAccount={onManageAccount}
+          onUpgrade={onUpgrade}
           onSettings={onSettings}
           onDark
         />
@@ -570,6 +551,10 @@ export default function App() {
     window.open("https://metis.zward.studio/account", "_blank", "noopener,noreferrer");
   };
 
+  const handleUpgrade = () => {
+    window.open("https://metis.zward.studio/account", "_blank", "noopener,noreferrer");
+  };
+
   const handleOpenExport = () => {
     if (!viewModel) {
       return;
@@ -637,10 +622,8 @@ export default function App() {
         <>
           <SidePanelHeader
             hostname={viewModel?.hostname ?? session.currentUrl}
-            onOpenReport={() => {
-              void handleOpenPageReport();
-            }}
             onManageAccount={handleManageAccount}
+            onUpgrade={handleUpgrade}
             onSettings={handleOpenSettings}
           />
 

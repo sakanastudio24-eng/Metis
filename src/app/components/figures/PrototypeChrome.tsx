@@ -12,6 +12,7 @@ import {
   Copy,
   ExternalLink,
   Loader2,
+  Rocket,
   Settings,
   UserRound,
   Wrench,
@@ -98,10 +99,12 @@ export function LoadingScreen() {
 export function ProfileButton({
   onManageAccount,
   onSettings,
+  onUpgrade,
   onDark = true
 }: {
   onManageAccount: () => void;
   onSettings?: () => void;
+  onUpgrade?: () => void;
   onDark?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -178,44 +181,57 @@ export function ProfileButton({
             <div className="py-1.5">
               {[
                 { icon: ExternalLink, label: "Manage account", accent: true },
-                { icon: Settings, label: "Extension settings", accent: false }
+                { icon: Settings, label: "Extension settings", accent: false },
+                { icon: Rocket, label: "Upgrade", accent: true }
               ].map((item) => {
                   const Icon = item.icon;
                   return (
-                    <motion.button
-                      key={item.label}
-                      type="button"
-                      whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
-                      onClick={() => {
-                        setOpen(false);
-                        if (item.label === "Manage account") {
-                          onManageAccount();
-                          return;
-                        }
+                    <div key={item.label}>
+                      {item.label === "Upgrade" ? (
+                        <div
+                          className="mx-4 mb-1 mt-1"
+                          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+                        />
+                      ) : null}
+                      <motion.button
+                        type="button"
+                        whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
+                        onClick={() => {
+                          setOpen(false);
+                          if (item.label === "Manage account") {
+                            onManageAccount();
+                            return;
+                          }
 
-                        if (item.label === "Extension settings") {
-                          onSettings?.();
-                        }
-                      }}
-                    >
-                      <Icon
-                        size={12}
-                        style={{
-                          color: item.accent ? METIS_RED : "rgba(255,255,255,0.35)"
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 12,
-                          fontWeight: 500,
-                          color: item.accent ? METIS_RED : "rgba(255,255,255,0.65)"
+                          if (item.label === "Extension settings") {
+                            onSettings?.();
+                            return;
+                          }
+
+                          if (item.label === "Upgrade") {
+                            onUpgrade?.();
+                          }
                         }}
                       >
-                        {item.label}
-                      </span>
-                    </motion.button>
+                        <Icon
+                          size={12}
+                          style={{
+                            color: item.accent ? METIS_RED : "rgba(255,255,255,0.35)"
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: item.accent ? METIS_RED : "rgba(255,255,255,0.65)"
+                          }}
+                        >
+                          {item.label}
+                        </span>
+                      </motion.button>
+                    </div>
                   );
                 })}
             </div>
