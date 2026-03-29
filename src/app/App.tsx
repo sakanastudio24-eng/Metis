@@ -261,7 +261,7 @@ function ReconnectState({
         className="mt-5 text-center text-white"
         style={{ fontFamily: "Jua, sans-serif", fontSize: 24 }}
       >
-        {ready ? "Start Metis on this page" : "Reconnect to this page"}
+        {ready ? "Start Metis on this page" : "Close and reopen Metis"}
       </div>
       <div
         className="mt-3 max-w-[320px] text-center"
@@ -273,8 +273,8 @@ function ReconnectState({
         }}
       >
         {ready
-          ? "Click the page hover or reconnect here to start the tab session and stream live scan data into the side panel."
-          : "The page bridge is not ready yet. Reconnect Metis to refresh the current tab and resume live updates."}
+          ? "Click the page hover or use this button to start the tab session and stream live scan data into the side panel."
+          : "The page bridge is not ready yet. Close the panel, reopen Metis, and refresh the current tab if needed."}
       </div>
       <motion.button
         type="button"
@@ -291,7 +291,7 @@ function ReconnectState({
         whileTap={{ scale: 0.98 }}
       >
         <RefreshCcw size={14} />
-        Reconnect
+        Close and reopen
       </motion.button>
     </div>
   );
@@ -651,13 +651,13 @@ export default function App() {
     });
 
     if (!response?.ok) {
-      toast.error("Reconnect failed", {
-        description: "Metis could not reattach to the current tab."
+      toast.error("Close and reopen failed", {
+        description: "Metis could not reopen cleanly on the current tab."
       });
       return;
     }
 
-    toast.success("Reconnecting", {
+    toast.success("Close and reopen started", {
       description: "Metis is rebuilding the page bridge for this tab."
     });
   };
