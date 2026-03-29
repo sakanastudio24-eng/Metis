@@ -124,9 +124,9 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Body, estimate summary:
   `Current waste estimate is roughly {range}.`
 - Header, fairness question:
-  `What type of page is this?`
+  `What type of page is this route on?`
 - Header, fairness question:
-  `Is this representative of your main public experience?`
+  `Is this route part of the main public experience?`
 - CTA option:
   `Marketing / landing page`
 - CTA option:
@@ -142,9 +142,11 @@ Use it before changing UI wording, fallback copy, or product labels.
 - CTA option:
   `Not sure`
 - Body, fairness helper:
-  `This keeps Metis fair about what normal looks like on this route.`
+  `This answer applies to the current page. It helps Metis judge whether the route looks justified here.`
 - Body, fairness helper:
-  `This tells Metis whether to read the route as the main experience or a more specific path.`
+  `This answer stays tied to the current page, not the whole site.`
+- Body rule:
+  `Fairness answers for page type and route role should be stored by normalized page key, not once for the whole tab session.`
 - Body, fairness framing:
   `This route is heavy for a marketing page.`
 - Body, fairness framing:
