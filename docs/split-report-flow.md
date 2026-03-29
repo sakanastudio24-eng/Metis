@@ -166,11 +166,21 @@ Mini panel:
 Full report:
 
 - same split summary pattern
+- `Single Page` and `Multipage Scan (beta)` live in the Combined Score card
+- `Single Page` is the default read
 - confidence sits with the score and control summary
 - quick insight and session cost remain nearby
 - tiny positive monthly projections should not round down to `$0/month`
 - page context questions sit below the summary once the first scan is ready
 - the report reads as `Score`, `Control`, and `Confidence`, instead of one mixed block
+- when `Multipage Scan (beta)` is selected, Metis adds sampled-page evidence only
+
+Multipage scan:
+
+- never changes score, control, confidence, top issues, or cost estimate
+- shows sampled-page count and a short comparison note
+- can add one recurring-pattern note like duplicate requests appearing across sampled pages
+- exists to add credibility and route-pattern context, not to average the site
 
 Known stack:
 

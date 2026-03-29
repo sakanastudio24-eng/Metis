@@ -31,6 +31,8 @@ Use it before changing UI wording, fallback copy, or product labels.
 - CTA, account handoff: `Manage account`
 - CTA, Plus action: `Upgrade`
 - CTA, local Plus downgrade: `Degrade to free`
+- CTA, report scope: `Single Page`
+- CTA, report scope: `Multipage Scan (beta)`
 
 ## Page and side panel copy
 
@@ -100,10 +102,12 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Header: `Metis+ Full Report`
 - Header: `Score`
 - Header: `Confidence`
+- Header: `Report Scope`
 - Header: `Add page context`
 - Header: `Estimated waste`
 - Header: `Top drivers`
 - Header: `Insight`
+- Header: `Current session cost`
 - CTA: `Back`
 - Header: `Plus read`
 - Tag: `Metis+`
@@ -129,6 +133,22 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Metis has a strong signal set for this route.`
 - Body, estimate summary:
   `Current waste estimate is roughly {range}.`
+- Body, scope helper:
+  `Score stays tied to this route. Multipage adds supporting context only.`
+- Body, multipage helper:
+  `Visit a few more routes to compare this page against the rest of the site.`
+- Body, multipage helper:
+  `Similar cost patterns were observed across sampled pages.`
+- Body, multipage helper:
+  `Other sampled pages show higher cost pressure than this page.`
+- Body, multipage helper:
+  `This page shows more cost pressure than the other sampled pages.`
+- Body, multipage helper:
+  `Duplicate requests appear across sampled pages.`
+- Body, multipage helper:
+  `Third-party vendor overhead appears across sampled pages.`
+- Body, multipage helper:
+  `Large media appears across sampled pages.`
 - Header, fairness question:
   `What type of page is this route on?`
 - Header, fairness question:
@@ -171,6 +191,8 @@ Use it before changing UI wording, fallback copy, or product labels.
   `If the current route only resolves hosting or CDN, keep the grouped stack section quiet instead of making the report look more complete than it is.`
 - Body rule:
   `Only call a marketing route heavy when both request pressure and payload pressure are meaningfully elevated.`
+- Body rule:
+  `Multipage scan is supporting context only. It must not change score, control, confidence, issue order, or cost.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
 - Header: `Endpoint Detail`

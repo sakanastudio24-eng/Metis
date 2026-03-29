@@ -20,6 +20,20 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.7.0
+
+Release type: Minor
+
+This release keeps the main report locked to the current route and turns multipage scan into supporting evidence instead of alternate scoring.
+
+What changed
+
+- Stopped `Multipage` mode from swapping in an aggregated snapshot for score, control, confidence, issues, and cost.
+- Added lightweight sampled-page evidence with route-count, comparison text, and recurring-pattern notes.
+- Moved `Single Page` and `Multipage Scan (beta)` next to the Combined Score area in the fullscreen report.
+- Removed scope wording that implied the session cost changed between single-page and multipage views.
+- Kept multipage plumbing and visited-route sampling for future site-level features without letting it rewrite the current route read.
+
 ## 0.6.0
 
 Release type: Minor
