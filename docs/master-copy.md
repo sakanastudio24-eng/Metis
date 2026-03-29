@@ -99,6 +99,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Header: `Metis+ Full Report`
 - Header: `Score`
 - Header: `Confidence`
+- Header: `Add page context`
 - Header: `Estimated waste`
 - Header: `Top drivers`
 - Header: `Insight`
@@ -122,6 +123,34 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Metis has a strong signal set for this route.`
 - Body, estimate summary:
   `Current waste estimate is roughly {range}.`
+- Header, fairness question:
+  `What type of page is this?`
+- Header, fairness question:
+  `Is this representative of your main public experience?`
+- CTA option:
+  `Marketing / landing page`
+- CTA option:
+  `Product / dashboard`
+- CTA option:
+  `AI / interactive app`
+- CTA option:
+  `Docs / content page`
+- CTA option:
+  `Yes, this is the main page`
+- CTA option:
+  `No, this is a specific route`
+- CTA option:
+  `Not sure`
+- Body, fairness helper:
+  `This keeps Metis fair about what normal looks like on this route.`
+- Body, fairness helper:
+  `This tells Metis whether to read the route as the main experience or a more specific path.`
+- Body, fairness framing:
+  `This route is heavy for a marketing page.`
+- Body, fairness framing:
+  `This route is heavier, but some of that is expected for a dashboard.`
+- Body, fairness framing:
+  `This route is specific and dynamic, so some extra activity is expected.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
 - Header: `Endpoint Detail`

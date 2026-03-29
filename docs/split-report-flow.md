@@ -37,7 +37,15 @@ The control layer reads:
 - route metrics
 - duplicate and third-party waste
 - stack context
-- refinement answers
+- fairness answers
+- deeper refinement answers
+
+The fairness layer now starts with two lightweight questions:
+
+- what type of page is this
+- is this representative of the main public experience
+
+Those answers help Metis judge a route more fairly without pretending the raw scan changed.
 
 ## Confidence
 
@@ -91,6 +99,14 @@ Plus only adds depth:
 - scale simulation
 - recommendation detail
 
+The fairness questions are shared across Free and Plus.
+
+That means:
+
+- Free gets a fairer read
+- Plus gets the same fairer read plus more depth
+- neither mode gets a different truth
+
 Plus must not replace the base read with a different story.
 
 ## Where it lives
@@ -112,6 +128,7 @@ Full report:
 - same split summary pattern
 - confidence sits with the score and control summary
 - quick insight and session cost remain nearby
+- page context questions sit below the summary once the first scan is ready
 - the report reads as `Cost Risk`, `Control`, and `Confidence`, instead of one mixed block
 
 ## Refresh behavior
