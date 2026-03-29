@@ -298,7 +298,9 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           tabId: senderTab.tabId,
           windowId: senderTab.windowId,
           currentUrl: runtimeMessage.payload.currentUrl,
-          isActive: current?.isActive ?? true,
+          // A live scan update means the page bridge is already active on this
+          // tab, even if an earlier session-start message was missed.
+          isActive: true,
           isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: "ready",
           lastUpdatedAt: Date.now(),

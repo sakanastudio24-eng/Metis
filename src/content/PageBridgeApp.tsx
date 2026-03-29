@@ -730,7 +730,7 @@ export function PageBridgeApp() {
               }}
               onMouseEnter={() => setHovered(true)}
               onMouseLeave={() => setHovered(false)}
-              className="group flex min-w-[48px] items-center justify-center px-3 py-4 shadow-2xl"
+              className="group flex h-[56px] w-[56px] items-center justify-center shadow-2xl"
               style={{
                 background: "#0d1825",
                 border: "1px solid rgba(255,255,255,0.08)",
@@ -739,16 +739,15 @@ export function PageBridgeApp() {
                 boxShadow: "0 18px 44px rgba(0,0,0,0.32)"
               }}
               title="Open Metis"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
             >
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
                 style={{
                   background: isUpdating ? "rgba(34,197,94,0.16)" : "rgba(220,94,94,0.18)",
                   color: isUpdating ? "#22c55e" : "#ffffff",
                   fontFamily: "Jua, sans-serif",
-                  fontSize: 15
+                  fontSize: 15,
+                  lineHeight: 1
                 }}
               >
                 M
