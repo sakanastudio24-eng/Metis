@@ -97,6 +97,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Header: `Metis report for {hostname}`
 - Header: `Metis+ report for {hostname}`
 - Header: `Metis+ Full Report`
+- Header: `Score`
 - Header: `Confidence`
 - Header: `Estimated waste`
 - Header: `Top drivers`
@@ -112,7 +113,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Body, export footer:
   `Scanned by Metis (metis.zward.studio)`
 - Body, confidence helper:
-  `Based on available page data and detected signals.`
+  `Based on available page data.`
 - Body, low confidence:
   `Metis could only see part of this route.`
 - Body, moderate confidence:
@@ -123,6 +124,15 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Current waste estimate is roughly {range}.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
+- Header: `Endpoint Detail`
+- Body:
+  `Type: {type}`
+- Body:
+  `Requests: {count}`
+- Body:
+  `Size: {size}`
+- Header: `Recommendation`
+- Header: `Impact`
 
 ## Plus and refinement copy
 
