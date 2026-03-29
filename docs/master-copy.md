@@ -18,7 +18,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Product name: `Metis`
 - Product identity in descriptive copy: `Metis extension`
 - Premium label: `Metis+`
-- Main score labels: `Combined Score`, `Cost Risk`, `Control`, `Confidence`
+- Main score labels: `Combined Score`, `Score`, `Control`, `Confidence`
 
 ## Core actions
 
@@ -155,6 +155,10 @@ Use it before changing UI wording, fallback copy, or product labels.
   `This route is specific and dynamic, so some extra activity is expected.`
 - Body rule:
   `Do not call a light route heavy if the page stays under 50 requests, under 500 KB, and clear of duplicate waste.`
+- Body rule:
+  `Hosting and CDN should stay supporting context unless heavier transfer or repeated work makes them part of the cost story.`
+- Body rule:
+  `Score means avoidable cost pressure. Control means whether the route complexity looks justified.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
 - Header: `Endpoint Detail`

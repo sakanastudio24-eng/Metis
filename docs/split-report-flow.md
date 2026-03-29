@@ -4,23 +4,35 @@ This is the current top-of-report shape in Phase 4.
 
 Metis now treats the overview as three parallel reads:
 
-- `Cost Risk`
+- `Score`
 - `Control`
 - `Confidence`
 
-That split matters because those two ideas answer different questions.
+That split matters because these ideas answer different questions.
 
-## Cost Risk
+## Score
 
 This is the waste-facing read.
 
 It answers:
 
-- how heavy is this route?
-- how much cost pressure is visible?
-- how likely is it that the current request, transfer, and vendor pattern will scale badly?
+- how much avoidable cost pressure is visible
+- whether the route is doing work that looks unnecessary
+- how likely it is that the current request, transfer, and vendor pattern will scale badly
 
-The existing issue detection and score pipeline drives this side.
+The score pipeline should penalize waste hard and complexity softly.
+
+Strong waste signals:
+
+- duplicate endpoints and repeated loading
+- oversized images
+- analytics or vendor sprawl
+
+Softer context signals:
+
+- request volume
+- payload weight
+- hosting or CDN presence
 
 ## Control
 
@@ -28,9 +40,9 @@ This is the judgment read.
 
 It answers:
 
-- does this route look heavy for a good reason?
-- is the current weight expected for the product shape?
-- is the cost pressure partly justified, or mostly uncontrolled?
+- does this route look complex for a good reason
+- is the current weight expected for the product shape
+- does the route seem intentional, or mostly avoidable
 
 The control layer reads:
 
@@ -52,6 +64,8 @@ The page-type and route-role answers are stored by normalized page key. They sho
 There is also a light-route safeguard in the insight layer.
 
 If a route stays under 50 retained requests, under 500 KB, and clear of duplicate waste, Metis should not describe it as a heavy route just because the page type is marketing.
+
+Hosting and CDN should stay supporting context unless they are paired with heavier transfer or repeated work. They should not read like the main problem by themselves.
 
 ## Confidence
 
@@ -79,8 +93,8 @@ A route with real AI work, a real SPA shell, or legitimate media weight could lo
 
 The split makes the product say:
 
-- this route is expensive
-- and this is how justified that expense looks
+- this route may be creating unnecessary cost pressure
+- and this is how justified the complexity looks
 - and this is how complete the current read is
 
 That is more believable than one flat score.
@@ -135,7 +149,7 @@ Full report:
 - confidence sits with the score and control summary
 - quick insight and session cost remain nearby
 - page context questions sit below the summary once the first scan is ready
-- the report reads as `Cost Risk`, `Control`, and `Confidence`, instead of one mixed block
+- the report reads as `Score`, `Control`, and `Confidence`, instead of one mixed block
 
 ## Refresh behavior
 
