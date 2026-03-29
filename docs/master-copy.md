@@ -151,6 +151,8 @@ Use it before changing UI wording, fallback copy, or product labels.
   `This route is heavier, but some of that is expected for a dashboard.`
 - Body, fairness framing:
   `This route is specific and dynamic, so some extra activity is expected.`
+- Body rule:
+  `Do not call a light route heavy if the page stays under 50 requests, under 500 KB, and clear of duplicate waste.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
 - Header: `Endpoint Detail`

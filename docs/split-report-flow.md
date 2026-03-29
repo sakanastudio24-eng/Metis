@@ -47,6 +47,10 @@ The fairness layer now starts with two lightweight questions:
 
 Those answers help Metis judge a route more fairly without pretending the raw scan changed.
 
+There is also a light-route safeguard in the insight layer.
+
+If a route stays under 50 retained requests, under 500 KB, and clear of duplicate waste, Metis should not describe it as a heavy route just because the page type is marketing.
+
 ## Confidence
 
 This is the trust read.
