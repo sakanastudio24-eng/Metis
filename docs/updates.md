@@ -20,6 +20,18 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.3.1
+
+Release type: Patch
+
+This release fixes a scan hydration gap where the page bridge could finish scanning but the side panel and fullscreen report stayed empty.
+
+What changed
+
+- Hydrated the page bridge directly from the `METIS_SCAN_UPDATE` response instead of waiting only on a follow-up session broadcast.
+- Added a short side panel retry loop while an active tab session is still missing its first snapshot.
+- Kept the scan, score, and report logic unchanged while making the session handoff more reliable.
+
 ## 0.3.0
 
 Release type: Minor
