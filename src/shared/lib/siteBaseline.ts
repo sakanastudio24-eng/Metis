@@ -1,5 +1,6 @@
 // siteBaseline.ts persists origin baselines and visited-page snapshots in chrome.storage.local.
 // It also validates stored records so stale snapshot shapes do not crash newer panel code.
+import { getPageScanKey } from "./pageScanHistory";
 import type { RawScanSnapshot } from "../types/audit";
 
 export interface SiteHistorySummary {
@@ -15,21 +16,49 @@ function getPagesStorageKey(origin: string) {
   return `metis:pages:${origin}`;
 }
 
+type StorageAreaLike = {
+  get: (
+    keys: string[] | null,
+    callback: (result: Record<string, unknown>) => void
+  ) => void;
+  set: (items: Record<string, unknown>, callback: () => void) => void;
+  remove: (keys: string | string[], callback: () => void) => void;
+};
+
+type ChromeLike = {
+  runtime?: {
+    id?: string;
+    lastError?: unknown;
+  };
+  storage?: {
+    local?: StorageAreaLike;
+  };
+};
+
+function getChromeRuntime(): ChromeLike | null {
+  const runtime = globalThis as typeof globalThis & { chrome?: ChromeLike };
+  return runtime.chrome ?? null;
+}
+
 function getStorageArea() {
+  const chromeRuntime = getChromeRuntime();
+
   try {
-    if (!chrome?.runtime?.id) {
+    if (!chromeRuntime?.runtime?.id) {
       return null;
     }
 
-    return chrome.storage.local;
+    return chromeRuntime.storage?.local ?? null;
   } catch {
     return null;
   }
 }
 
 function resolveStorageValue<T>(fallback: T, resolve: (value: T) => void, value: T) {
+  const chromeRuntime = getChromeRuntime();
+
   try {
-    if (chrome.runtime.lastError) {
+    if (chromeRuntime?.runtime?.lastError) {
       resolve(fallback);
       return;
     }
@@ -92,6 +121,17 @@ function isValidSnapshot(snapshot: unknown): snapshot is RawScanSnapshot {
     Array.isArray(metrics.topOffenders) &&
     Array.isArray(metrics.topMeaningfulImages)
   );
+}
+
+export function buildStoredVisitedSnapshot(snapshot: RawScanSnapshot): RawScanSnapshot {
+  return {
+    ...snapshot,
+    // Multipage context only needs route identity, metrics, DOM counts, and
+    // a light hint of stack context. Keeping route history compact helps the
+    // sampled-page count grow instead of collapsing on large pages.
+    resources: [],
+    stackSignals: (snapshot.stackSignals ?? []).slice(0, 24)
+  };
 }
 
 export async function getSiteBaseline(
@@ -188,7 +228,8 @@ export async function upsertVisitedSiteSnapshot(
   }
 
   const key = getPagesStorageKey(snapshot.page.origin);
-  const pageKey = snapshot.page.href;
+  const pageKey = getPageScanKey(snapshot.page.href);
+  const storedSnapshot = buildStoredVisitedSnapshot(snapshot);
 
   return new Promise((resolve) => {
     try {
@@ -199,19 +240,19 @@ export async function upsertVisitedSiteSnapshot(
         );
         const next = {
           ...existing,
-          [pageKey]: snapshot
+          [pageKey]: storedSnapshot
         };
 
         try {
           storage.set({ [key]: next }, () => {
-            resolveStorageValue([snapshot], resolve, Object.values(next));
+            resolveStorageValue([storedSnapshot], resolve, Object.values(next));
           });
         } catch {
-          resolve([snapshot]);
+          resolve([storedSnapshot]);
         }
       });
     } catch {
-      resolve([snapshot]);
+      resolve([storedSnapshot]);
     }
   });
 }

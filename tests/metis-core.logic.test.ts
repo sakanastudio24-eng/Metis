@@ -36,6 +36,7 @@ import {
   getMetisLocalSettings,
   saveMetisLocalSettings
 } from "../src/shared/lib/metisLocalSettings";
+import { buildStoredVisitedSnapshot } from "../src/shared/lib/siteBaseline";
 import {
   buildPageScanSnapshot,
   comparePageScans,
@@ -300,6 +301,35 @@ test("page-scoped fairness answers follow the normalized route key", () => {
     appType: "saasDashboard"
   });
   assert.deepEqual(getPageScopedFairnessAnswers(fairnessMap, docsPageKey), {});
+});
+
+test("stored visited snapshots stay compact and keyed by normalized route", () => {
+  const snapshot = createSnapshot([
+    createResource("https://example.com/app.js?v=1", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 220_000
+    }),
+    createResource("https://example.com/api/feed?page=1", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 90_000
+    })
+  ], {
+    page: {
+      ...defaultPage,
+      href: "https://example.com/pricing?utm_source=test",
+      pathname: "/pricing"
+    }
+  });
+
+  const storedSnapshot = buildStoredVisitedSnapshot(snapshot);
+
+  assert.equal(getPageScanKey(snapshot.page.href), "https://example.com/pricing");
+  assert.deepEqual(storedSnapshot.resources, []);
+  assert.ok((storedSnapshot.stackSignals ?? []).length <= 24);
+  assert.equal(storedSnapshot.metrics.requestCount, snapshot.metrics.requestCount);
+  assert.equal(storedSnapshot.page.href, snapshot.page.href);
 });
 
 test("legacy fairness answers migrate into the current page key", () => {

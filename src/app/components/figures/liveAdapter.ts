@@ -500,7 +500,7 @@ function buildStackChips(
   }
 
   chips.push({
-    label: scope === "multi" ? `Sampled ${pageCount} pages` : "Single page scan",
+    label: pageCount > 1 ? `Sampled pages: ${pageCount}` : "Current route scan",
     tone: "neutral"
   });
 

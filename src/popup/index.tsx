@@ -431,7 +431,7 @@ function PopupApp() {
               Current mode
             </div>
             <div style={{ color: "rgba(255,255,255,0.56)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "16px", marginTop: 5 }}>
-              The page hover is visible on normal sites, but Metis does not begin scanning until you click it.
+              The page hover is visible on normal sites, but Metis does not begin scanning until you click it. After activation, it scans the current page and same-site routes you open in that session.
             </div>
           </div>
         </Section>

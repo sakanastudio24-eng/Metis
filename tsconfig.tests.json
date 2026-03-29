@@ -14,6 +14,7 @@
   },
   "include": [
     "src/shared/types/**/*.ts",
+    "src/shared/lib/siteBaseline.ts",
     "src/features/detection/**/*.ts",
     "src/features/scoring/**/*.ts",
     "src/features/insights/**/*.ts",
