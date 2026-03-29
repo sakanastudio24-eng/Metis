@@ -23,7 +23,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 ## Core actions
 
 - CTA, launcher tooltip: `Open Metis`
-- CTA, reconnect: `Reconnect`
+- CTA, reconnect: `Close and reopen`
 - CTA, full report: `Full Report`
 - CTA, settings entry: `Settings`
 - CTA, copy report: `Copy report`
@@ -35,11 +35,11 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 - Body, hover idle state: `Open Metis`
 - Header, reconnect ready: `Start Metis on this page`
-- Header, reconnect disconnected: `Reconnect to this page`
+- Header, reconnect disconnected: `Close and reopen Metis`
 - Body, reconnect ready:
-  `Click the page hover or reconnect here to start the tab session and stream live scan data into the side panel.`
+  `Click the page hover or use this button to start the tab session and stream live scan data into the side panel.`
 - Body, reconnect disconnected:
-  `The page bridge is not ready yet. Reconnect Metis to refresh the current tab and resume live updates.`
+  `The page bridge is not ready yet. Close the panel, reopen Metis, and refresh the current tab if needed.`
 - Header, activity module: `Latest scan activity`
 
 ## Toolbar settings copy
@@ -157,12 +157,12 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ## Error and catchall responses
 
-### Reconnect
+### Close and reopen
 
-- Header: `Reconnect failed`
+- Header: `Close and reopen failed`
 - Body:
-  `Metis could not reattach to the current tab.`
-- Header: `Reconnecting`
+  `Metis could not reopen cleanly on the current tab.`
+- Header: `Close and reopen started`
 - Body:
   `Metis is rebuilding the page bridge for this tab.`
 
