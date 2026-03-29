@@ -11,14 +11,14 @@ import {
   ChevronDown,
   Copy,
   Crown,
+  ExternalLink,
   Loader2,
-  LogOut,
   Settings,
   Sparkles,
+  UserRound,
   Wrench,
   X
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   DARK_BG,
   DETECTION_STEPS,
@@ -104,14 +104,12 @@ export function LoadingScreen() {
 }
 
 export function ProfileButton({
-  onUpgrade,
+  onManageAccount,
   onSettings,
-  isPlusUser = false,
   onDark = true
 }: {
-  onUpgrade: () => void;
+  onManageAccount: () => void;
   onSettings?: () => void;
-  isPlusUser?: boolean;
   onDark?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -150,20 +148,7 @@ export function ProfileButton({
         }}
         title="Profile · Live"
       >
-        <span
-          className="select-none text-white font-bold"
-          style={{ fontFamily: "Inter, sans-serif", fontSize: 10 }}
-        >
-          JD
-        </span>
-        <span
-          className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full"
-          style={{
-            background: "#22c55e",
-            border: "1px solid #0d1825",
-            boxShadow: "0 0 0 1.5px rgba(34,197,94,0.16)"
-          }}
-        />
+        <UserRound size={12} className="text-white" />
       </motion.button>
 
       <AnimatePresence>
@@ -181,103 +166,28 @@ export function ProfileButton({
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
             <div
-              className="flex items-center gap-3 px-4 py-3.5"
+              className="px-4 py-3.5"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
             >
-              <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                style={{ background: METIS_RED }}
+              <p
+                className="text-white font-semibold"
+                style={{ margin: 0, fontFamily: "Inter, sans-serif", fontSize: 12 }}
               >
-                <span
-                  className="text-white font-bold"
-                  style={{ fontFamily: "Inter, sans-serif", fontSize: 13 }}
-                >
-                  JD
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p
-                  className="truncate text-white font-semibold"
-                  style={{ fontFamily: "Inter, sans-serif", fontSize: 12 }}
-                >
-                  Jamie Dawson
-                </p>
-                <p
-                  className="truncate text-white/40"
-                  style={{ fontFamily: "Inter, sans-serif", fontSize: 10 }}
-                >
-                  jamie@acmecorp.io
-                </p>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2 py-1">
-                  <span className="h-1 w-1 rounded-full" style={{ background: "#22c55e" }} />
-                  <span
-                    style={{
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: "rgba(255,255,255,0.55)",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase"
-                    }}
-                  >
-                    Live
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="flex items-center justify-between px-4 py-2.5"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-            >
-              <span
-                className="text-white/40"
-                style={{ fontFamily: "Inter, sans-serif", fontSize: 11 }}
+                Account and settings
+              </p>
+              <p
+                className="text-white/45"
+                style={{ margin: "4px 0 0", fontFamily: "Inter, sans-serif", fontSize: 10, lineHeight: "15px" }}
               >
-                Current plan
-              </span>
-              <div
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-                style={{
-                  background: isPlusUser
-                    ? "rgba(220,94,94,0.18)"
-                    : "rgba(255,255,255,0.08)",
-                  border: isPlusUser
-                    ? "1px solid rgba(220,94,94,0.35)"
-                    : "1px solid rgba(255,255,255,0.08)"
-                }}
-              >
-                <Crown
-                  size={9}
-                  style={{ color: isPlusUser ? METIS_RED : "rgba(255,255,255,0.5)" }}
-                />
-                <span
-                  style={{
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: isPlusUser ? METIS_RED : "rgba(255,255,255,0.6)"
-                  }}
-                >
-                  {isPlusUser ? "Plus" : "Free"}
-                </span>
-              </div>
+                Manage account access on the website. Keep scan and extension settings here.
+              </p>
             </div>
 
             <div className="py-1.5">
               {[
-                !isPlusUser
-                  ? { icon: Sparkles, label: "Get Plus", accent: true }
-                  : null,
-                { icon: Settings, label: "Settings", accent: false },
-                { icon: LogOut, label: "Sign out", accent: false }
-              ]
-                .filter(Boolean)
-                .map((item) => {
-                  if (!item) {
-                    return null;
-                  }
-
+                { icon: ExternalLink, label: "Manage account", accent: true },
+                { icon: Settings, label: "Extension settings", accent: false }
+              ].map((item) => {
                   const Icon = item.icon;
                   return (
                     <motion.button
@@ -287,12 +197,12 @@ export function ProfileButton({
                       className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
                       onClick={() => {
                         setOpen(false);
-                        if (item.label === "Get Plus") {
-                          onUpgrade();
+                        if (item.label === "Manage account") {
+                          onManageAccount();
                           return;
                         }
 
-                        if (item.label === "Settings") {
+                        if (item.label === "Extension settings") {
                           onSettings?.();
                         }
                       }}
@@ -831,27 +741,6 @@ export function PlusUpgradeModal({
             >
               <Sparkles size={13} />
               Upgrade to Metis+ — ${price}/mo
-            </motion.button>
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() =>
-                toast("Agency assist", {
-                  description: "We'll wire the agency CTA once the core design is locked."
-                })
-              }
-              className="flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 font-semibold"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.45)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 12
-              }}
-            >
-              <Wrench size={11} />
-              Fix this for me (Agency)
             </motion.button>
           </div>
         </motion.div>
