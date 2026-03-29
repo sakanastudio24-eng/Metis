@@ -95,11 +95,13 @@ Use it before changing UI wording, fallback copy, or product labels.
 ## Report copy
 
 - Header: `Metis report for {hostname}`
+- Header: `Metis+ report for {hostname}`
 - Header: `Metis+ Full Report`
 - Header: `Confidence`
 - Header: `Estimated waste`
 - Header: `Top drivers`
 - Header: `Insight`
+- CTA: `Back`
 - Header: `Plus read`
 - Tag: `Metis+`
 - Tag: `Low`
@@ -140,6 +142,8 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Export should read like a report document, not a screenshot.`
 - Body rule:
   `Pricing wording should stay approximate when it uses reference pricing.`
+- Body rule:
+  `Metis+ exports should carry the Metis+ title and include the deeper Plus sections.`
 
 ## Error and catchall responses
 
