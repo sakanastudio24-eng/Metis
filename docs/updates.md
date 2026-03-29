@@ -20,6 +20,18 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.3.0
+
+Release type: Minor
+
+This release cleans up tracked generated test output, keeps the route-scoped fairness work in the new minor line, and links the launch and front-facing docs into the repo map.
+
+What changed
+
+- Stopped tracking generated `.tmp-tests` output and ignored it properly.
+- Kept the route-scoped fairness question work in the release line.
+- Linked the front-facing foundation, design-system logic, and production roadmap docs from the main repo guides.
+
 ## 0.2.0
 
 Release type: Minor
