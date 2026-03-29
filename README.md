@@ -12,6 +12,10 @@ Metis is local first. It scans the current route, scores waste, explains what lo
 
 If you want the shortest repo context note for an AI or code agent, start with [AI.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/AI.md).
 
+Release history and version policy live in [docs/updates.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/updates.md).
+
+The current pre-ship release line starts at `0.1.0`. Normal product work now moves on minor versions. Patch versions are reserved for small fixes after a minor when needed. The first public ship will be `1.0.0`.
+
 ## What works now
 
 - Manifest V3 extension runtime
@@ -59,11 +63,12 @@ The scan path is deterministic.
 If you are getting oriented, read these in order.
 
 1. [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/flow-overview.md)
-2. [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/extension-runtime-flow.md)
-3. [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/sidepanel-session-flow.md)
-4. [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-flow.md)
-5. [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md)
-6. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
+2. [docs/updates.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/updates.md)
+3. [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/extension-runtime-flow.md)
+4. [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/sidepanel-session-flow.md)
+5. [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-flow.md)
+6. [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md)
+7. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
 
 ## Setup
 

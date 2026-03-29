@@ -75,10 +75,21 @@ Key boundaries:
 - prefer focused commits by subsystem
 - call out git segmentation for every meaningful feature or cleanup
 - keep version bumps isolated in their own commit
+- keep the updates doc in the same release prep pass as the version bump
 - keep frontend work human, intentional, and easy to read
 - load `dist/` when testing the unpacked extension
 - reload the extension after manifest or background changes
 - refresh the host page after content script changes
+
+## Versioning rules
+
+- the legacy `0.0.0.x` line is historical and should not continue
+- the current pre-ship line starts at `0.1.0`
+- before first public ship, normal product work uses minor releases like `0.1.0`, `0.2.0`, and `0.3.0`
+- patch releases like `0.1.1` are only for small fixes or regressions after a minor release
+- the first public ship should be `1.0.0`
+- release workflow stays split into feature or docs work first, then a standalone version bump commit
+- update [docs/updates.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/updates.md) whenever a new version is cut
 
 ## Agent rules
 
