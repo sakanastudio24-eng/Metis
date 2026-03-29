@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.7.2
+
+Release type: Patch
+
+This release fixes the main-page fairness question so Metis stops re-asking it on every route once one route has already been marked as the main public page.
+
+What changed
+
+- Let one route hold the `main page` role and treated the rest of the site as separate routes from that page by default.
+- Stopped the side panel and fullscreen report from re-asking the main-page question on routes that should inherit `specific route`.
+- Kept page-type answers route-scoped while making the back flow ignore inherited fairness answers that were never explicitly chosen.
+- Simplified the main-page question copy so the behavior is clearer in the refinement flow.
+
 ## 0.7.1
 
 Release type: Patch
