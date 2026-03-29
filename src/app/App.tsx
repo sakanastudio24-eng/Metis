@@ -320,6 +320,32 @@ export default function App() {
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const [settingsReady, setSettingsReady] = useState(false);
 
+  const applySessionState = (nextSession: MetisTabSessionState | null) => {
+    setSession(nextSession);
+
+    const uiState = nextSession?.uiState ?? null;
+    if (uiState) {
+      const migratedUiState = migrateLegacyFairnessAnswers(
+        uiState.plusAnswers,
+        uiState.pageFairnessByKey ?? {},
+        getFairnessPageKey(nextSession?.currentUrl)
+      );
+
+      setScanScope(uiState.scanScope);
+      setPlusAnswers(migratedUiState.plusAnswers);
+      setPageFairnessByKey(migratedUiState.pageFairnessByKey);
+      setIsPlusRefinementOpen(uiState.isPlusRefinementOpen);
+      setIsPlusUser(uiState.isPlusUser);
+      return;
+    }
+
+    setScanScope(settings.preferredScanScope);
+    setPlusAnswers({});
+    setPageFairnessByKey({});
+    setIsPlusRefinementOpen(false);
+    setIsPlusUser(false);
+  };
+
   const rawSnapshot = session?.rawSnapshot ?? null;
   const visitedSnapshots = session?.visitedSnapshots ?? [];
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot, visitedSnapshots, scanScope);
@@ -425,27 +451,7 @@ export default function App() {
     }
 
     setActiveTabId(response.tabId ?? null);
-    setSession(response.session ?? null);
-
-    const uiState = response.session?.uiState ?? null;
-    if (uiState) {
-      const migratedUiState = migrateLegacyFairnessAnswers(
-        uiState.plusAnswers,
-        uiState.pageFairnessByKey ?? {},
-        getFairnessPageKey(response.session?.currentUrl)
-      );
-      setScanScope(uiState.scanScope);
-      setPlusAnswers(migratedUiState.plusAnswers);
-      setPageFairnessByKey(migratedUiState.pageFairnessByKey);
-      setIsPlusRefinementOpen(uiState.isPlusRefinementOpen);
-      setIsPlusUser(uiState.isPlusUser);
-    } else {
-      setScanScope(settings.preferredScanScope);
-      setPlusAnswers({});
-      setPageFairnessByKey({});
-      setIsPlusRefinementOpen(false);
-      setIsPlusUser(false);
-    }
+    applySessionState(response.session ?? null);
   };
 
   const patchSessionUi = async (patch: Partial<MetisSessionUiState>) => {
@@ -575,6 +581,23 @@ export default function App() {
       chrome.windows.onFocusChanged.removeListener(handleActivated);
     };
   }, [activeTabId]);
+
+  useEffect(() => {
+    if (!session?.isActive || rawSnapshot) {
+      return;
+    }
+
+    // The side panel can mount before the first scan lands. Retry hydration
+    // briefly while the tab session is active so the panel does not get stuck
+    // on an empty state if the initial session-change broadcast is missed.
+    const timeoutId = window.setTimeout(() => {
+      void refreshActiveSession();
+    }, 900);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [rawSnapshot, session?.isActive]);
 
   const handleSetScanScope = (scope: ScanScope) => {
     setScanScope(scope);

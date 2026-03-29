@@ -208,6 +208,33 @@ export function PageBridgeApp() {
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const scanTimeoutRef = useRef<number | null>(null);
 
+  const applySessionState = (nextSession: MetisTabSessionState | null) => {
+    setSession(nextSession);
+    setIsSessionActive(nextSession?.isActive ?? false);
+    setIsPanelOpen(nextSession?.isSidePanelOpen ?? false);
+
+    if (nextSession?.uiState) {
+      const migratedUiState = migrateLegacyFairnessAnswers(
+        nextSession.uiState.plusAnswers,
+        nextSession.uiState.pageFairnessByKey ?? {},
+        getFairnessPageKey(nextSession.currentUrl)
+      );
+
+      setScanScope(nextSession.uiState.scanScope);
+      setPlusAnswers(migratedUiState.plusAnswers);
+      setPageFairnessByKey(migratedUiState.pageFairnessByKey);
+      setIsPlusRefinementOpen(nextSession.uiState.isPlusRefinementOpen);
+      setIsPlusUser(nextSession.uiState.isPlusUser);
+      return;
+    }
+
+    setScanScope("single");
+    setPlusAnswers({});
+    setPageFairnessByKey({});
+    setIsPlusRefinementOpen(false);
+    setIsPlusUser(false);
+  };
+
   const visitedSnapshots = session?.visitedSnapshots ?? [];
   const activeSnapshot = buildCurrentSnapshot(session?.rawSnapshot ?? null, visitedSnapshots, scanScope);
   const inferredAnswers = useMemo(
@@ -319,29 +346,7 @@ export function PageBridgeApp() {
         return;
       }
 
-      const nextSession = response?.session ?? null;
-      setSession(nextSession);
-      setIsSessionActive(nextSession?.isActive ?? false);
-      setIsPanelOpen(nextSession?.isSidePanelOpen ?? false);
-
-      if (nextSession?.uiState) {
-        const migratedUiState = migrateLegacyFairnessAnswers(
-          nextSession.uiState.plusAnswers,
-          nextSession.uiState.pageFairnessByKey ?? {},
-          getFairnessPageKey(nextSession.currentUrl)
-        );
-        setScanScope(nextSession.uiState.scanScope);
-        setPlusAnswers(migratedUiState.plusAnswers);
-        setPageFairnessByKey(migratedUiState.pageFairnessByKey);
-        setIsPlusRefinementOpen(nextSession.uiState.isPlusRefinementOpen);
-        setIsPlusUser(nextSession.uiState.isPlusUser);
-      } else {
-        setScanScope("single");
-        setPlusAnswers({});
-        setPageFairnessByKey({});
-        setIsPlusRefinementOpen(false);
-        setIsPlusUser(false);
-      }
+      applySessionState(response?.session ?? null);
     });
 
     const listener = (
@@ -380,28 +385,7 @@ export function PageBridgeApp() {
       }
 
       if (runtimeMessage.type === "METIS_SESSION_CHANGED") {
-        setSession(runtimeMessage.session ?? null);
-        setIsSessionActive(runtimeMessage.session?.isActive ?? false);
-        setIsPanelOpen(runtimeMessage.session?.isSidePanelOpen ?? false);
-
-        if (runtimeMessage.session?.uiState) {
-          const migratedUiState = migrateLegacyFairnessAnswers(
-            runtimeMessage.session.uiState.plusAnswers,
-            runtimeMessage.session.uiState.pageFairnessByKey ?? {},
-            getFairnessPageKey(runtimeMessage.session.currentUrl)
-          );
-          setScanScope(runtimeMessage.session.uiState.scanScope);
-          setPlusAnswers(migratedUiState.plusAnswers);
-          setPageFairnessByKey(migratedUiState.pageFairnessByKey);
-          setIsPlusRefinementOpen(runtimeMessage.session.uiState.isPlusRefinementOpen);
-          setIsPlusUser(runtimeMessage.session.uiState.isPlusUser);
-        } else {
-          setScanScope("single");
-          setPlusAnswers({});
-          setPageFairnessByKey({});
-          setIsPlusRefinementOpen(false);
-          setIsPlusUser(false);
-        }
+        applySessionState(runtimeMessage.session ?? null);
 
         sendResponse({ ok: true });
         return true;
@@ -556,7 +540,10 @@ export function PageBridgeApp() {
           );
         }
 
-        await sendRuntimeMessage({
+        const response = await sendRuntimeMessage<{
+          ok: boolean;
+          session?: MetisTabSessionState | null;
+        }>({
           type: "METIS_SCAN_UPDATE",
           payload: {
             currentUrl: window.location.href,
@@ -565,6 +552,13 @@ export function PageBridgeApp() {
             visitedSnapshots: visited
           }
         });
+
+        // The page bridge should not wait on a follow-up session broadcast to
+        // show the latest scan. Hydrate from the write response immediately so
+        // the fullscreen report stays in sync even if the broadcast arrives late.
+        if (response?.ok) {
+          applySessionState(response.session ?? null);
+        }
       } catch (error) {
         if (isExtensionContextInvalidated(error)) {
           stopSync();
