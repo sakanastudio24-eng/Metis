@@ -7,6 +7,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { motion } from "motion/react";
+import type { ScanScope } from "../../types/scanScope";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
 import { AcronymText } from "./AcronymTooltipText";
@@ -15,6 +16,8 @@ interface SplitScoreSummaryProps {
   viewModel: MetisDesignViewModel;
   compact?: boolean;
   pulseKey?: number;
+  scanScope?: ScanScope;
+  onSetScanScope?: (scope: ScanScope) => void;
 }
 
 function SummaryCard({
@@ -233,7 +236,9 @@ function ConfidenceStrip({
 export function SplitScoreSummary({
   viewModel,
   compact = false,
-  pulseKey = 0
+  pulseKey = 0,
+  scanScope = "single",
+  onSetScanScope
 }: SplitScoreSummaryProps) {
   const combinedTone =
     viewModel.combinedScore >= 65
@@ -260,66 +265,189 @@ export function SplitScoreSummary({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
       >
-        <div className="flex items-center gap-4">
-          <ScoreVisualization
-            score={viewModel.combinedScore}
-            size={compact ? 88 : 116}
-            color={combinedTone}
-            trackColor="rgba(255,255,255,0.08)"
-            pulseKey={pulseKey}
-          />
-          <div className="min-w-0">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <ScoreVisualization
+              score={viewModel.combinedScore}
+              size={compact ? 88 : 116}
+              color={combinedTone}
+              trackColor="rgba(255,255,255,0.08)"
+              pulseKey={pulseKey}
+            />
+            <div className="min-w-0">
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.36)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase"
+                }}
+              >
+                <AcronymText text="Combined Score" />
+              </div>
+              <div
+                className="metis-display"
+                style={{
+                  color: "white",
+                  fontSize: compact ? 24 : 30,
+                  lineHeight: 1,
+                  marginTop: 8
+                }}
+              >
+                {viewModel.combinedScore}/100
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <div
+                  className="rounded-full px-3 py-1.5"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.72)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: compact ? 10 : 11,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text={`Score ${viewModel.combinedBreakdown.costRisk}/100`} />
+                </div>
+                <div
+                  className="rounded-full px-3 py-1.5"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.72)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: compact ? 10 : 11,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text={`Control ${viewModel.combinedBreakdown.control}/100`} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {!compact && onSetScanScope ? (
+            <div className="shrink-0 rounded-[20px] px-3 py-3" style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)"
+            }}>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.34)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  marginBottom: 10
+                }}
+              >
+                <AcronymText text="Report Scope" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSetScanScope("single")}
+                  className="rounded-full px-3 py-2"
+                  style={{
+                    background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
+                    color: scanScope === "single" ? "#0c1623" : "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text="Single Page" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSetScanScope("multi")}
+                  className="rounded-full px-3 py-2"
+                  style={{
+                    background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
+                    color: scanScope === "multi" ? "#0c1623" : "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text="Multipage Scan (beta)" />
+                </button>
+              </div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.48)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 11,
+                  lineHeight: "17px",
+                  marginTop: 10,
+                  maxWidth: 220
+                }}
+              >
+                <AcronymText text="Score stays tied to this route. Multipage adds supporting context only." />
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {!compact && scanScope === "multi" ? (
+          <div
+            className="mt-4 rounded-[18px] px-4 py-4"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)"
+            }}
+          >
             <div
               style={{
-                color: "rgba(255,255,255,0.36)",
+                color: "rgba(255,255,255,0.34)",
                 fontFamily: "Inter, sans-serif",
-                fontSize: compact ? 10 : 11,
+                fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase"
               }}
             >
-              <AcronymText text="Combined Score" />
+              <AcronymText text="Multipage Scan (beta)" />
             </div>
             <div
-              className="metis-display"
               style={{
-                color: "white",
-                fontSize: compact ? 24 : 30,
-                lineHeight: 1,
+                color: "rgba(255,255,255,0.78)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 13,
+                fontWeight: 700,
+                marginTop: 10
+              }}
+            >
+              <AcronymText text={viewModel.pagesSampledLabel} />
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.58)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                lineHeight: "18px",
                 marginTop: 8
               }}
             >
-              {viewModel.combinedScore}/100
+              <AcronymText text={viewModel.multipageComparisonSummary} />
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            {viewModel.multipagePatternNote ? (
               <div
-                className="rounded-full px-3 py-1.5"
                 style={{
-                  background: "rgba(255,255,255,0.06)",
-                  color: "rgba(255,255,255,0.72)",
+                  color: "rgba(255,255,255,0.48)",
                   fontFamily: "Inter, sans-serif",
-                  fontSize: compact ? 10 : 11,
-                  fontWeight: 700
+                  fontSize: 12,
+                  lineHeight: "18px",
+                  marginTop: 8
                 }}
               >
-                <AcronymText text={`Score ${viewModel.combinedBreakdown.costRisk}/100`} />
+                <AcronymText text={viewModel.multipagePatternNote} />
               </div>
-              <div
-                className="rounded-full px-3 py-1.5"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  color: "rgba(255,255,255,0.72)",
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: compact ? 10 : 11,
-                  fontWeight: 700
-                }}
-              >
-                <AcronymText text={`Control ${viewModel.combinedBreakdown.control}/100`} />
-              </div>
-            </div>
+            ) : null}
           </div>
-        </div>
+        ) : null}
       </motion.div>
 
       <SummaryCard

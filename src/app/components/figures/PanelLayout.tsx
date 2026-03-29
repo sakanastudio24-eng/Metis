@@ -235,7 +235,7 @@ export function PanelLayout({
                   lineHeight: compact ? "16px" : "20px"
                 }}
               >
-                <AcronymText text={`Current session cost (${viewModel.scopeLabel.toLowerCase()})`} />
+                <AcronymText text="Current session cost" />
               </div>
               <div
                 style={{

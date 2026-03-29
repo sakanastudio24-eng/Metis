@@ -681,7 +681,12 @@ export function FullReportLayout({
           >
             <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_328px]">
               <div className="space-y-4">
-                <SplitScoreSummary viewModel={viewModel} pulseKey={refreshTick} />
+                <SplitScoreSummary
+                  viewModel={viewModel}
+                  pulseKey={refreshTick}
+                  scanScope={scanScope}
+                  onSetScanScope={onSetScanScope}
+                />
                 <div
                   className="rounded-[22px] px-5 py-4"
                   style={{
@@ -806,7 +811,7 @@ export function FullReportLayout({
                         fontSize: 12
                       }}
                     >
-                      <AcronymText text={`Current session cost (${viewModel.scopeLabel.toLowerCase()})`} />
+                      <AcronymText text="Current session cost" />
                     </div>
                     <div
                       style={{
@@ -1001,68 +1006,6 @@ export function FullReportLayout({
               >
                 <AcronymText text={isRefinementOpen ? "Hide questions" : "Answer context questions"} />
               </motion.button>
-            </div>
-
-            <div
-              className="mt-5 rounded-[22px] px-5 py-4"
-              style={{
-                background: "rgba(12,22,35,0.34)",
-                border: "1px solid rgba(255,255,255,0.07)"
-              }}
-            >
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.3)",
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase"
-                }}
-              >
-                Report Scope
-              </div>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.58)",
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 12,
-                  lineHeight: "18px",
-                  marginTop: 8
-                }}
-              >
-                <AcronymText text="This changes whether Metis reads only this route or the pages you have already visited on this site." />
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSetScanScope("single")}
-                  className="rounded-full px-5 py-3"
-                  style={{
-                    background: scanScope === "single" ? "#ff7a1a" : "#0f2740",
-                    color: scanScope === "single" ? "#0c1623" : "white",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 13,
-                    fontWeight: 700
-                  }}
-                >
-                  <AcronymText text="Single Page" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onSetScanScope("multi")}
-                  className="rounded-full px-5 py-3"
-                  style={{
-                    background: scanScope === "multi" ? "#ff7a1a" : "#0f2740",
-                    color: scanScope === "multi" ? "#0c1623" : "white",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 13,
-                    fontWeight: 700
-                  }}
-                >
-                  <AcronymText text="Multipage" />
-                </button>
-              </div>
             </div>
 
             <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">

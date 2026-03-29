@@ -181,7 +181,7 @@ export function LocalSettingsModal({
                     active={settings.preferredScanScope === "multi"}
                     onClick={() => onChange({ ...settings, preferredScanScope: "multi" })}
                   >
-                    Default to multipage
+                    Default to multipage scan beta
                   </PillButton>
                 </div>
                 <div className="flex flex-wrap gap-2">
