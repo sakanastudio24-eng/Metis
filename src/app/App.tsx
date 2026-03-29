@@ -24,6 +24,10 @@ import {
   getMetisLocalSettings,
   saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
+import {
+  METIS_ACCOUNT_URL,
+  METIS_SITE_LABEL
+} from "../shared/lib/metisLinks";
 import type {
   MetisRuntimeMessage,
   MetisSessionUiState,
@@ -135,7 +139,7 @@ function buildReportCopyText(hostname: string, viewModel: ReturnType<typeof buil
     viewModel.controlReasons.length > 0
       ? `Control reasons: ${viewModel.controlReasons.join(" | ")}`
       : null,
-    "— Scanned by Metis (metis.zward.studio)"
+    `— Scanned by Metis (${METIS_SITE_LABEL})`
   ]
     .filter((line): line is string => typeof line === "string" && line.length > 0)
     .join("\n");
@@ -329,6 +333,9 @@ export default function App() {
     [plusAnswers, questionDefinitions]
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
+
+  // The side panel stays small and stable. Deeper reading and immersive actions
+  // still happen back in the page DOM.
   const refreshActiveSession = async () => {
     const response = await sendRuntimeMessage<{
       ok: boolean;
@@ -547,12 +554,8 @@ export default function App() {
     });
   };
 
-  const handleManageAccount = () => {
-    window.open("https://metis.zward.studio/account", "_blank", "noopener,noreferrer");
-  };
-
-  const handleUpgrade = () => {
-    window.open("https://metis.zward.studio/account", "_blank", "noopener,noreferrer");
+  const handleOpenAccountPortal = () => {
+    window.open(METIS_ACCOUNT_URL, "_blank", "noopener,noreferrer");
   };
 
   const handleOpenExport = () => {
@@ -622,8 +625,8 @@ export default function App() {
         <>
           <SidePanelHeader
             hostname={viewModel?.hostname ?? session.currentUrl}
-            onManageAccount={handleManageAccount}
-            onUpgrade={handleUpgrade}
+            onManageAccount={handleOpenAccountPortal}
+            onUpgrade={handleOpenAccountPortal}
             onSettings={handleOpenSettings}
           />
 

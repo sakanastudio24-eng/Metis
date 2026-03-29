@@ -179,6 +179,8 @@ export function ProfileButton({
             </div>
 
             <div className="py-1.5">
+              {/* Keep website actions grouped together and leave Upgrade last so
+                  the account menu reads like a steady handoff, not a sales menu. */}
               {[
                 { icon: ExternalLink, label: "Manage account", accent: true },
                 { icon: Settings, label: "Extension settings", accent: false },

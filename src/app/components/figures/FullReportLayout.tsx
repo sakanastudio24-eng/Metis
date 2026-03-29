@@ -9,6 +9,7 @@ import { ArrowLeft, Bot, Check, Copy, Download, Target, X, Zap } from "lucide-re
 import { motion } from "motion/react";
 import type { ScanScope } from "../../types/scanScope";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
+import { METIS_SITE_LABEL } from "../../../shared/lib/metisLinks";
 import type { PlusRefinementAnswers } from "../../../shared/types/audit";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { TopIssuesList } from "./TopIssuesList";
@@ -1050,7 +1051,7 @@ export function FullReportLayout({
             fontSize: 10
           }}
         >
-          metis.zward.studio
+          {METIS_SITE_LABEL}
         </div>
         <div className="flex items-center gap-3">
           <motion.button

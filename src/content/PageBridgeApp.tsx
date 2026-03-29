@@ -21,6 +21,7 @@ import {
   buildPageScanSnapshot,
   savePageScanAndCompare
 } from "../shared/lib/pageScanHistory";
+import { METIS_SITE_LABEL } from "../shared/lib/metisLinks";
 import {
   DEFAULT_METIS_SETTINGS,
   getMetisLocalSettings
@@ -158,7 +159,7 @@ function buildReportCopyText(
     viewModel.controlReasons.length > 0
       ? `Control reasons: ${viewModel.controlReasons.join(" | ")}`
       : null,
-    "— Scanned by Metis (metis.zward.studio)"
+    `— Scanned by Metis (${METIS_SITE_LABEL})`
   ]
     .filter((line): line is string => typeof line === "string" && line.length > 0)
     .join("\n");

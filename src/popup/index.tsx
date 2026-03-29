@@ -14,6 +14,7 @@ import {
   getSiteHistorySummary,
   type SiteHistorySummary
 } from "../shared/lib/siteBaseline";
+import { METIS_ACCOUNT_URL, METIS_SITE_URL } from "../shared/lib/metisLinks";
 import type { MetisLocalSettings } from "../shared/types/audit";
 
 function Section({
@@ -438,13 +439,13 @@ function PopupApp() {
         <Section
           icon={Sparkles}
           title="About"
-          detail="Feedback and product links for the beta."
+          detail="A quick way to reach the product site, legal pages, and account access."
         >
           <div className="space-y-2">
             <LinkCard
-              href="https://metis.zward.studio"
+              href={METIS_SITE_URL}
               title="Metis site"
-              detail="Product overview and account entry."
+              detail="Product overview, current direction, and website entry."
             />
             <LinkCard
               href={privacyUrl}
@@ -457,9 +458,9 @@ function PopupApp() {
               detail="Current terms of use."
             />
             <LinkCard
-              href="https://metis.zward.studio/account"
+              href={METIS_ACCOUNT_URL}
               title="Manage account"
-              detail="Open website account settings and beta access."
+              detail="Open website account access and Plus Beta entry."
             />
           </div>
         </Section>
