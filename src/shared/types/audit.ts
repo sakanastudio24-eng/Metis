@@ -463,8 +463,8 @@ export interface PlusRefinementAnswers {
 }
 
 export interface PlusOptimizationReport {
-  summary: string;
-  detail: string;
+  detailSummary: string;
+  contextNotes: string[];
   nextStep: string;
   priorityLabel: string;
   answeredCount: number;

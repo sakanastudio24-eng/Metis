@@ -128,23 +128,36 @@ function buildAutoRefinementAnswers(
 }
 
 function buildReportCopyText(hostname: string, viewModel: ReturnType<typeof buildMetisDesignViewModel>) {
+  const topDrivers =
+    viewModel.topIssues.length > 0
+      ? viewModel.topIssues.slice(0, 3).map((issue, index) => `${index + 1}. ${issue.title}`)
+      : ["1. No major issues surfaced"];
+
   return [
-    `Metis Cost Report — ${hostname}`,
-    `Risk Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
+    `Metis report for ${hostname}`,
+    "",
+    `Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
     `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
     `Confidence: ${viewModel.confidenceLabel}`,
     viewModel.confidenceDetail,
-    `Estimated waste: ${viewModel.estimateRange}`,
+    "",
+    "Estimated waste",
+    viewModel.estimateRange,
     viewModel.estimateSourceNote ?? null,
-    `Session cost: ${viewModel.sessionCost} · At 10k users: ${viewModel.monthlyProjection}`,
-    `Top issues: ${viewModel.topIssues.map((issue) => issue.title).join(", ") || "No major issues surfaced"}`,
-    `Quick insight: ${viewModel.quickInsight}`,
-    viewModel.controlReasons.length > 0
-      ? `Control reasons: ${viewModel.controlReasons.join(" | ")}`
-      : null,
-    `— Scanned by Metis (${METIS_SITE_LABEL})`
+    "",
+    "At 10k users",
+    viewModel.monthlyProjection,
+    "",
+    "Top drivers",
+    ...topDrivers,
+    "",
+    "Insight",
+    viewModel.quickInsight,
+    viewModel.supportingDetail,
+    "",
+    `Scanned by Metis (${METIS_SITE_LABEL})`
   ]
-    .filter((line): line is string => typeof line === "string" && line.length > 0)
+    .filter((line): line is string => typeof line === "string")
     .join("\n");
 }
 

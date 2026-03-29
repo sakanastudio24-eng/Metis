@@ -63,6 +63,7 @@ export interface DesignQuestionState {
   missingCoreCount: number;
   summary: string | null;
   detail: string | null;
+  contextNotes: string[];
   nextStep: string | null;
   priorityLabel: string | null;
 }
@@ -471,6 +472,7 @@ function buildQuestionState(report: PlusOptimizationReport | null, requiredCount
       missingCoreCount: requiredCount,
       summary: null,
       detail: null,
+      contextNotes: [],
       nextStep: null,
       priorityLabel: null
     };
@@ -480,10 +482,75 @@ function buildQuestionState(report: PlusOptimizationReport | null, requiredCount
     answeredCount: report.answeredCount,
     requiredCount,
     missingCoreCount: report.missingCoreQuestions.length,
-    summary: report.summary,
-    detail: report.detail,
+    summary: report.detailSummary,
+    detail: report.contextNotes[0] ?? null,
+    contextNotes: report.contextNotes,
     nextStep: report.nextStep,
     priorityLabel: report.priorityLabel
+  };
+}
+
+function buildBaseReportCore({
+  snapshot,
+  score,
+  control,
+  insight,
+  answers,
+  pageCount,
+  scope
+}: {
+  snapshot: RawScanSnapshot;
+  score: ScoreBreakdown;
+  control: ControlAssessment;
+  insight: { summary: string; supportingDetail: string } | null;
+  answers: PlusRefinementAnswers;
+  pageCount: number;
+  scope: ScanScope;
+}) {
+  const riskTone = scoreToRiskTone(score);
+  const controlTone = controlToTone(control);
+  const monthlyWaste = deriveMonthlyWaste(snapshot, answers);
+  const roundedRiskScore = Math.round(score.score);
+  const roundedControlScore = Math.round(control.score);
+  const displayPageCount = Math.max(pageCount, 1);
+  const sampledPagesLabel =
+    displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
+
+  return {
+    riskTone,
+    controlTone,
+    monthlyWaste,
+    roundedRiskScore,
+    roundedControlScore,
+    sampledPagesLabel,
+    displayPageCount,
+    quickInsight:
+      insight?.summary ?? "Metis is still building a clean read of this page.",
+    supportingDetail:
+      insight?.supportingDetail ??
+      "Interact with the page once to help Metis refine the session profile.",
+    estimateRange: `~$${Math.round(monthlyWaste * 0.6)} to $${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
+    splitSummary: {
+      costRisk: {
+        title: "Cost Risk",
+        score: roundedRiskScore,
+        label: riskTone.label,
+        color: riskTone.color,
+        background: riskTone.bg,
+        summary: "The waste and cost pressure Metis sees on this route right now.",
+        detail: `Current waste estimate is roughly $${Math.round(monthlyWaste * 0.6)} to $${Math.round(monthlyWaste * 1.1)}/month`
+      },
+      control: {
+        title: "Control",
+        score: roundedControlScore,
+        label: controlTone.label,
+        color: controlTone.color,
+        background: controlTone.bg,
+        summary: "Whether the route weight looks justified for the product context Metis can see.",
+        reasons: control.reasons
+      }
+    },
+    scopeLabel: scope === "multi" ? "Multipage" : "Single Page"
   };
 }
 
@@ -641,23 +708,25 @@ export function buildMetisDesignViewModel({
   plusReport: PlusOptimizationReport | null;
   requiredQuestionCount: number;
 }): MetisDesignViewModel {
-  const riskTone = scoreToRiskTone(score);
-  const controlTone = controlToTone(control);
   const detectedStack = detectStack(snapshot, answers);
   const pricingContext = resolvePricingContext(snapshot, detectedStack.detection, answers);
-  const monthlyWaste = deriveMonthlyWaste(snapshot, answers) * pricingContext.providerMultiplier;
+  const baseReportCore = buildBaseReportCore({
+    snapshot,
+    score,
+    control,
+    insight,
+    answers,
+    pageCount,
+    scope
+  });
+  const monthlyWaste = baseReportCore.monthlyWaste * pricingContext.providerMultiplier;
   const fixRecommendations = buildFixRecommendationCards(issues, monthlyWaste);
   const visitCount = pricingContext.monthlyVisitBaseline ?? visitEstimate(answers);
   const sessionCostValue = monthlyWaste / Math.max(250, visitCount / 4);
   const monthlyProjection = sessionCostValue * 10_000;
   const issuesForDisplay = issues.map(issueToDesignIssue);
-  const displayPageCount = Math.max(pageCount, 1);
-  const sampledPagesLabel =
-    displayPageCount === 1 ? "Sampled 1 page" : `Sampled ${displayPageCount} pages`;
-  const roundedRiskScore = Math.round(score.score);
-  const roundedControlScore = Math.round(control.score);
-  const costRiskContribution = Math.round(roundedRiskScore / 2);
-  const controlContribution = Math.round(roundedControlScore / 2);
+  const costRiskContribution = Math.round(baseReportCore.roundedRiskScore / 2);
+  const controlContribution = Math.round(baseReportCore.roundedControlScore / 2);
   const combinedScore = costRiskContribution + controlContribution;
 
   // This adapter is the only place where the product core is translated into
@@ -670,22 +739,22 @@ export function buildMetisDesignViewModel({
     hostname: snapshot.page.hostname,
     pathname: snapshot.page.pathname,
     scannedAt: new Date(snapshot.scannedAt).toLocaleString(),
-    scopeLabel: scope === "multi" ? "Multipage" : "Single Page",
-    pagesSampledLabel: sampledPagesLabel,
-    sampledPagesCount: displayPageCount,
-    score: roundedRiskScore,
-    riskLabel: riskTone.label,
-    riskColor: riskTone.color,
-    riskBg: riskTone.bg,
+    scopeLabel: baseReportCore.scopeLabel,
+    pagesSampledLabel: baseReportCore.sampledPagesLabel,
+    sampledPagesCount: baseReportCore.displayPageCount,
+    score: baseReportCore.roundedRiskScore,
+    riskLabel: baseReportCore.riskTone.label,
+    riskColor: baseReportCore.riskTone.color,
+    riskBg: baseReportCore.riskTone.bg,
     combinedScore,
     combinedBreakdown: {
       costRisk: costRiskContribution,
       control: controlContribution
     },
-    controlScore: roundedControlScore,
-    controlLabel: controlTone.label,
-    controlColor: controlTone.color,
-    controlBg: controlTone.bg,
+    controlScore: baseReportCore.roundedControlScore,
+    controlLabel: baseReportCore.controlTone.label,
+    controlColor: baseReportCore.controlTone.color,
+    controlBg: baseReportCore.controlTone.bg,
     controlReasons: control.reasons,
     confidenceLabel: confidence.label,
     confidenceSummary: confidence.summary,
@@ -693,31 +762,14 @@ export function buildMetisDesignViewModel({
     confidenceReasons: confidence.reasons,
     splitSummary: {
       costRisk: {
-        title: "Cost Risk",
-        score: roundedRiskScore,
-        label: riskTone.label,
-        color: riskTone.color,
-        background: riskTone.bg,
-        summary: "The waste and cost pressure Metis sees on this route right now.",
-        detail: `Current waste estimate: ~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month`
+        ...baseReportCore.splitSummary.costRisk,
+        detail: `Current waste estimate is roughly $${Math.round(monthlyWaste * 0.6)} to $${Math.round(monthlyWaste * 1.1)}/month`
       },
-      control: {
-        title: "Control",
-        score: roundedControlScore,
-        label: controlTone.label,
-        color: controlTone.color,
-        background: controlTone.bg,
-        summary: "Whether the route weight looks justified for the product context Metis can see.",
-        reasons: control.reasons
-      }
+      control: baseReportCore.splitSummary.control
     },
-    estimateRange: `~$${Math.round(monthlyWaste * 0.6)}–$${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
-    quickInsight:
-      plusReport?.summary ?? insight?.summary ?? "Metis is still building a clean read of this page.",
-    supportingDetail:
-      plusReport?.detail ??
-      insight?.supportingDetail ??
-      "Interact with the page once to help Metis refine the session profile.",
+    estimateRange: `~$${Math.round(monthlyWaste * 0.6)} to $${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
+    quickInsight: baseReportCore.quickInsight,
+    supportingDetail: baseReportCore.supportingDetail,
     sessionCost: `~${formatCurrency(sessionCostValue)}`,
     monthlyProjection: `~${formatMonthly(monthlyProjection)}/month`,
     summaryPills: buildSummaryPills(issuesForDisplay),

@@ -102,7 +102,7 @@ function buildContextPrefix(answers: PlusRefinementAnswers) {
     parts.push(`across ${PLUS_LABELS.siteSize[answers.siteSize]}`);
   }
 
-  return parts.length > 0 ? `${parts.join(" ")}:` : "";
+  return parts.join(" ");
 }
 
 function buildCostSensitivityNote(
@@ -213,13 +213,11 @@ export function buildPlusOptimizationReport(
     routePriority,
     planNote,
     sensitivityNote
-  ]
-    .filter(Boolean)
-    .join(" ");
+  ].filter(Boolean);
 
   return {
-    summary: baseInsight.summary,
-    detail,
+    detailSummary: detail[0] ?? baseInsight.summary,
+    contextNotes: detail.slice(1),
     nextStep: buildProviderNextStep(answers, baseInsight.primaryCategory, baseInsight.nextStep),
     priorityLabel:
       missingCoreQuestions.length === 0 ? buildPriorityLabel(answers, score) : "Plus suggestion",

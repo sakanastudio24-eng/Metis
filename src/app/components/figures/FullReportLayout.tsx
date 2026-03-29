@@ -414,6 +414,10 @@ export function FullReportLayout({
       className={`metis-report-shell flex h-full flex-col overflow-hidden ${
         attachedLayout ? "rounded-l-[28px] rounded-r-none" : "rounded-[24px]"
       }`}
+      style={{
+        border: isPlusUser ? "1px solid rgba(220,94,94,0.22)" : undefined,
+        boxShadow: isPlusUser ? "0 30px 90px rgba(220,94,94,0.12)" : undefined
+      }}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: "easeOut" }}
@@ -528,8 +532,10 @@ export function FullReportLayout({
                 <div
                   className="rounded-[22px] px-5 py-4"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)"
+                    background: isPlusUser ? "rgba(220,94,94,0.08)" : "rgba(255,255,255,0.04)",
+                    border: isPlusUser
+                      ? "1px solid rgba(220,94,94,0.18)"
+                      : "1px solid rgba(255,255,255,0.07)"
                   }}
                 >
                   <div
@@ -567,6 +573,22 @@ export function FullReportLayout({
                   >
                     {viewModel.supportingDetail}
                   </div>
+                  {isPlusUser ? (
+                    <div
+                      className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5"
+                      style={{
+                        background: "rgba(220,94,94,0.14)",
+                        border: "1px solid rgba(220,94,94,0.28)",
+                        color: "#dc8d72",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 11,
+                        fontWeight: 700
+                      }}
+                    >
+                      <Zap size={12} />
+                      Plus read
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -978,8 +1000,10 @@ export function FullReportLayout({
                 <div
                   className="rounded-[24px] px-5 py-5"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)"
+                    background: isPlusUser ? "rgba(220,94,94,0.08)" : "rgba(255,255,255,0.04)",
+                    border: isPlusUser
+                      ? "1px solid rgba(220,94,94,0.18)"
+                      : "1px solid rgba(255,255,255,0.08)"
                   }}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1022,6 +1046,23 @@ export function FullReportLayout({
                       <AcronymText text={viewModel.questionState.detail} />
                     </div>
                   )}
+                  {viewModel.questionState.contextNotes.length > 1 ? (
+                    <div className="mt-4 space-y-2">
+                      {viewModel.questionState.contextNotes.slice(1).map((note) => (
+                        <div
+                          key={note}
+                          style={{
+                            color: "rgba(255,255,255,0.52)",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 12,
+                            lineHeight: "18px"
+                          }}
+                        >
+                          <AcronymText text={note} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   {viewModel.questionState.nextStep && (
                     <div
                       className="mt-4 rounded-[18px] px-4 py-4"

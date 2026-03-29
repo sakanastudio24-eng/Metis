@@ -14,7 +14,10 @@ import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } f
 import { scoreSnapshot } from "../src/features/scoring";
 import { detectMoneyStack } from "../src/features/stack";
 import { PRICING_ENTRIES } from "../src/config/pricing";
-import { buildExportReportDocument } from "../src/app/components/figures/exportDocument";
+import {
+  buildExportOutlineText,
+  buildExportReportDocument
+} from "../src/app/components/figures/exportDocument";
 import { buildMetisDesignViewModel } from "../src/app/components/figures/liveAdapter";
 import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figures/loadingState";
 import {
@@ -312,7 +315,8 @@ test("plus refinement raises priority with traffic, free plan, and paid APIs", (
   assert.ok(report);
   assert.equal(report?.priorityLabel, "High priority");
   assert.equal(report?.missingCoreQuestions.length, 0);
-  assert.match(report?.detail ?? "", /Vercel|100k\+|marketing/i);
+  assert.match(report?.detailSummary ?? "", /Vercel|100k\+|marketing/i);
+  assert.ok((report?.contextNotes.length ?? 0) >= 1);
   assert.match(report?.nextStep ?? "", /Vercel|caching|function work/i);
 });
 
@@ -335,7 +339,7 @@ test("plus refinement keeps partial output when only some core answers are prese
   });
 
   assert.ok(report);
-  assert.equal(report?.summary, insight.summary);
+  assert.match(report?.detailSummary ?? "", /image|waste|route/i);
   assert.equal(report?.priorityLabel, "Plus suggestion");
   assert.ok((report?.missingCoreQuestions.length ?? 0) > 0);
   assert.match(report?.nextStep ?? "", /Cloudflare|cache rules|media delivery/i);
@@ -686,6 +690,78 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   );
   assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
   assert.ok(["Low", "Moderate", "High"].includes(viewModel.confidenceLabel));
+});
+
+test("plus report stays additive and does not replace the base report read", () => {
+  const resources = [
+    createResource("https://example.com/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 160_000
+    }),
+    createResource("https://example.com/api/search", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 90_000
+    }),
+    createResource("https://example.com/api/search?slot=2", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 90_000
+    })
+  ];
+  const snapshot = createSnapshot(resources);
+  const answers = {
+    hostingProvider: "vercel" as const,
+    monthlyVisits: "10kTo100k" as const,
+    appType: "saasDashboard" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const score = scoreSnapshot(snapshot, issues);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence);
+  const control = assessControl(snapshot, issues, answers);
+  const plusReport = buildPlusOptimizationReport(insight, snapshot, issues, score, answers);
+
+  const freeViewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    control,
+    confidence,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers,
+    plusReport: null,
+    requiredQuestionCount: 3
+  });
+
+  const plusViewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues,
+    control,
+    confidence,
+    score,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers,
+    plusReport,
+    requiredQuestionCount: 3
+  });
+
+  assert.equal(plusViewModel.score, freeViewModel.score);
+  assert.equal(plusViewModel.riskLabel, freeViewModel.riskLabel);
+  assert.equal(plusViewModel.confidenceLabel, freeViewModel.confidenceLabel);
+  assert.equal(plusViewModel.estimateRange, freeViewModel.estimateRange);
+  assert.equal(plusViewModel.quickInsight, freeViewModel.quickInsight);
+  assert.equal(plusViewModel.supportingDetail, freeViewModel.supportingDetail);
+  assert.deepEqual(
+    plusViewModel.topIssues.map((issue) => issue.title),
+    freeViewModel.topIssues.map((issue) => issue.title)
+  );
+  assert.ok(plusViewModel.questionState.summary);
 });
 
 test("design view model can show current-site sampled progress beyond single-page mode", () => {
@@ -1299,11 +1375,14 @@ test("export document builder keeps report sections deterministic", () => {
   });
 
   const document = buildExportReportDocument(viewModel);
+  const outline = buildExportOutlineText(document);
 
-  assert.equal(document.title, "Metis report · example.com");
+  assert.equal(document.title, "Metis report for example.com");
   assert.equal(document.confidenceLabel, viewModel.confidenceLabel);
   assert.equal(document.sections[0]?.title, "Overview");
   assert.match(document.sections[0]?.lines[0] ?? "", /Cost Risk:/);
   assert.match(document.sections[0]?.lines[2] ?? "", /Confidence:/);
   assert.equal(document.sections.at(-1)?.title, "Recommendations");
+  assert.equal(outline.includes("\n- "), false);
+  assert.equal(outline.includes(" · "), false);
 });

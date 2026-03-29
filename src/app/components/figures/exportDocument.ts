@@ -7,7 +7,7 @@ export function buildExportReportDocument(
   // This document shape is the contract the future PDF path should target.
   // Keeping it separate from the rendered UI avoids screenshot-style exports.
   return {
-    title: `Metis report · ${viewModel.hostname}`,
+    title: `Metis report for ${viewModel.hostname}`,
     hostname: viewModel.hostname,
     generatedAt: viewModel.scannedAt,
     costRiskScore: viewModel.score,
@@ -38,7 +38,7 @@ export function buildExportReportDocument(
         lines:
           viewModel.topIssues.length > 0
             ? viewModel.topIssues.map(
-                (issue) => `${issue.title} · ${issue.severityLabel} · ${issue.detail}`
+                (issue) => `${issue.title}. Severity: ${issue.severityLabel}. ${issue.detail}`
               )
             : ["No major cost issues surfaced on this route."]
       },
@@ -66,7 +66,7 @@ export function buildExportReportDocument(
                   lines.push(card.scaleImpact);
                 }
 
-                return lines.join(" · ");
+                return lines.join(". ");
               })
             : ["No fix recommendations generated yet."]
       }
@@ -84,7 +84,7 @@ export function buildExportOutlineText(document: ExportReportDocument) {
     ...document.sections.flatMap((section) => [
       "",
       section.title,
-      ...section.lines.map((line) => `- ${line}`)
+      ...section.lines
     ])
   ].join("\n");
 }
