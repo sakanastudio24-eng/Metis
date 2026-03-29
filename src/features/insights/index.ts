@@ -17,6 +17,7 @@ import {
   INSIGHT_NEXT_STEPS,
   INSIGHT_SUMMARY_TEMPLATES
 } from "./config";
+import { normalizeRouteContext } from "../refinement/normalizedContext";
 
 const severityRank: Record<Severity, number> = {
   low: 1,
@@ -139,7 +140,17 @@ function isHeavyRouteCategory(category: IssueCategory | null) {
   ].includes(category ?? "");
 }
 
+function isLightRoute(snapshot: RawScanSnapshot, issues: DetectedIssue[]) {
+  return (
+    snapshot.metrics.requestCount < 50 &&
+    snapshot.metrics.totalEncodedBodySize < 500_000 &&
+    !issues.some((issue) => issue.category === "duplicateRequests")
+  );
+}
+
 function applyContextFraming(
+  snapshot: RawScanSnapshot,
+  issues: DetectedIssue[],
   insight: CostInsight,
   answers: PlusRefinementAnswers
 ): CostInsight {
@@ -147,42 +158,41 @@ function applyContextFraming(
     return insight;
   }
 
-  if (answers.appType === "marketing" || answers.appType === "portfolio") {
+  if (isLightRoute(snapshot, issues)) {
+    return insight;
+  }
+
+  const routeContext = normalizeRouteContext(answers);
+
+  if (routeContext.pageClass === "marketing") {
     return {
       ...insight,
       summary: "This route is heavy for a marketing page."
     };
   }
 
-  if (answers.appType === "docsContent") {
+  if (routeContext.pageClass === "docs") {
     return {
       ...insight,
       summary: "This route is a little heavier than expected for a docs page."
     };
   }
 
-  if (
-    ["saasDashboard", "ecommerce", "marketplace", "internalTool"].includes(
-      answers.appType ?? ""
-    )
-  ) {
+  if (routeContext.pageClass === "dashboard") {
     return {
       ...insight,
       summary: "This route is heavier, but some of that is expected for a dashboard."
     };
   }
 
-  if (answers.appType === "aiApp") {
+  if (routeContext.pageClass === "ai") {
     return {
       ...insight,
       summary: "This route is active and interactive, so some extra activity is expected."
     };
   }
 
-  if (
-    answers.representativeExperience === "specificRoute" &&
-    answers.pageDynamics === "highlyDynamic"
-  ) {
+  if (routeContext.routeRole === "specific" && routeContext.isDynamic) {
     return {
       ...insight,
       summary: "This route is specific and dynamic, so some extra activity is expected."
@@ -229,14 +239,16 @@ export function buildInsight(
 
   const contextDetail = buildContextDetail(answers);
   const insight: CostInsight = applyContextFraming(
+    snapshot,
+    issues,
     {
-    summary: summaryTemplate,
-    supportingDetail: contextDetail
-      ? `${buildSupportingDetail(strongestIssue)} ${contextDetail}`
-      : buildSupportingDetail(strongestIssue),
-    estimateLabel: INSIGHT_ESTIMATE_LABELS[score.label],
-    nextStep: INSIGHT_NEXT_STEPS[primaryCategory] ?? INSIGHT_NEXT_STEPS.default,
-    primaryCategory
+      summary: summaryTemplate,
+      supportingDetail: contextDetail
+        ? `${buildSupportingDetail(strongestIssue)} ${contextDetail}`
+        : buildSupportingDetail(strongestIssue),
+      estimateLabel: INSIGHT_ESTIMATE_LABELS[score.label],
+      nextStep: INSIGHT_NEXT_STEPS[primaryCategory] ?? INSIGHT_NEXT_STEPS.default,
+      primaryCategory
     },
     answers
   );

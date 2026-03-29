@@ -696,6 +696,78 @@ test("context framing stays fair for specific dashboard routes", () => {
   assert.match(insight.supportingDetail, /specific route/i);
 });
 
+test("light marketing routes stay controlled and avoid heavy framing", () => {
+  const resources = Array.from({ length: 30 }, (_, index) =>
+    createResource(`https://example.com/assets/part-${index}.js`, {
+      category: index < 24 ? "script" : "stylesheet",
+      initiatorType: index < 24 ? "script" : "link",
+      encodedBodySize: index < 20 ? 7_000 : 3_500
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const answers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const score = scoreSnapshot(snapshot, issues, answers);
+  const control = assessControl(snapshot, issues, answers);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence, answers);
+
+  assert.equal(snapshot.metrics.requestCount, 30);
+  assert.equal(snapshot.metrics.totalEncodedBodySize < 500_000, true);
+  assert.ok(control.score >= 75 && control.score <= 90);
+  assert.doesNotMatch(insight.summary, /heavy for a marketing page/i);
+});
+
+test("AI context lifts the same heavy route more than dashboard context", () => {
+  const resources = [
+    ...Array.from({ length: 18 }, (_, index) =>
+      createResource(`https://example.com/api/search?slot=${index}`, {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 75_000
+      })
+    ),
+    createResource("https://api.openai.com/v1/chat/completions", {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 90_000,
+      isThirdParty: true
+    }),
+    createResource("https://example.com/_next/static/chunks/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 240_000
+    })
+  ];
+  const snapshot = createSnapshot(resources);
+  const dashboardAnswers = {
+    appType: "saasDashboard" as const,
+    representativeExperience: "specificRoute" as const,
+    pageDynamics: "highlyDynamic" as const
+  };
+  const aiAnswers = {
+    appType: "aiApp" as const,
+    representativeExperience: "specificRoute" as const,
+    pageDynamics: "highlyDynamic" as const,
+    aiUsage: "yesOften" as const
+  };
+
+  const dashboardIssues = detectIssues(snapshot, dashboardAnswers);
+  const aiIssues = detectIssues(snapshot, aiAnswers);
+  const dashboardScore = scoreSnapshot(snapshot, dashboardIssues, dashboardAnswers);
+  const aiScore = scoreSnapshot(snapshot, aiIssues, aiAnswers);
+  const dashboardControl = assessControl(snapshot, dashboardIssues, dashboardAnswers);
+  const aiControl = assessControl(snapshot, aiIssues, aiAnswers);
+
+  assert.ok(dashboardIssues.some((issue) => issue.category === "duplicateRequests"));
+  assert.ok(aiIssues.some((issue) => issue.category === "duplicateRequests"));
+  assert.ok(aiScore.score > dashboardScore.score);
+  assert.ok(aiControl.score > dashboardControl.score);
+});
+
 test("design view model splits metadata and builds scale simulation rows", () => {
   const resources = [
     createResource("https://example.com/_next/static/chunks/app.js", {

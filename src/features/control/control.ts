@@ -1,5 +1,6 @@
 import { detectMoneyStack } from "../stack";
 import { DETECTION_THRESHOLDS } from "../detection/config";
+import { normalizeRouteContext } from "../refinement/normalizedContext";
 import { CONTROL_CONFIG } from "./control.config";
 import type {
   ControlAssessment,
@@ -23,17 +24,11 @@ function isModernFramework(frameworkIds: string[]) {
   return frameworkIds.some((id) => ["react", "nextjs", "vue", "svelte"].includes(id));
 }
 
-function isMarketingContext(answers: PlusRefinementAnswers) {
-  return ["marketing", "portfolio"].includes(answers.appType ?? "");
-}
-
-function isDocsContext(answers: PlusRefinementAnswers) {
-  return ["docsContent", "mediaHeavy"].includes(answers.appType ?? "");
-}
-
-function supportsHeavyAppContext(answers: PlusRefinementAnswers) {
-  return ["aiApp", "saasDashboard", "mediaHeavy", "ecommerce", "marketplace", "internalTool"].includes(
-    answers.appType ?? ""
+function isContainedRoute(snapshot: RawScanSnapshot, issues: DetectedIssue[]) {
+  return (
+    snapshot.metrics.requestCount < 50 &&
+    snapshot.metrics.totalEncodedBodySize < 500_000 &&
+    !hasIssue(issues, "duplicateRequests")
   );
 }
 
@@ -97,25 +92,35 @@ export function assessControl(
     detection.groups.find((group) => group.id === "analyticsAdsRum")?.vendors.map((vendor) => vendor.id) ?? [];
   const frameworkIds =
     detection.groups.find((group) => group.id === "framework")?.vendors.map((vendor) => vendor.id) ?? [];
+  const routeContext = normalizeRouteContext(answers);
 
   const hasHostingSupport = hostingIds.length > 0 || Boolean(answers.hostingProvider);
   const hasAiSurface = aiIds.length > 0 || ["yesOften", "sometimes"].includes(answers.aiUsage ?? "");
   const hasHeavyPayload = metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.pageWeight.medium;
   const hasElevatedRequestCount = metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.medium;
   const hasHighRequestCount = metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.high;
-  const hasSpecificRouteContext = answers.representativeExperience === "specificRoute";
-  const hasMainPublicPageContext = answers.representativeExperience === "mainPublicPage";
+  const hasSpecificRouteContext = routeContext.routeRole === "specific";
+  const hasMainPublicPageContext = routeContext.routeRole === "main";
   const hasStaticContext =
-    isMarketingContext(answers) ||
+    routeContext.pageClass === "marketing" ||
     answers.pageDynamics === "mostlyStatic" ||
     hasMainPublicPageContext;
   const hasContextualSupport =
     hasHostingSupport ||
     hasAiSurface ||
-    supportsHeavyAppContext(answers) ||
-    isDocsContext(answers) ||
+    routeContext.pageClass === "dashboard" ||
+    routeContext.pageClass === "ai" ||
+    routeContext.pageClass === "docs" ||
     hasSpecificRouteContext ||
     isModernFramework(frameworkIds);
+
+  if (isContainedRoute(snapshot, issues)) {
+    credits.push({
+      id: "contained-route",
+      points: 30,
+      reason: "This route stays light enough to look controlled on its own."
+    });
+  }
 
   if (aiIds.length > 0) {
     credits.push({
@@ -157,15 +162,15 @@ export function assessControl(
     });
   }
 
-  if (supportsHeavyAppContext(answers)) {
+  if (routeContext.pageClass === "dashboard") {
     credits.push({
       id: "app-context-support",
-      points: CONTROL_CONFIG.credits.appContextSupport,
+      points: 15,
       reason: "The selected app type suggests this route can legitimately carry more work than a simple site."
     });
   }
 
-  if (isDocsContext(answers)) {
+  if (routeContext.pageClass === "docs") {
     credits.push({
       id: "docs-context-support",
       points: 4,
@@ -173,10 +178,18 @@ export function assessControl(
     });
   }
 
+  if (routeContext.pageClass === "ai") {
+    credits.push({
+      id: "ai-context-support",
+      points: 18,
+      reason: "An interactive AI route can justify more request activity than a simple public page."
+    });
+  }
+
   if (hasSpecificRouteContext) {
     credits.push({
       id: "specific-route-context",
-      points: 7,
+      points: 10,
       reason: "This was marked as a specific route, so some extra route-level activity is more expected."
     });
   }
