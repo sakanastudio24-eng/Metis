@@ -11,6 +11,7 @@ import { buildInsight } from "../src/features/insights";
 import { resolvePricingContext } from "../src/features/pricing";
 import { buildPlusOptimizationReport } from "../src/features/refinement";
 import {
+  getEffectivePageScopedFairnessAnswers,
   getFairnessPageKey,
   getPageScopedFairnessAnswers,
   migrateLegacyFairnessAnswers,
@@ -301,6 +302,48 @@ test("page-scoped fairness answers follow the normalized route key", () => {
     appType: "saasDashboard"
   });
   assert.deepEqual(getPageScopedFairnessAnswers(fairnessMap, docsPageKey), {});
+});
+
+test("other routes inherit specific-route context once a main page is chosen", () => {
+  const mainPageKey = getFairnessPageKey("https://example.com/");
+  const docsPageKey = getFairnessPageKey("https://example.com/docs/getting-started");
+
+  const fairnessMap = setPageScopedFairnessAnswer(
+    {},
+    mainPageKey,
+    "representativeExperience",
+    "mainPublicPage"
+  );
+
+  assert.deepEqual(getPageScopedFairnessAnswers(fairnessMap, docsPageKey), {});
+  assert.deepEqual(getEffectivePageScopedFairnessAnswers(fairnessMap, docsPageKey), {
+    representativeExperience: "specificRoute"
+  });
+});
+
+test("setting a new main page demotes the previous main page to a specific route", () => {
+  const homePageKey = getFairnessPageKey("https://example.com/");
+  const pricingPageKey = getFairnessPageKey("https://example.com/pricing");
+
+  const withHomeMain = setPageScopedFairnessAnswer(
+    {},
+    homePageKey,
+    "representativeExperience",
+    "mainPublicPage"
+  );
+  const withPricingMain = setPageScopedFairnessAnswer(
+    withHomeMain,
+    pricingPageKey,
+    "representativeExperience",
+    "mainPublicPage"
+  );
+
+  assert.deepEqual(getPageScopedFairnessAnswers(withPricingMain, homePageKey), {
+    representativeExperience: "specificRoute"
+  });
+  assert.deepEqual(getPageScopedFairnessAnswers(withPricingMain, pricingPageKey), {
+    representativeExperience: "mainPublicPage"
+  });
 });
 
 test("stored visited snapshots stay compact and keyed by normalized route", () => {

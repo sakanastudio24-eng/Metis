@@ -51,6 +51,38 @@ export function getPageScopedFairnessAnswers(
   return map[pageKey] ?? {};
 }
 
+export function findMainPublicPageKey(map: PageScopedFairnessMap) {
+  for (const [pageKey, answers] of Object.entries(map)) {
+    if (answers.representativeExperience === "mainPublicPage") {
+      return pageKey;
+    }
+  }
+
+  return null;
+}
+
+export function getEffectivePageScopedFairnessAnswers(
+  map: PageScopedFairnessMap,
+  pageKey: string | null
+): Partial<PageScopedFairnessAnswers> {
+  const explicitAnswers = getPageScopedFairnessAnswers(map, pageKey);
+
+  if (!pageKey || explicitAnswers.representativeExperience !== undefined) {
+    return explicitAnswers;
+  }
+
+  const mainPublicPageKey = findMainPublicPageKey(map);
+
+  if (!mainPublicPageKey || mainPublicPageKey === pageKey) {
+    return explicitAnswers;
+  }
+
+  return {
+    ...explicitAnswers,
+    representativeExperience: "specificRoute"
+  };
+}
+
 export function setPageScopedFairnessAnswer(
   map: PageScopedFairnessMap,
   pageKey: string | null,
@@ -59,6 +91,33 @@ export function setPageScopedFairnessAnswer(
 ): PageScopedFairnessMap {
   if (!pageKey) {
     return map;
+  }
+
+  if (key === "representativeExperience" && value === "mainPublicPage") {
+    const nextMap: PageScopedFairnessMap = {};
+
+    for (const [existingPageKey, answers] of Object.entries(map)) {
+      if (
+        existingPageKey !== pageKey &&
+        answers.representativeExperience === "mainPublicPage"
+      ) {
+        nextMap[existingPageKey] = {
+          ...answers,
+          representativeExperience: "specificRoute"
+        };
+        continue;
+      }
+
+      nextMap[existingPageKey] = answers;
+    }
+
+    return {
+      ...nextMap,
+      [pageKey]: {
+        ...nextMap[pageKey],
+        [key]: value
+      }
+    };
   }
 
   return {

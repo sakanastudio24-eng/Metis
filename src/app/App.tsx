@@ -14,6 +14,7 @@ import {
 } from "../features/refinement/config";
 import {
   clearPageScopedFairnessAnswer,
+  getEffectivePageScopedFairnessAnswers,
   getFairnessPageKey,
   getPageScopedFairnessAnswers,
   migrateLegacyFairnessAnswers,
@@ -353,8 +354,12 @@ export default function App() {
     () => getFairnessPageKey(activeSnapshot?.page.href ?? session?.currentUrl),
     [activeSnapshot?.page.href, session?.currentUrl]
   );
-  const currentPageFairnessAnswers = useMemo(
+  const currentPageStoredFairnessAnswers = useMemo(
     () => getPageScopedFairnessAnswers(pageFairnessByKey, currentPageKey),
+    [currentPageKey, pageFairnessByKey]
+  );
+  const currentPageFairnessAnswers = useMemo(
+    () => getEffectivePageScopedFairnessAnswers(pageFairnessByKey, currentPageKey),
     [currentPageKey, pageFairnessByKey]
   );
   const effectiveAnswers = useMemo(
@@ -413,9 +418,21 @@ export default function App() {
 
     return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])];
   }, [effectiveAnswers, viewModel?.stackQuestionDefinitions]);
+  const isFairnessQuestionKey = (
+    key: keyof PlusRefinementAnswers
+  ): key is "appType" | "representativeExperience" =>
+    FAIRNESS_QUESTION_KEYS.includes(key as "appType" | "representativeExperience");
+  const isQuestionResolved = (key: keyof PlusRefinementAnswers) =>
+    isFairnessQuestionKey(key)
+      ? currentPageFairnessAnswers[key] !== undefined
+      : effectiveAnswers[key] !== undefined;
+  const isQuestionExplicitlyAnswered = (key: keyof PlusRefinementAnswers) =>
+    isFairnessQuestionKey(key)
+      ? currentPageStoredFairnessAnswers[key] !== undefined
+      : effectiveAnswers[key] !== undefined;
   const pendingQuestionDefinitions = useMemo(
-    () => questionDefinitions.filter((definition) => effectiveAnswers[definition.key] === undefined),
-    [effectiveAnswers, questionDefinitions]
+    () => questionDefinitions.filter((definition) => !isQuestionResolved(definition.key)),
+    [questionDefinitions, currentPageFairnessAnswers, effectiveAnswers]
   );
   const currentQuestion =
     pendingQuestionDefinitions[0] ?? null;
@@ -423,12 +440,12 @@ export default function App() {
     questionDefinitions.find(
       (definition) =>
         FAIRNESS_QUESTION_KEYS.includes(definition.key) &&
-        effectiveAnswers[definition.key] === undefined
+        !isQuestionResolved(definition.key)
     ) ?? null;
   const answeredQuestions = useMemo(
     () =>
-      questionDefinitions.filter((definition) => effectiveAnswers[definition.key] !== undefined),
-    [effectiveAnswers, questionDefinitions]
+      questionDefinitions.filter((definition) => isQuestionExplicitlyAnswered(definition.key)),
+    [questionDefinitions, currentPageStoredFairnessAnswers, effectiveAnswers]
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
 

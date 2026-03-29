@@ -106,8 +106,9 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
   },
   {
     key: "representativeExperience",
-    label: "Is this route part of the main public experience?",
-    helper: "This answer stays tied to the current page, not the whole site.",
+    label: "Is this the main public page?",
+    helper:
+      "Choose this once for the main page. Other routes are treated as separate from it.",
     improves: [
       "falsePositiveControl",
       "requestCountInterpretation",
