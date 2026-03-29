@@ -20,6 +20,20 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.5.0
+
+Release type: Minor
+
+This release freezes the approved `0.4.0` score model and adds final trust polish around light scans, tiny projections, and sparse stack reads.
+
+What changed
+
+- Added [docs/approved-score-model-v1.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/approved-score-model-v1.md) as the rollback reference for the approved `0.4.0` scoring baseline.
+- Added a `Limited` confidence state for routes that return very little network activity.
+- Stopped small positive monthly projections from rounding down to `$0/month`.
+- Kept the grouped stack block quieter when hosting or CDN is the only resolved stack group.
+- Linked the approved score model doc in the README.
+
 ## 0.4.0
 
 Release type: Minor
