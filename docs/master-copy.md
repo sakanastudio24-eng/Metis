@@ -18,7 +18,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Product name: `Metis`
 - Product identity in descriptive copy: `Metis extension`
 - Premium label: `Metis+`
-- Main score labels: `Combined Score`, `Cost Risk`, `Control`
+- Main score labels: `Combined Score`, `Cost Risk`, `Control`, `Confidence`
 
 ## Core actions
 
@@ -95,10 +95,22 @@ Use it before changing UI wording, fallback copy, or product labels.
 ## Report copy
 
 - Header: `Metis Cost Report`
+- Header: `Confidence`
+- Tag: `Low`
+- Tag: `Moderate`
+- Tag: `High`
 - Body, fallback summary:
   `Metis is still building a clean read of this page.`
 - Body, export footer:
   `Scanned by Metis (metis.zward.studio)`
+- Body, confidence helper:
+  `Based on available page data and detected signals.`
+- Body, low confidence:
+  `Metis could only see part of this route.`
+- Body, moderate confidence:
+  `Metis has enough signal to guide the read, but not the full picture.`
+- Body, high confidence:
+  `Metis has a strong signal set for this route.`
 
 ## Plus and refinement copy
 

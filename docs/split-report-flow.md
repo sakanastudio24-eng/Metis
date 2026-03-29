@@ -2,10 +2,11 @@
 
 This is the current top-of-report shape in Phase 4.
 
-Metis now treats the overview as two parallel reads:
+Metis now treats the overview as three parallel reads:
 
 - `Cost Risk`
 - `Control`
+- `Confidence`
 
 That split matters because those two ideas answer different questions.
 
@@ -38,6 +39,24 @@ The control layer reads:
 - stack context
 - refinement answers
 
+## Confidence
+
+This is the trust read.
+
+It answers:
+
+- how complete is the current route picture
+- how much of the result comes from strong page evidence
+- whether Metis should sound firm or more careful
+
+The confidence layer reads:
+
+- retained request volume
+- meaningful asset weight
+- stack coverage
+- missing cost groups
+- warming or sparse scan state
+
 ## Why the split exists
 
 Before this change, Metis could sound too harsh.
@@ -48,14 +67,16 @@ The split makes the product say:
 
 - this route is expensive
 - and this is how justified that expense looks
+- and this is how complete the current read is
 
 That is more believable than one flat score.
 
 ## Where it lives
 
-- [src/app/components/figures/SplitScoreSummary.tsx](/Users/zech/Downloads/The-Big-One/Metis/src/app/components/figures/SplitScoreSummary.tsx)
-- [src/app/components/figures/liveAdapter.ts](/Users/zech/Downloads/The-Big-One/Metis/src/app/components/figures/liveAdapter.ts)
-- [src/features/control/control.ts](/Users/zech/Downloads/The-Big-One/Metis/src/features/control/control.ts)
+- [src/app/components/figures/SplitScoreSummary.tsx](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/src/app/components/figures/SplitScoreSummary.tsx)
+- [src/app/components/figures/liveAdapter.ts](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/src/app/components/figures/liveAdapter.ts)
+- [src/features/control/control.ts](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/src/features/control/control.ts)
+- [src/features/confidence/index.ts](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/src/features/confidence/index.ts)
 
 ## UI behavior
 
@@ -67,8 +88,9 @@ Mini panel:
 Full report:
 
 - same split summary pattern
+- confidence sits with the score and control summary
 - quick insight and session cost remain nearby
-- the report reads as `Cost Risk` first, then `Control`, instead of one mixed block
+- the report reads as `Cost Risk`, `Control`, and `Confidence`, instead of one mixed block
 
 ## Refresh behavior
 
