@@ -78,7 +78,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 - Header: `Current mode`
 - Body:
-  `The page hover is visible on normal sites, but Metis does not begin scanning until you click it.`
+  `The page hover is visible on normal sites, but Metis does not begin scanning until you click it. After activation, Metis scans the current page and same-site routes you open in that session.`
 
 ### About
 

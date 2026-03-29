@@ -20,6 +20,18 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.7.1
+
+Release type: Patch
+
+This release fixes sampled-page growth so route history can accumulate more reliably on heavier sites and clarifies what the extension scans after activation.
+
+What changed
+
+- Stored visited-route history by normalized page key instead of raw URL so query noise no longer collapses or splinters sampled-page progress.
+- Compacted stored visited snapshots so sampled-page history can keep growing without dragging full raw resource arrays into local storage.
+- Updated permissions wording to explain that Metis scans the current page and same-site routes you open after activation.
+
 ## 0.7.0
 
 Release type: Minor
