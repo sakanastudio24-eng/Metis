@@ -135,7 +135,7 @@ function buildReportCopyText(hostname: string, viewModel: ReturnType<typeof buil
     viewModel.controlReasons.length > 0
       ? `Control reasons: ${viewModel.controlReasons.join(" | ")}`
       : null,
-    "— Scanned by Metis (ward.studio/metis)"
+    "— Scanned by Metis (metis.zward.studio)"
   ]
     .filter((line): line is string => typeof line === "string" && line.length > 0)
     .join("\n");
@@ -152,15 +152,13 @@ async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | 
 function SidePanelHeader({
   hostname,
   onOpenReport,
-  onUpgrade,
+  onManageAccount,
   onSettings,
-  isPlusUser
 }: {
   hostname: string;
   onOpenReport: () => void;
-  onUpgrade: () => void;
+  onManageAccount: () => void;
   onSettings: () => void;
-  isPlusUser: boolean;
 }) {
   return (
     <div
@@ -208,9 +206,8 @@ function SidePanelHeader({
           </div>
         </motion.button>
         <ProfileButton
-          onUpgrade={onUpgrade}
+          onManageAccount={onManageAccount}
           onSettings={onSettings}
-          isPlusUser={isPlusUser}
           onDark
         />
       </div>
@@ -351,8 +348,6 @@ export default function App() {
     [plusAnswers, questionDefinitions]
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
-  const isPlusUser = session?.uiState.isPlusEnabled ?? false;
-
   const refreshActiveSession = async () => {
     const response = await sendRuntimeMessage<{
       ok: boolean;
@@ -571,15 +566,8 @@ export default function App() {
     });
   };
 
-  const handleOpenPagePlusOverlay = async () => {
-    if (!activeTabId) {
-      return;
-    }
-
-    await sendRuntimeMessage({
-      type: "METIS_OPEN_PAGE_PLUS_OVERLAY",
-      tabId: activeTabId
-    });
+  const handleManageAccount = () => {
+    window.open("https://metis.zward.studio/account", "_blank", "noopener,noreferrer");
   };
 
   const handleOpenExport = () => {
@@ -652,11 +640,8 @@ export default function App() {
             onOpenReport={() => {
               void handleOpenPageReport();
             }}
-            onUpgrade={() => {
-              void handleOpenPagePlusOverlay();
-            }}
+            onManageAccount={handleManageAccount}
             onSettings={handleOpenSettings}
-            isPlusUser={isPlusUser}
           />
 
           <div className="metis-scroll flex-1 overflow-y-auto px-4 py-4">

@@ -442,9 +442,9 @@ function PopupApp() {
         >
           <div className="space-y-2">
             <LinkCard
-              href="https://ward.studio/metis"
+              href="https://metis.zward.studio"
               title="Metis site"
-              detail="Product overview and roadmap."
+              detail="Product overview and account entry."
             />
             <LinkCard
               href={privacyUrl}
@@ -457,14 +457,9 @@ function PopupApp() {
               detail="Current terms of use."
             />
             <LinkCard
-              href="https://ward.studio/metis#feedback"
-              title="Report an issue"
-              detail="Send beta feedback."
-            />
-            <LinkCard
-              href="https://ward.studio/metis#plus"
-              title="Join Metis+ early"
-              detail="Register interest for deeper reports."
+              href="https://metis.zward.studio/account"
+              title="Manage account"
+              detail="Open website account settings and beta access."
             />
           </div>
         </Section>

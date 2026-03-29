@@ -5,7 +5,6 @@ export type MetisSessionUiState = {
   scanScope: "single" | "multi";
   plusAnswers: PlusRefinementAnswers;
   isPlusRefinementOpen: boolean;
-  isPlusEnabled: boolean;
 };
 
 export interface MetisTabSessionState {
@@ -35,7 +34,6 @@ export type MetisRuntimeMessage =
   | { type: "METIS_OPEN_SIDE_PANEL" }
   | { type: "METIS_OPEN_TOOLBAR_SETTINGS" }
   | { type: "METIS_OPEN_PAGE_REPORT"; tabId: number }
-  | { type: "METIS_OPEN_PAGE_PLUS_OVERLAY"; tabId: number }
   | { type: "METIS_START_TAB_SESSION" }
   | { type: "METIS_ACTIVATE_FROM_TOOLBAR" }
   | { type: "METIS_RECONNECT_ACTIVE_TAB" }
@@ -49,6 +47,5 @@ export type MetisRuntimeMessage =
 export const DEFAULT_METIS_SESSION_UI_STATE: MetisSessionUiState = {
   scanScope: "single",
   plusAnswers: {},
-  isPlusRefinementOpen: false,
-  isPlusEnabled: false
+  isPlusRefinementOpen: false
 };

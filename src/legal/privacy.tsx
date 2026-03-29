@@ -16,7 +16,8 @@ function PrivacyPage() {
         </p>
         <p>
           Metis is designed to stay local-first. The extension reads page context in your browser
-          and stores local settings and scan history on your device.
+          and stores local settings and scan history on your device while account management stays
+          on the Metis website.
         </p>
       </CopySection>
 
@@ -36,7 +37,11 @@ function PrivacyPage() {
           Metis stores local settings, saved page snapshots, site history, and current tab-session
           state in extension storage so reports stay useful across reloads.
         </p>
-        <p>That data stays in the extension context unless a future feature explicitly says otherwise.</p>
+        <p>
+          That data stays in the extension context unless a future feature explicitly says
+          otherwise. Website account data and extension scan data should not be treated as fully
+          synced unless Metis explicitly releases that bridge.
+        </p>
       </CopySection>
 
       <CopySection title="What Metis does not do">
@@ -53,14 +58,15 @@ function PrivacyPage() {
       <CopySection title="Your controls">
         <p>
           You can clear saved snapshots and site history from the extension settings popup. You can
-          also stop using the extension at any time by disabling or removing it in Chrome.
+          also stop using the extension at any time by disabling or removing it in Chrome. Account
+          and security settings are managed on the Metis website.
         </p>
       </CopySection>
 
       <CopySection title="Contact">
         <p>
-          For product questions or beta feedback, use the Metis site or issue-report path linked
-          from the extension settings popup.
+          For product questions, beta access, or account changes, use the Metis website linked from
+          the extension settings popup.
         </p>
       </CopySection>
     </LegalPageShell>

@@ -10,6 +10,10 @@ function TermsPage() {
           Metis is a beta extension. Features, pricing, availability, and report behavior may change
           while the product is being developed.
         </p>
+        <p>
+          Account access, beta enrollment, and security settings are managed on the Metis website,
+          not inside the extension.
+        </p>
       </CopySection>
 
       <CopySection title="Use at your own judgment">
@@ -41,6 +45,10 @@ function TermsPage() {
         <p>
           Because Metis runs in the browser and depends on live page behavior, some sites or routes
           may be incomplete, blocked, or only partially observable.
+        </p>
+        <p>
+          If website-managed account features or beta access expand later, they should not be
+          assumed to change extension behavior until Metis explicitly ships that connection.
         </p>
       </CopySection>
 

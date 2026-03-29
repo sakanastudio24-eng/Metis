@@ -17,7 +17,6 @@ import { buildExportOutlineText, buildExportReportDocument } from "../app/compon
 import { FullReportLayout } from "../app/components/figures/FullReportLayout";
 import { ExportArchitectureModal } from "../app/components/figures/MetisUtilityModals";
 import { buildMetisDesignViewModel } from "../app/components/figures/liveAdapter";
-import { PlusUpgradeModal } from "../app/components/figures/PrototypeChrome";
 import {
   buildPageScanSnapshot,
   savePageScanAndCompare
@@ -159,7 +158,7 @@ function buildReportCopyText(
     viewModel.controlReasons.length > 0
       ? `Control reasons: ${viewModel.controlReasons.join(" | ")}`
       : null,
-    "— Scanned by Metis (ward.studio/metis)"
+    "— Scanned by Metis (metis.zward.studio)"
   ]
     .filter((line): line is string => typeof line === "string" && line.length > 0)
     .join("\n");
@@ -177,7 +176,6 @@ export function PageBridgeApp() {
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
-  const [isPlusModalOpen, setIsPlusModalOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const scanTimeoutRef = useRef<number | null>(null);
@@ -206,7 +204,6 @@ export function PageBridgeApp() {
     activeSnapshot && scoreBreakdown && insight
       ? buildPlusOptimizationReport(insight, activeSnapshot, issues, scoreBreakdown, effectiveAnswers)
       : null;
-  const isPlusUser = session?.uiState.isPlusEnabled ?? false;
   const pageCount = Math.max(visitedSnapshots.length, 1);
   const viewModel =
     activeSnapshot && scoreBreakdown && control
@@ -314,13 +311,6 @@ export function PageBridgeApp() {
       if (runtimeMessage.type === "METIS_OPEN_PAGE_REPORT") {
         setHovered(false);
         setIsReportOpen(true);
-        sendResponse({ ok: true });
-        return true;
-      }
-
-      if (runtimeMessage.type === "METIS_OPEN_PAGE_PLUS_OVERLAY") {
-        setHovered(false);
-        setIsPlusModalOpen(true);
         sendResponse({ ok: true });
         return true;
       }
@@ -539,7 +529,7 @@ export function PageBridgeApp() {
   }, [isSessionActive, settings.autoRescanWhilePanelOpen, settings.scanDelayProfile]);
 
   useEffect(() => {
-    if (!(isReportOpen || isPlusModalOpen || isExportOpen)) {
+    if (!(isReportOpen || isExportOpen)) {
       return;
     }
 
@@ -553,7 +543,7 @@ export function PageBridgeApp() {
       document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousBodyOverflow;
     };
-  }, [isExportOpen, isPlusModalOpen, isReportOpen]);
+  }, [isExportOpen, isReportOpen]);
 
   const handleActivate = async () => {
     setIsSessionActive(true);
@@ -763,8 +753,7 @@ export function PageBridgeApp() {
                   onCopyReport={() => {
                     void handleCopyReport();
                   }}
-                  onUpgrade={() => setIsPlusModalOpen(true)}
-                  isPlusUser={isPlusUser}
+                  isPlusUser={false}
                   refreshTick={0}
                   onClose={() => setIsReportOpen(false)}
                   showSampleProgress
@@ -789,20 +778,6 @@ export function PageBridgeApp() {
         ) : null}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isPlusModalOpen ? (
-          <PlusUpgradeModal
-            onClose={() => setIsPlusModalOpen(false)}
-            onConfirm={() => {
-              void patchSessionUi({ isPlusEnabled: true });
-              setIsPlusModalOpen(false);
-              toast.success("Metis+ unlocked", {
-                description: "The prototype Plus experience is now enabled in this session."
-              });
-            }}
-          />
-        ) : null}
-      </AnimatePresence>
     </>
   );
 }
