@@ -2,6 +2,7 @@
 // It never re-reads raw browser entries directly; it only uses normalized metrics,
 // detected issues, and the weighted score breakdown already produced upstream.
 import type {
+  ConfidenceAssessment,
   CostInsight,
   DetectedIssue,
   IssueCategory,
@@ -129,7 +130,8 @@ function buildWarmingInsight(snapshot: RawScanSnapshot): CostInsight {
 export function buildInsight(
   snapshot: RawScanSnapshot,
   issues: DetectedIssue[],
-  score: ScoreBreakdown
+  score: ScoreBreakdown,
+  confidence: ConfidenceAssessment
 ): CostInsight {
   if (score.label === "warming up") {
     return buildWarmingInsight(snapshot);
@@ -147,11 +149,28 @@ export function buildInsight(
     INSIGHT_SUMMARY_TEMPLATES[primaryCategory]?.[score.label] ??
     INSIGHT_SUMMARY_TEMPLATES.default[score.label];
 
-  return {
+  const insight: CostInsight = {
     summary: summaryTemplate,
     supportingDetail: buildSupportingDetail(strongestIssue),
     estimateLabel: INSIGHT_ESTIMATE_LABELS[score.label],
     nextStep: INSIGHT_NEXT_STEPS[primaryCategory] ?? INSIGHT_NEXT_STEPS.default,
     primaryCategory
+  };
+
+  if (confidence.label === "High") {
+    return insight;
+  }
+
+  if (confidence.label === "Moderate") {
+    return {
+      ...insight,
+      supportingDetail: `${insight.supportingDetail} ${confidence.detail}`
+    };
+  }
+
+  return {
+    ...insight,
+    summary: `${insight.summary} Metis could only see part of this route.`,
+    supportingDetail: confidence.detail
   };
 }

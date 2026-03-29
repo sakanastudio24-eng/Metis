@@ -10,6 +10,8 @@ import { resolvePricingContext } from "../../../features/pricing";
 import { detectMoneyStack } from "../../../features/stack";
 import type { PlusQuestionDefinition } from "../../../features/refinement/config";
 import type {
+  ConfidenceAssessment,
+  ConfidenceLabel,
   ControlAssessment,
   DetectedIssue,
   IssueCategory,
@@ -116,6 +118,10 @@ export interface MetisDesignViewModel {
   controlColor: string;
   controlBg: string;
   controlReasons: string[];
+  confidenceLabel: ConfidenceLabel;
+  confidenceSummary: string;
+  confidenceDetail: string;
+  confidenceReasons: string[];
   splitSummary: {
     costRisk: DesignSplitSummaryCard;
     control: DesignSplitSummaryCard;
@@ -614,6 +620,7 @@ export function buildMetisDesignViewModel({
   snapshot,
   issues,
   control,
+  confidence,
   score,
   insight,
   scope,
@@ -625,6 +632,7 @@ export function buildMetisDesignViewModel({
   snapshot: RawScanSnapshot;
   issues: DetectedIssue[];
   control: ControlAssessment;
+  confidence: ConfidenceAssessment;
   score: ScoreBreakdown;
   insight: { summary: string; supportingDetail: string } | null;
   scope: ScanScope;
@@ -679,6 +687,10 @@ export function buildMetisDesignViewModel({
     controlColor: controlTone.color,
     controlBg: controlTone.bg,
     controlReasons: control.reasons,
+    confidenceLabel: confidence.label,
+    confidenceSummary: confidence.summary,
+    confidenceDetail: confidence.detail,
+    confidenceReasons: confidence.reasons,
     splitSummary: {
       costRisk: {
         title: "Cost Risk",

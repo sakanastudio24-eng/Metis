@@ -1,4 +1,11 @@
-import { AlertTriangle, ArrowUp, ChevronUp, Minus, ShieldCheck } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowUp,
+  ChevronUp,
+  Minus,
+  ShieldCheck
+} from "lucide-react";
 import { motion } from "motion/react";
 import type { MetisDesignViewModel } from "./liveAdapter";
 import { ScoreVisualization } from "./ScoreVisualization";
@@ -146,6 +153,96 @@ function SummaryCard({
   );
 }
 
+function ConfidenceStrip({
+  label,
+  summary,
+  detail,
+  compact
+}: {
+  label: string;
+  summary: string;
+  detail: string;
+  compact: boolean;
+}) {
+  const tone =
+    label === "High"
+      ? { color: "#22c55e", background: "rgba(34,197,94,0.12)" }
+      : label === "Moderate"
+        ? { color: "#f97316", background: "rgba(249,115,22,0.12)" }
+        : { color: "#dc5e5e", background: "rgba(220,94,94,0.12)" };
+
+  return (
+    <motion.div
+      className={compact ? "col-span-2 rounded-[20px] px-4 py-3" : "rounded-[22px] px-4 py-4 lg:col-span-2"}
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)"
+      }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, delay: 0.06, ease: "easeOut" }}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full"
+          style={{ background: tone.background, color: tone.color }}
+        >
+          <Activity size={14} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div
+            style={{
+              color: "rgba(255,255,255,0.36)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: compact ? 10 : 11,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase"
+            }}
+          >
+            <AcronymText text="Confidence" />
+          </div>
+          <div
+            className="mt-1"
+            style={{
+              color: tone.color,
+              fontFamily: "Inter, sans-serif",
+              fontSize: compact ? 12 : 13,
+              fontWeight: 700
+            }}
+          >
+            <AcronymText text={label} />
+          </div>
+          <div
+            className="mt-2"
+            style={{
+              color: "rgba(255,255,255,0.62)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: compact ? 11 : 12,
+              lineHeight: compact ? "17px" : "19px"
+            }}
+          >
+            <AcronymText text={compact ? detail : summary} />
+          </div>
+          {!compact && (
+            <div
+              className="mt-2"
+              style={{
+                color: "rgba(255,255,255,0.46)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                lineHeight: "17px"
+              }}
+            >
+              <AcronymText text={detail} />
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function SplitScoreSummary({
   viewModel,
   compact = false,
@@ -259,6 +356,12 @@ export function SplitScoreSummary({
         compact={compact}
         delay={0.04}
         icon={ShieldCheck}
+      />
+      <ConfidenceStrip
+        label={viewModel.confidenceLabel}
+        summary={viewModel.confidenceSummary}
+        detail={viewModel.confidenceDetail}
+        compact={compact}
       />
     </motion.div>
   );

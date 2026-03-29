@@ -12,6 +12,7 @@ export function buildExportReportDocument(
     generatedAt: viewModel.scannedAt,
     costRiskScore: viewModel.score,
     controlScore: viewModel.controlScore,
+    confidenceLabel: viewModel.confidenceLabel,
     sections: [
       {
         id: "overview",
@@ -19,6 +20,8 @@ export function buildExportReportDocument(
         lines: [
           `Cost Risk: ${viewModel.score}/100 (${viewModel.riskLabel})`,
           `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
+          `Confidence: ${viewModel.confidenceLabel}`,
+          viewModel.confidenceDetail,
           `Estimated waste: ${viewModel.estimateRange}`,
           `Session cost: ${viewModel.sessionCost}`,
           `Projection at 10k users: ${viewModel.monthlyProjection}`
@@ -77,6 +80,7 @@ export function buildExportOutlineText(document: ExportReportDocument) {
     `Generated: ${document.generatedAt}`,
     `Cost Risk: ${document.costRiskScore}/100`,
     `Control: ${document.controlScore}/100`,
+    `Confidence: ${document.confidenceLabel}`,
     ...document.sections.flatMap((section) => [
       "",
       section.title,

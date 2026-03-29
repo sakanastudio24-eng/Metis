@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
+import { assessConfidence } from "../features/confidence";
 import { assessControl } from "../features/control/control";
 import { detectIssues } from "../features/detection";
 import { buildInsight } from "../features/insights";
@@ -151,6 +152,8 @@ function buildReportCopyText(
     `Metis Cost Report — ${hostname}`,
     `Risk Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
     `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
+    `Confidence: ${viewModel.confidenceLabel}`,
+    viewModel.confidenceDetail,
     `Estimated waste: ${viewModel.estimateRange}`,
     viewModel.estimateSourceNote ?? null,
     `Session cost: ${viewModel.sessionCost} · At 10k users: ${viewModel.monthlyProjection}`,
@@ -194,12 +197,17 @@ export function PageBridgeApp() {
     }),
     [inferredAnswers, plusAnswers]
   );
+  const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
   const scoreBreakdown = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
+  const confidence =
+    activeSnapshot && stackDetection && scoreBreakdown
+      ? assessConfidence(activeSnapshot, stackDetection, scoreBreakdown)
+      : null;
   const insight =
-    activeSnapshot && scoreBreakdown
-      ? buildInsight(activeSnapshot, issues, scoreBreakdown)
+    activeSnapshot && scoreBreakdown && confidence
+      ? buildInsight(activeSnapshot, issues, scoreBreakdown, confidence)
       : null;
   const plusReport =
     activeSnapshot && scoreBreakdown && insight
@@ -207,11 +215,12 @@ export function PageBridgeApp() {
       : null;
   const pageCount = Math.max(visitedSnapshots.length, 1);
   const viewModel =
-    activeSnapshot && scoreBreakdown && control
+    activeSnapshot && scoreBreakdown && control && confidence
       ? buildMetisDesignViewModel({
           snapshot: activeSnapshot,
           issues,
           control,
+          confidence,
           score: scoreBreakdown,
           insight,
           scope: scanScope,

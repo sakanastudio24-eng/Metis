@@ -281,6 +281,7 @@ export interface PricingContext {
 }
 
 export type ControlLabel = "Controlled" | "Mixed" | "Uncontrolled";
+export type ConfidenceLabel = "Low" | "Moderate" | "High";
 
 export interface ControlCredit {
   id: string;
@@ -300,6 +301,13 @@ export interface ControlAssessment {
   reasons: string[];
   credits: ControlCredit[];
   penalties: ControlPenalty[];
+}
+
+export interface ConfidenceAssessment {
+  label: ConfidenceLabel;
+  summary: string;
+  detail: string;
+  reasons: string[];
 }
 
 export type MetisRefreshMode = "smart" | "steady";
@@ -328,6 +336,7 @@ export interface ExportReportDocument {
   generatedAt: string;
   costRiskScore: number;
   controlScore: number;
+  confidenceLabel: ConfidenceLabel;
   sections: ExportReportSection[];
 }
 

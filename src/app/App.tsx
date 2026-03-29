@@ -1,3 +1,4 @@
+import { assessConfidence } from "../features/confidence";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { AlertTriangle, FileText, RefreshCcw } from "lucide-react";
@@ -131,6 +132,8 @@ function buildReportCopyText(hostname: string, viewModel: ReturnType<typeof buil
     `Metis Cost Report — ${hostname}`,
     `Risk Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
     `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
+    `Confidence: ${viewModel.confidenceLabel}`,
+    viewModel.confidenceDetail,
     `Estimated waste: ${viewModel.estimateRange}`,
     viewModel.estimateSourceNote ?? null,
     `Session cost: ${viewModel.sessionCost} · At 10k users: ${viewModel.monthlyProjection}`,
@@ -286,22 +289,30 @@ export default function App() {
     }),
     [inferredAnswers, plusAnswers]
   );
+  const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
   const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
+  const confidence =
+    activeSnapshot && stackDetection && score
+      ? assessConfidence(activeSnapshot, stackDetection, score)
+      : null;
   const insight =
-    activeSnapshot && score ? buildInsight(activeSnapshot, issues, score) : null;
+    activeSnapshot && score && confidence
+      ? buildInsight(activeSnapshot, issues, score, confidence)
+      : null;
   const plusReport =
     activeSnapshot && score && insight
       ? buildPlusOptimizationReport(insight, activeSnapshot, issues, score, effectiveAnswers)
       : null;
   const pageCount = Math.max(visitedSnapshots.length, 1);
   const viewModel =
-    activeSnapshot && score && control
+    activeSnapshot && score && control && confidence
       ? buildMetisDesignViewModel({
           snapshot: activeSnapshot,
           issues,
           control,
+          confidence,
           score,
           insight,
           scope: scanScope,

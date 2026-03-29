@@ -4,6 +4,7 @@
 // polish continues.
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import { assessConfidence } from "../src/features/confidence";
 import { assessControl } from "../src/features/control/control";
 import { detectIssues } from "../src/features/detection";
 import { buildInsight } from "../src/features/insights";
@@ -98,6 +99,22 @@ function createSnapshot(
   };
 }
 
+function buildConfidenceForSnapshot(
+  snapshot: RawScanSnapshot,
+  score = scoreSnapshot(snapshot, detectIssues(snapshot))
+) {
+  return assessConfidence(snapshot, detectMoneyStack(snapshot, {}), score);
+}
+
+function buildInsightForSnapshot(snapshot: RawScanSnapshot) {
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence);
+
+  return { issues, score, confidence, insight };
+}
+
 test("buildResourceMetrics tracks duplicates and meaningful images from normalized resources", () => {
   const resources = [
     createResource("https://example.com/api/data?id=1", {
@@ -172,9 +189,7 @@ test("buildMultipageSnapshot aggregates visited pages and debug summary stays st
 
 test("warming snapshots stay non-committal", () => {
   const snapshot = createSnapshot([]);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { score, insight } = buildInsightForSnapshot(snapshot);
 
   assert.equal(score.label, "warming up");
   assert.equal(insight.estimateLabel, "Scanning");
@@ -196,9 +211,7 @@ test("controlled snapshots produce a low-waste insight", () => {
     })
   ]);
 
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, insight } = buildInsightForSnapshot(snapshot);
 
   assert.equal(issues.length, 0);
   assert.equal(score.label, "healthy");
@@ -216,9 +229,7 @@ test("duplicate-heavy snapshots prioritize duplicate waste in the insight", () =
     })
   );
   const snapshot = createSnapshot(resources);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, insight } = buildInsightForSnapshot(snapshot);
 
   assert.equal(issues[0]?.category, "duplicateRequests");
   assert.equal(score.label, "healthy");
@@ -239,9 +250,7 @@ test("image-heavy snapshots produce a moderate or heavy image-focused insight", 
     })
   );
   const snapshot = createSnapshot(resources);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, insight } = buildInsightForSnapshot(snapshot);
 
   assert.equal(insight.primaryCategory, "largeImages");
   assert.match(insight.summary, /image/i);
@@ -258,9 +267,7 @@ test("third-party-heavy snapshots point to dependency sprawl", () => {
     })
   );
   const snapshot = createSnapshot(resources);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, insight } = buildInsightForSnapshot(snapshot);
 
   assert.equal(insight.primaryCategory, "thirdPartySprawl");
   assert.ok(["healthy", "watch", "high risk"].includes(score.label));
@@ -276,9 +283,7 @@ test("plus refinement stays dormant until answers are provided", () => {
       encodedBodySize: 120_000
     })
   ]);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, insight } = buildInsightForSnapshot(snapshot);
 
   const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {});
 
@@ -294,9 +299,7 @@ test("plus refinement raises priority with traffic, free plan, and paid APIs", (
     })
   );
   const snapshot = createSnapshot(resources);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, insight } = buildInsightForSnapshot(snapshot);
   const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {
     hostingProvider: "vercel",
     hostingPlan: "free",
@@ -324,9 +327,7 @@ test("plus refinement keeps partial output when only some core answers are prese
     })
   );
   const snapshot = createSnapshot(resources);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, insight } = buildInsightForSnapshot(snapshot);
   const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {
     hostingProvider: "cloudflare",
     mediaImportance: "core",
@@ -503,6 +504,106 @@ test("control does not punish AI presence by itself", () => {
   assert.ok(control.score >= 50);
 });
 
+test("confidence is high when request and stack signals are both strong", () => {
+  const resources = Array.from({ length: 20 }, (_, index) =>
+    createResource(`https://cdn.example.net/gallery-${index}.jpg`, {
+      category: "image",
+      initiatorType: "img",
+      encodedBodySize: 120_000,
+      isThirdParty: true,
+      isMeaningfulImage: true
+    })
+  );
+  const snapshot = createSnapshot(resources, {
+    stackSignals: [
+      {
+        name: "https://api.openai.com/v1/chat/completions",
+        hostname: "api.openai.com",
+        pathname: "/v1/chat/completions",
+        source: "resource"
+      },
+      {
+        name: "https://d111111abcdef8.cloudfront.net/app.js",
+        hostname: "d111111abcdef8.cloudfront.net",
+        pathname: "/app.js",
+        source: "resource"
+      },
+      {
+        name: "https://www.googletagmanager.com/gtag/js?id=G-TEST",
+        hostname: "www.googletagmanager.com",
+        pathname: "/gtag/js",
+        source: "resource"
+      }
+    ]
+  });
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+
+  assert.equal(confidence.label, "High");
+});
+
+test("confidence is moderate when the route has usable but partial signals", () => {
+  const resources = Array.from({ length: 10 }, (_, index) =>
+    createResource(`https://example.com/api/feed?slot=${index}`, {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 60_000
+    })
+  );
+  const snapshot = createSnapshot(resources, {
+    stackSignals: [
+      {
+        name: "https://api.openai.com/v1/chat/completions",
+        hostname: "api.openai.com",
+        pathname: "/v1/chat/completions",
+        source: "resource"
+      }
+    ]
+  });
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+
+  assert.equal(confidence.label, "Moderate");
+});
+
+test("confidence is low when the page is still sparse or under-observed", () => {
+  const snapshot = createSnapshot([], {
+    dom: {
+      scriptCount: 5,
+      imageCount: 2,
+      iframeCount: 0
+    }
+  });
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+
+  assert.equal(confidence.label, "Low");
+  assert.match(confidence.detail, /limited page data/i);
+});
+
+test("low confidence softens insight wording without changing score", () => {
+  const resources = Array.from({ length: 7 }, (_, index) =>
+    createResource(`https://vendor-${index}.example.net/sdk.js`, {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 20_000,
+      isThirdParty: true
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const issues = detectIssues(snapshot);
+  const score = scoreSnapshot(snapshot, issues);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence);
+
+  assert.equal(confidence.label, "Low");
+  assert.match(insight.summary, /part of this route/i);
+  assert.equal(score.score, scoreSnapshot(snapshot, issues).score);
+});
+
 test("design view model splits metadata and builds scale simulation rows", () => {
   const resources = [
     createResource("https://example.com/_next/static/chunks/app.js", {
@@ -533,7 +634,8 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   const snapshot = createSnapshot(resources);
   const issues = detectIssues(snapshot);
   const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence);
   const report = buildPlusOptimizationReport(insight, snapshot, issues, score, {
     hostingProvider: "vercel",
     monthlyVisits: "1kTo10k",
@@ -550,6 +652,7 @@ test("design view model splits metadata and builds scale simulation rows", () =>
       appType: "saasDashboard",
       aiUsage: "yesOften"
     }),
+    confidence,
     score,
     insight,
     scope: "multi",
@@ -582,18 +685,18 @@ test("design view model splits metadata and builds scale simulation rows", () =>
     /^Cost Risk \d+\/100$/
   );
   assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
+  assert.ok(["Low", "Moderate", "High"].includes(viewModel.confidenceLabel));
 });
 
 test("design view model can show current-site sampled progress beyond single-page mode", () => {
   const snapshot = createSnapshot([]);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, confidence, insight } = buildInsightForSnapshot(snapshot);
 
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
     control: assessControl(snapshot, issues, {}),
+    confidence,
     score,
     insight,
     scope: "single",
@@ -615,9 +718,7 @@ test("design view model adds stack fallback questions for missing groups", () =>
       encodedBodySize: 120_000
     })
   ]);
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, confidence, insight } = buildInsightForSnapshot(snapshot);
 
   const viewModel = buildMetisDesignViewModel({
     snapshot,
@@ -625,6 +726,7 @@ test("design view model adds stack fallback questions for missing groups", () =>
     control: assessControl(snapshot, issues, {
       aiUsage: "yesOften"
     }),
+    confidence,
     score,
     insight,
     scope: "single",
@@ -664,14 +766,13 @@ test("design view model detects known stack from raw stack signals even when ret
       }
     ]
   });
-  const issues = detectIssues(snapshot);
-  const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const { issues, score, confidence, insight } = buildInsightForSnapshot(snapshot);
 
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
     control: assessControl(snapshot, issues, {}),
+    confidence,
     score,
     insight,
     scope: "single",
@@ -743,7 +844,8 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
     hostingProvider: "vercel"
   });
   const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence);
 
   const viewModel = buildMetisDesignViewModel({
     snapshot,
@@ -752,6 +854,7 @@ test("design view model keeps brand colors for detected stack and fix cards", ()
       aiUsage: "yesOften",
       hostingProvider: "vercel"
     }),
+    confidence,
     score,
     insight,
     scope: "single",
@@ -1179,11 +1282,13 @@ test("export document builder keeps report sections deterministic", () => {
   const issues = detectIssues(snapshot);
   const control = assessControl(snapshot, issues, {});
   const score = scoreSnapshot(snapshot, issues);
-  const insight = buildInsight(snapshot, issues, score);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence);
   const viewModel = buildMetisDesignViewModel({
     snapshot,
     issues,
     control,
+    confidence,
     score,
     insight,
     scope: "single",
@@ -1196,7 +1301,9 @@ test("export document builder keeps report sections deterministic", () => {
   const document = buildExportReportDocument(viewModel);
 
   assert.equal(document.title, "Metis report · example.com");
+  assert.equal(document.confidenceLabel, viewModel.confidenceLabel);
   assert.equal(document.sections[0]?.title, "Overview");
   assert.match(document.sections[0]?.lines[0] ?? "", /Cost Risk:/);
+  assert.match(document.sections[0]?.lines[2] ?? "", /Confidence:/);
   assert.equal(document.sections.at(-1)?.title, "Recommendations");
 });
