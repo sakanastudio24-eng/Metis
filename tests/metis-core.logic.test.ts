@@ -1382,7 +1382,7 @@ test("export document builder keeps report sections deterministic", () => {
   assert.equal(freeDocument.title, "Metis report for example.com");
   assert.equal(freeDocument.confidenceLabel, viewModel.confidenceLabel);
   assert.equal(freeDocument.sections[0]?.title, "Overview");
-  assert.match(freeDocument.sections[0]?.lines[0] ?? "", /Cost Risk:/);
+  assert.match(freeDocument.sections[0]?.lines[0] ?? "", /Score:/);
   assert.match(freeDocument.sections[0]?.lines[2] ?? "", /Confidence:/);
   assert.equal(
     freeDocument.sections.some((section) => section.title === "Fix Priority"),

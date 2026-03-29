@@ -65,7 +65,7 @@ export function assessConfidence(
     return {
       label: "Low",
       summary: "Metis could only see part of this route.",
-      detail: "This read is based on limited page data and detected signals.",
+      detail: "Based on limited page data.",
       reasons: buildReasons(snapshot, detection)
     };
   }
@@ -78,7 +78,7 @@ export function assessConfidence(
     return {
       label: "High",
       summary: "Metis has a strong signal set for this route.",
-      detail: "The current read is based on solid page data and resolved cost signals.",
+      detail: "Based on strong page data and resolved signals.",
       reasons: buildReasons(snapshot, detection)
     };
   }
@@ -86,7 +86,7 @@ export function assessConfidence(
   return {
     label: "Moderate",
     summary: "Metis has enough signal to guide the read, but not the full picture.",
-    detail: "Based on available page data and detected signals.",
+    detail: "Based on available page data.",
     reasons: buildReasons(snapshot, detection)
   };
 }

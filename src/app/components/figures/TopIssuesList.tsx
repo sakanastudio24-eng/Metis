@@ -54,6 +54,7 @@ interface TopIssuesListProps {
   compact?: boolean;
   title?: string;
   showSummaryPills?: boolean;
+  showDetails?: boolean;
 }
 
 export function TopIssuesList({
@@ -61,8 +62,11 @@ export function TopIssuesList({
   summaryPills = [],
   compact = false,
   title = "Top Issues",
-  showSummaryPills = true
+  showSummaryPills = true,
+  showDetails
 }: TopIssuesListProps) {
+  const shouldShowDetails = showDetails ?? !compact;
+
   return (
     <motion.div
       className="space-y-3"
@@ -151,7 +155,7 @@ export function TopIssuesList({
                       <AcronymText text={issue.title} />
                     </div>
                   </div>
-                  {!compact && (
+                  {shouldShowDetails ? (
                     <div
                       style={{
                         color: "rgba(255,255,255,0.5)",
@@ -164,7 +168,7 @@ export function TopIssuesList({
                     >
                       <AcronymText text={issue.detail} />
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 <div
                   className="rounded-full px-4 py-1.5"

@@ -60,7 +60,7 @@ export const INSIGHT_SUMMARY_TEMPLATES: Record<
   },
   analyticsAdsRumSurface: {
     "warming up": "Metis is still warming up on this page.",
-    healthy: "The page is mostly controlled, but vendor measurement overhead is present.",
+    healthy: "The page is mostly controlled, but measurement overhead from third-party vendors is present.",
     watch: "Analytics and ad-tech vendors are adding measurable cost pressure.",
     "high risk": "Vendor measurement and ad-tech overhead are a major cost driver here."
   },

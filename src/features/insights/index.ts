@@ -162,15 +162,12 @@ export function buildInsight(
   }
 
   if (confidence.label === "Moderate") {
-    return {
-      ...insight,
-      supportingDetail: `${insight.supportingDetail} ${confidence.detail}`
-    };
+    return insight;
   }
 
   return {
     ...insight,
     summary: `${insight.summary} Metis could only see part of this route.`,
-    supportingDetail: confidence.detail
+    supportingDetail: insight.supportingDetail
   };
 }

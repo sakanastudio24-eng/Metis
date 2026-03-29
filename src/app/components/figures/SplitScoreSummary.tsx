@@ -155,12 +155,10 @@ function SummaryCard({
 
 function ConfidenceStrip({
   label,
-  summary,
   detail,
   compact
 }: {
   label: string;
-  summary: string;
   detail: string;
   compact: boolean;
 }) {
@@ -222,21 +220,8 @@ function ConfidenceStrip({
               lineHeight: compact ? "17px" : "19px"
             }}
           >
-            <AcronymText text={compact ? detail : summary} />
+            <AcronymText text={detail} />
           </div>
-          {!compact && (
-            <div
-              className="mt-2"
-              style={{
-                color: "rgba(255,255,255,0.46)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 11,
-                lineHeight: "17px"
-              }}
-            >
-              <AcronymText text={detail} />
-            </div>
-          )}
         </div>
       </div>
     </motion.div>
@@ -359,7 +344,6 @@ export function SplitScoreSummary({
       />
       <ConfidenceStrip
         label={viewModel.confidenceLabel}
-        summary={viewModel.confidenceSummary}
         detail={viewModel.confidenceDetail}
         compact={compact}
       />

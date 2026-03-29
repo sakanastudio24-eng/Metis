@@ -424,7 +424,7 @@ function buildEndpointRows(snapshot: RawScanSnapshot): DesignEndpointRow[] {
     return {
       label,
       categoryLabel,
-      requestCountLabel: `${offender.requestCount} hits`,
+      requestCountLabel: `${offender.requestCount}`,
       sizeLabel: formatBytes(offender.totalEncodedBodySize)
     };
   });
@@ -571,7 +571,7 @@ function buildBaseReportCore({
     estimateRange: `~$${Math.round(monthlyWaste * 0.6)} to $${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
     splitSummary: {
       costRisk: {
-        title: "Cost Risk",
+        title: "Score",
         score: roundedRiskScore,
         label: riskTone.label,
         color: riskTone.color,
@@ -595,11 +595,11 @@ function buildBaseReportCore({
 
 function buildScaleSimulationRows(monthlyWaste: number): DesignScaleSimulationRow[] {
   const cases = [
-    { users: 1_000, label: "1k users", scenario: "now", factor: 1 },
-    { users: 5_000, label: "5k users", scenario: "5× growth", factor: 5 },
-    { users: 10_000, label: "10k users", scenario: "10× growth", factor: 10 },
-    { users: 50_000, label: "50k users", scenario: "50× growth", factor: 50 },
-    { users: 100_000, label: "100k users", scenario: "Viral / scale", factor: 100 }
+    { users: 1_000, label: "1k users", scenario: "current scale", factor: 1 },
+    { users: 5_000, label: "5k users", scenario: "growing usage", factor: 5 },
+    { users: 10_000, label: "10k users", scenario: "expanding route", factor: 10 },
+    { users: 50_000, label: "50k users", scenario: "large audience", factor: 50 },
+    { users: 100_000, label: "100k users", scenario: "high scale", factor: 100 }
   ];
 
   return cases.map((entry) => ({
@@ -712,7 +712,7 @@ function buildFixRecommendationCards(
         saveLabel: formatSavingsLabel(savingsValue),
         rootCause: library.rootCause,
         fix: library.fix,
-        scaleImpact: `At 10× traffic → ~${formatMonthly(savingsValue * 10)}/mo recoverable if this issue stays on the route.`
+        scaleImpact: `At 10× traffic, ~${formatMonthly(savingsValue * 10)}/month is recoverable if this issue stays on the route.`
       };
     });
 

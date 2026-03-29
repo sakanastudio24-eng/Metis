@@ -11,14 +11,14 @@ export function buildExportReportDocument(
 ): ExportReportDocument {
   const isPlusUser = options.isPlusUser ?? false;
   const sections: ExportReportDocument["sections"] = [
-    {
-      id: "overview",
-      title: "Overview",
-      lines: [
-        `Cost Risk: ${viewModel.score}/100 (${viewModel.riskLabel})`,
-        `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
-        `Confidence: ${viewModel.confidenceLabel}`,
-        viewModel.confidenceDetail,
+      {
+        id: "overview",
+        title: "Overview",
+        lines: [
+          `Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
+          `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
+          `Confidence: ${viewModel.confidenceLabel}`,
+          viewModel.confidenceDetail,
         `Estimated waste: ${viewModel.estimateRange}`,
         `Session cost: ${viewModel.sessionCost}`,
         `Projection at 10k users: ${viewModel.monthlyProjection}`
@@ -68,7 +68,7 @@ export function buildExportReportDocument(
           viewModel.plusEndpointRows.length > 0
             ? viewModel.plusEndpointRows.map(
                 (row) =>
-                  `${row.label}. ${row.categoryLabel}. ${row.requestCountLabel}. ${row.sizeLabel}.`
+                  `${row.label}. Type: ${row.categoryLabel}. Requests: ${row.requestCountLabel}. Size: ${row.sizeLabel}.`
               )
             : ["No endpoint detail rows were generated for this route."]
       },
@@ -90,13 +90,13 @@ export function buildExportReportDocument(
             ? viewModel.fixRecommendationCards.map((card) => {
                 const lines = [card.title];
                 if (card.priorityLabel) {
-                  lines.push(card.priorityLabel);
+                  lines.push(`Priority: ${card.priorityLabel}`);
                 }
                 if (card.fix) {
-                  lines.push(card.fix);
+                  lines.push(`Recommendation: ${card.fix}`);
                 }
                 if (card.scaleImpact) {
-                  lines.push(card.scaleImpact);
+                  lines.push(`Impact: ${card.scaleImpact}`);
                 }
 
                 return lines.join(". ");
@@ -123,7 +123,7 @@ export function buildExportOutlineText(document: ExportReportDocument) {
   return [
     document.title,
     `Generated: ${document.generatedAt}`,
-    `Cost Risk: ${document.costRiskScore}/100`,
+    `Score: ${document.costRiskScore}/100`,
     `Control: ${document.controlScore}/100`,
     `Confidence: ${document.confidenceLabel}`,
     ...document.sections.flatMap((section) => [

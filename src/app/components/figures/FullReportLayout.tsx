@@ -331,7 +331,7 @@ function FixRecommendationsSection({
 
             {card.fix && (
               <div className="mt-4">
-                <div className="metis-overline text-white/35">Fix</div>
+                <div className="metis-overline text-white/35">Recommendation</div>
                 <div style={{ color: "rgba(255,255,255,0.78)", fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: "20px", marginTop: 8 }}>
                   {card.fix}
                 </div>
@@ -339,18 +339,21 @@ function FixRecommendationsSection({
             )}
 
             {card.scaleImpact && (
-              <div
-                className="mt-4 rounded-[18px] px-4 py-4"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  color: "rgba(255,255,255,0.62)",
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 12,
-                  lineHeight: "18px"
-                }}
-              >
-                {card.scaleImpact}
+              <div className="mt-4">
+                <div className="metis-overline text-white/35">Impact</div>
+                <div
+                  className="mt-2 rounded-[18px] px-4 py-4"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.62)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 12,
+                    lineHeight: "18px"
+                  }}
+                >
+                  {card.scaleImpact}
+                </div>
               </div>
             )}
           </div>
@@ -426,28 +429,46 @@ function EndpointDetailSection({
                 >
                   <AcronymText text={row.label} />
                 </div>
-                <div
-                  className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.62)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 11,
-                    fontWeight: 700
-                  }}
-                >
-                  <span>{row.categoryLabel}</span>
-                  <span>{row.requestCountLabel}</span>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {[
+                    { label: "Type", value: row.categoryLabel },
+                    { label: "Requests", value: row.requestCountLabel },
+                    { label: "Size", value: row.sizeLabel }
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-[16px] px-3 py-2.5"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.06)"
+                      }}
+                    >
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.34)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase"
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.74)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          marginTop: 6
+                        }}
+                      >
+                        {item.value}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <div
-                style={{
-                  color: "white",
-                  fontFamily: "Jua, sans-serif",
-                  fontSize: 16
-                }}
-              >
-                {row.sizeLabel}
               </div>
             </div>
           </div>
@@ -864,6 +885,7 @@ export function FullReportLayout({
                 issues={viewModel.issues}
                 title="Problems · Sorted by Severity"
                 showSummaryPills={false}
+                showDetails={isPlusUser}
               />
             </div>
 
