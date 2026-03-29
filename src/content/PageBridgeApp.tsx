@@ -329,7 +329,7 @@ export function PageBridgeApp() {
         setHovered(false);
         if (runtimeMessage.openPlusPreview) {
           setIsPlusUser(true);
-          setIsPlusRefinementOpen(true);
+          setIsPlusRefinementOpen(false);
         }
         setIsReportOpen(true);
         sendResponse({ ok: true });

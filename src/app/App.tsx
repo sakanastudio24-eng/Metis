@@ -1,7 +1,7 @@
 import { assessConfidence } from "../features/confidence";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { AlertTriangle, FileText, RefreshCcw } from "lucide-react";
+import { AlertTriangle, FileText, RefreshCcw, Zap } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { assessControl } from "../features/control/control";
 import { detectIssues } from "../features/detection";
@@ -158,11 +158,13 @@ async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | 
 
 function SidePanelHeader({
   hostname,
+  isPlusUser,
   onManageAccount,
   onUpgrade,
   onSettings,
 }: {
   hostname: string;
+  isPlusUser: boolean;
   onManageAccount: () => void;
   onUpgrade: () => void;
   onSettings: () => void;
@@ -189,6 +191,24 @@ function SidePanelHeader({
         >
           {hostname}
         </div>
+        {isPlusUser ? (
+          <div
+            className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1"
+            style={{
+              background: "rgba(220,94,94,0.14)",
+              border: "1px solid rgba(220,94,94,0.28)",
+              color: "#dc8d72",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase"
+            }}
+          >
+            <Zap size={10} />
+            Metis+
+          </div>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-2">
@@ -578,13 +598,12 @@ export default function App() {
       return;
     }
 
-    // Upgrade is local for now. It turns on the Plus preview inside the page
-    // report instead of handing the user off to a separate account flow.
+    // Upgrade is local for now. It opens the fullscreen report in its Plus
+    // state instead of forcing a separate billing or onboarding step.
     setIsPlusUser(true);
-    setIsPlusRefinementOpen(true);
     await patchSessionUi({
       isPlusUser: true,
-      isPlusRefinementOpen: true
+      isPlusRefinementOpen: false
     });
     await handleOpenPageReport({
       openPlusPreview: true
@@ -658,6 +677,7 @@ export default function App() {
         <>
           <SidePanelHeader
             hostname={viewModel?.hostname ?? session.currentUrl}
+            isPlusUser={isPlusUser}
             onManageAccount={handleOpenAccountPortal}
             onUpgrade={() => {
               void handleUpgradeToPlus();

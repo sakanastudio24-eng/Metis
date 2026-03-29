@@ -95,7 +95,9 @@ Use it before changing UI wording, fallback copy, or product labels.
 ## Report copy
 
 - Header: `Metis Cost Report`
+- Header: `Metis+ Full Report`
 - Header: `Confidence`
+- Tag: `Metis+`
 - Tag: `Low`
 - Tag: `Moderate`
 - Tag: `High`
@@ -116,7 +118,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 - Tag: `Plus suggestion`
 - Body:
-  `Upgrade opens the local Metis+ preview in the page report.`
+  `Upgrade opens the fullscreen Metis+ report preview.`
 - CTA:
   `Manage account`
 - CTA:

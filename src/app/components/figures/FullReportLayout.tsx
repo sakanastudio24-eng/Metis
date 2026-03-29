@@ -436,7 +436,7 @@ export function FullReportLayout({
           </div>
           <div>
             <div className="metis-display" style={{ color: "white", fontSize: 22 }}>
-              Metis Full Report
+              {isPlusUser ? "Metis+ Full Report" : "Metis Full Report"}
             </div>
             <div
               style={{
@@ -465,6 +465,24 @@ export function FullReportLayout({
           >
             Phase 4
           </div>
+          {isPlusUser ? (
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2"
+              style={{
+                background: "rgba(220,94,94,0.14)",
+                border: "1px solid rgba(220,94,94,0.32)",
+                color: "#dc8d72",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase"
+              }}
+            >
+              <Zap size={12} />
+              Metis+
+            </div>
+          ) : null}
           <div
             className="rounded-full px-4 py-2"
             style={{
