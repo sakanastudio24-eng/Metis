@@ -466,6 +466,13 @@ export interface PlusRefinementAnswers {
   stackPayment?: StackPayment;
 }
 
+export type PageScopedFairnessKey = "appType" | "representativeExperience";
+
+export type PageScopedFairnessAnswers = Pick<
+  PlusRefinementAnswers,
+  PageScopedFairnessKey
+>;
+
 export interface PlusOptimizationReport {
   detailSummary: string;
   contextNotes: string[];

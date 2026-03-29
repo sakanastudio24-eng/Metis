@@ -10,6 +10,12 @@ import { detectIssues } from "../src/features/detection";
 import { buildInsight } from "../src/features/insights";
 import { resolvePricingContext } from "../src/features/pricing";
 import { buildPlusOptimizationReport } from "../src/features/refinement";
+import {
+  getFairnessPageKey,
+  getPageScopedFairnessAnswers,
+  migrateLegacyFairnessAnswers,
+  setPageScopedFairnessAnswer
+} from "../src/features/refinement/pageScopedFairness";
 import { buildMultipageSnapshot, buildResourceMetrics, buildScanDebugSummary } from "../src/features/scan";
 import { scoreSnapshot } from "../src/features/scoring";
 import { detectMoneyStack } from "../src/features/stack";
@@ -188,6 +194,49 @@ test("buildMultipageSnapshot aggregates visited pages and debug summary stays st
   assert.equal(summary.totalRequests, 2);
   assert.equal(summary.imageCount, 1);
   assert.equal(summary.filteredCount, 2);
+});
+
+test("page-scoped fairness answers follow the normalized route key", () => {
+  const dashboardPageKey = getFairnessPageKey(
+    "https://example.com/dashboard?tab=usage"
+  );
+  const sameRoutePageKey = getFairnessPageKey(
+    "https://example.com/dashboard?tab=billing"
+  );
+  const docsPageKey = getFairnessPageKey("https://example.com/docs/getting-started");
+
+  const fairnessMap = setPageScopedFairnessAnswer(
+    {},
+    dashboardPageKey,
+    "appType",
+    "saasDashboard"
+  );
+
+  assert.deepEqual(getPageScopedFairnessAnswers(fairnessMap, sameRoutePageKey), {
+    appType: "saasDashboard"
+  });
+  assert.deepEqual(getPageScopedFairnessAnswers(fairnessMap, docsPageKey), {});
+});
+
+test("legacy fairness answers migrate into the current page key", () => {
+  const pageKey = getFairnessPageKey("https://example.com/app/usage");
+  const migrated = migrateLegacyFairnessAnswers(
+    {
+      appType: "saasDashboard",
+      representativeExperience: "specificRoute",
+      monthlyVisits: "10kTo100k"
+    },
+    {},
+    pageKey
+  );
+
+  assert.deepEqual(migrated.plusAnswers, {
+    monthlyVisits: "10kTo100k"
+  });
+  assert.deepEqual(migrated.pageFairnessByKey[pageKey ?? ""], {
+    appType: "saasDashboard",
+    representativeExperience: "specificRoute"
+  });
 });
 
 test("warming snapshots stay non-committal", () => {

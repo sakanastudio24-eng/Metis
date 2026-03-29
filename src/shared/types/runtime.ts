@@ -1,9 +1,14 @@
-import type { PlusRefinementAnswers, RawScanSnapshot } from "./audit";
+import type {
+  PageScopedFairnessAnswers,
+  PlusRefinementAnswers,
+  RawScanSnapshot
+} from "./audit";
 
 export type MetisBridgeStatus = "ready" | "reconnecting" | "missing";
 export type MetisSessionUiState = {
   scanScope: "single" | "multi";
   plusAnswers: PlusRefinementAnswers;
+  pageFairnessByKey: Record<string, Partial<PageScopedFairnessAnswers>>;
   isPlusRefinementOpen: boolean;
   isPlusUser: boolean;
 };
@@ -48,6 +53,7 @@ export type MetisRuntimeMessage =
 export const DEFAULT_METIS_SESSION_UI_STATE: MetisSessionUiState = {
   scanScope: "single",
   plusAnswers: {},
+  pageFairnessByKey: {},
   isPlusRefinementOpen: false,
   isPlusUser: false
 };

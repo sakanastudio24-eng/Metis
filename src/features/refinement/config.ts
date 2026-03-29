@@ -85,8 +85,8 @@ export const PLUS_CORE_KEYS: Array<keyof PlusRefinementAnswers> = FAIRNESS_QUEST
 export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
   {
     key: "appType",
-    label: "What type of page is this?",
-    helper: "This keeps Metis fair about what normal looks like on this route.",
+    label: "What type of page is this route on?",
+    helper: "This answer applies to the current page. It helps Metis judge whether the route looks justified here.",
     improves: [
       "baselineExpectations",
       "falsePositiveControl",
@@ -106,8 +106,8 @@ export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
   },
   {
     key: "representativeExperience",
-    label: "Is this representative of your main public experience?",
-    helper: "This tells Metis whether to read the route as the main experience or a more specific path.",
+    label: "Is this route part of the main public experience?",
+    helper: "This answer stays tied to the current page, not the whole site.",
     improves: [
       "falsePositiveControl",
       "requestCountInterpretation",

@@ -10,6 +10,15 @@ import {
   PLUS_CORE_KEYS,
   PLUS_QUESTION_DEFINITIONS
 } from "../features/refinement/config";
+import {
+  clearPageScopedFairnessAnswer,
+  getFairnessPageKey,
+  getPageScopedFairnessAnswers,
+  migrateLegacyFairnessAnswers,
+  setPageScopedFairnessAnswer,
+  stripPageScopedFairnessAnswers,
+  type PageScopedFairnessMap
+} from "../features/refinement/pageScopedFairness";
 import { buildScanDebugSummary, collectRawScanSnapshot } from "../features/scan";
 import { buildMultipageSnapshot } from "../features/scan";
 import { scoreSnapshot } from "../features/scoring";
@@ -192,6 +201,7 @@ export function PageBridgeApp() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
+  const [pageFairnessByKey, setPageFairnessByKey] = useState<PageScopedFairnessMap>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -204,12 +214,21 @@ export function PageBridgeApp() {
     () => buildAutoRefinementAnswers(activeSnapshot),
     [activeSnapshot]
   );
+  const currentPageKey = useMemo(
+    () => getFairnessPageKey(activeSnapshot?.page.href ?? session?.currentUrl ?? window.location.href),
+    [activeSnapshot?.page.href, session?.currentUrl]
+  );
+  const currentPageFairnessAnswers = useMemo(
+    () => getPageScopedFairnessAnswers(pageFairnessByKey, currentPageKey),
+    [currentPageKey, pageFairnessByKey]
+  );
   const effectiveAnswers = useMemo(
     () => ({
       ...inferredAnswers,
-      ...plusAnswers
+      ...plusAnswers,
+      ...currentPageFairnessAnswers
     }),
-    [inferredAnswers, plusAnswers]
+    [currentPageFairnessAnswers, inferredAnswers, plusAnswers]
   );
   const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
@@ -266,8 +285,8 @@ export function PageBridgeApp() {
     pendingQuestionDefinitions[0] ?? null;
   const answeredQuestions = useMemo(
     () =>
-      questionDefinitions.filter((definition) => plusAnswers[definition.key] !== undefined),
-    [plusAnswers, questionDefinitions]
+      questionDefinitions.filter((definition) => effectiveAnswers[definition.key] !== undefined),
+    [effectiveAnswers, questionDefinitions]
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
 
@@ -306,13 +325,20 @@ export function PageBridgeApp() {
       setIsPanelOpen(nextSession?.isSidePanelOpen ?? false);
 
       if (nextSession?.uiState) {
+        const migratedUiState = migrateLegacyFairnessAnswers(
+          nextSession.uiState.plusAnswers,
+          nextSession.uiState.pageFairnessByKey ?? {},
+          getFairnessPageKey(nextSession.currentUrl)
+        );
         setScanScope(nextSession.uiState.scanScope);
-        setPlusAnswers(nextSession.uiState.plusAnswers);
+        setPlusAnswers(migratedUiState.plusAnswers);
+        setPageFairnessByKey(migratedUiState.pageFairnessByKey);
         setIsPlusRefinementOpen(nextSession.uiState.isPlusRefinementOpen);
         setIsPlusUser(nextSession.uiState.isPlusUser);
       } else {
         setScanScope("single");
         setPlusAnswers({});
+        setPageFairnessByKey({});
         setIsPlusRefinementOpen(false);
         setIsPlusUser(false);
       }
@@ -359,13 +385,20 @@ export function PageBridgeApp() {
         setIsPanelOpen(runtimeMessage.session?.isSidePanelOpen ?? false);
 
         if (runtimeMessage.session?.uiState) {
+          const migratedUiState = migrateLegacyFairnessAnswers(
+            runtimeMessage.session.uiState.plusAnswers,
+            runtimeMessage.session.uiState.pageFairnessByKey ?? {},
+            getFairnessPageKey(runtimeMessage.session.currentUrl)
+          );
           setScanScope(runtimeMessage.session.uiState.scanScope);
-          setPlusAnswers(runtimeMessage.session.uiState.plusAnswers);
+          setPlusAnswers(migratedUiState.plusAnswers);
+          setPageFairnessByKey(migratedUiState.pageFairnessByKey);
           setIsPlusRefinementOpen(runtimeMessage.session.uiState.isPlusRefinementOpen);
           setIsPlusUser(runtimeMessage.session.uiState.isPlusUser);
         } else {
           setScanScope("single");
           setPlusAnswers({});
+          setPageFairnessByKey({});
           setIsPlusRefinementOpen(false);
           setIsPlusUser(false);
         }
@@ -604,8 +637,21 @@ export function PageBridgeApp() {
   };
 
   const handleAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
+    if (PLUS_CORE_KEYS.includes(key)) {
+      const nextPageFairnessByKey = setPageScopedFairnessAnswer(
+        pageFairnessByKey,
+        currentPageKey,
+        key as "appType" | "representativeExperience",
+        value
+      );
+
+      setPageFairnessByKey(nextPageFairnessByKey);
+      void patchSessionUi({ pageFairnessByKey: nextPageFairnessByKey });
+      return;
+    }
+
     const nextAnswers = {
-      ...plusAnswers,
+      ...stripPageScopedFairnessAnswers(plusAnswers),
       [key]: value
     };
 
@@ -618,8 +664,20 @@ export function PageBridgeApp() {
       return;
     }
 
+    if (PLUS_CORE_KEYS.includes(previousQuestion.key)) {
+      const nextPageFairnessByKey = clearPageScopedFairnessAnswer(
+        pageFairnessByKey,
+        currentPageKey,
+        previousQuestion.key as "appType" | "representativeExperience"
+      );
+
+      setPageFairnessByKey(nextPageFairnessByKey);
+      void patchSessionUi({ pageFairnessByKey: nextPageFairnessByKey });
+      return;
+    }
+
     const nextAnswers = {
-      ...plusAnswers,
+      ...stripPageScopedFairnessAnswers(plusAnswers),
       [previousQuestion.key]: undefined
     };
 

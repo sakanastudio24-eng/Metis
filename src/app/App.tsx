@@ -12,6 +12,15 @@ import {
   PLUS_CORE_KEYS,
   PLUS_QUESTION_DEFINITIONS
 } from "../features/refinement/config";
+import {
+  clearPageScopedFairnessAnswer,
+  getFairnessPageKey,
+  getPageScopedFairnessAnswers,
+  migrateLegacyFairnessAnswers,
+  setPageScopedFairnessAnswer,
+  stripPageScopedFairnessAnswers,
+  type PageScopedFairnessMap
+} from "../features/refinement/pageScopedFairness";
 import { buildMultipageSnapshot } from "../features/scan";
 import { scoreSnapshot } from "../features/scoring";
 import { detectMoneyStack } from "../features/stack";
@@ -304,6 +313,7 @@ export default function App() {
   const [session, setSession] = useState<MetisTabSessionState | null>(null);
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
+  const [pageFairnessByKey, setPageFairnessByKey] = useState<PageScopedFairnessMap>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -317,12 +327,21 @@ export default function App() {
     () => buildAutoRefinementAnswers(activeSnapshot),
     [activeSnapshot]
   );
+  const currentPageKey = useMemo(
+    () => getFairnessPageKey(activeSnapshot?.page.href ?? session?.currentUrl),
+    [activeSnapshot?.page.href, session?.currentUrl]
+  );
+  const currentPageFairnessAnswers = useMemo(
+    () => getPageScopedFairnessAnswers(pageFairnessByKey, currentPageKey),
+    [currentPageKey, pageFairnessByKey]
+  );
   const effectiveAnswers = useMemo(
     () => ({
       ...inferredAnswers,
-      ...plusAnswers
+      ...plusAnswers,
+      ...currentPageFairnessAnswers
     }),
-    [inferredAnswers, plusAnswers]
+    [currentPageFairnessAnswers, inferredAnswers, plusAnswers]
   );
   const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
@@ -385,8 +404,8 @@ export default function App() {
     ) ?? null;
   const answeredQuestions = useMemo(
     () =>
-      questionDefinitions.filter((definition) => plusAnswers[definition.key] !== undefined),
-    [plusAnswers, questionDefinitions]
+      questionDefinitions.filter((definition) => effectiveAnswers[definition.key] !== undefined),
+    [effectiveAnswers, questionDefinitions]
   );
   const previousQuestion = answeredQuestions[answeredQuestions.length - 1] ?? null;
 
@@ -410,13 +429,20 @@ export default function App() {
 
     const uiState = response.session?.uiState ?? null;
     if (uiState) {
+      const migratedUiState = migrateLegacyFairnessAnswers(
+        uiState.plusAnswers,
+        uiState.pageFairnessByKey ?? {},
+        getFairnessPageKey(response.session?.currentUrl)
+      );
       setScanScope(uiState.scanScope);
-      setPlusAnswers(uiState.plusAnswers);
+      setPlusAnswers(migratedUiState.plusAnswers);
+      setPageFairnessByKey(migratedUiState.pageFairnessByKey);
       setIsPlusRefinementOpen(uiState.isPlusRefinementOpen);
       setIsPlusUser(uiState.isPlusUser);
     } else {
       setScanScope(settings.preferredScanScope);
       setPlusAnswers({});
+      setPageFairnessByKey({});
       setIsPlusRefinementOpen(false);
       setIsPlusUser(false);
     }
@@ -556,8 +582,21 @@ export default function App() {
   };
 
   const handleAnswer = (key: keyof PlusRefinementAnswers, value: string) => {
+    if (FAIRNESS_QUESTION_KEYS.includes(key)) {
+      const nextPageFairnessByKey = setPageScopedFairnessAnswer(
+        pageFairnessByKey,
+        currentPageKey,
+        key as "appType" | "representativeExperience",
+        value
+      );
+
+      setPageFairnessByKey(nextPageFairnessByKey);
+      void patchSessionUi({ pageFairnessByKey: nextPageFairnessByKey });
+      return;
+    }
+
     const nextAnswers = {
-      ...plusAnswers,
+      ...stripPageScopedFairnessAnswers(plusAnswers),
       [key]: value
     };
 
@@ -570,8 +609,20 @@ export default function App() {
       return;
     }
 
+    if (FAIRNESS_QUESTION_KEYS.includes(previousQuestion.key)) {
+      const nextPageFairnessByKey = clearPageScopedFairnessAnswer(
+        pageFairnessByKey,
+        currentPageKey,
+        previousQuestion.key as "appType" | "representativeExperience"
+      );
+
+      setPageFairnessByKey(nextPageFairnessByKey);
+      void patchSessionUi({ pageFairnessByKey: nextPageFairnessByKey });
+      return;
+    }
+
     const nextAnswers = {
-      ...plusAnswers,
+      ...stripPageScopedFairnessAnswers(plusAnswers),
       [previousQuestion.key]: undefined
     };
 
