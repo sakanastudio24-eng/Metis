@@ -68,7 +68,10 @@ If you are getting oriented, read these in order.
 4. [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/sidepanel-session-flow.md)
 5. [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-flow.md)
 6. [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md)
-7. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
+7. [docs/front-facing-foundation.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/front-facing-foundation.md)
+8. [docs/design-system-logic.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-logic.md)
+9. [docs/production-roadmap.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/production-roadmap.md)
+10. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
 
 ## Setup
 

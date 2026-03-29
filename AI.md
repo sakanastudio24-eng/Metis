@@ -68,6 +68,9 @@ Key boundaries:
 - `docs/extension-runtime-flow.md`
 - `docs/sidepanel-session-flow.md`
 - `docs/design-system-flow.md`
+- `docs/design-system-logic.md`
+- `docs/front-facing-foundation.md`
+- `docs/production-roadmap.md`
 - `docs/pricing-reference-flow.md`
 
 ## Working rules

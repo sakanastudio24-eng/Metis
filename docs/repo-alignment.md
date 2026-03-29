@@ -6,6 +6,8 @@ It defines what belongs in the extension, what belongs on the website, and what 
 
 Use `docs/production-roadmap.md` for the ordered launch checklist.
 
+Use `docs/design-system-logic.md` for shared UI logic and final surface polish.
+
 ## What the extension owns
 
 The Metis extension owns:
@@ -58,12 +60,13 @@ Metis Web owns:
 
 ## Current repo state
 
-The repo is aligned to the current website managed model.
+The repo is aligned to the current website managed model and the core product is largely in place.
 
 - account actions link out to `https://metis.zward.studio/account`
 - local Plus purchase and fake entitlement flows are removed
 - extension legal copy now points account and security language to Metis Web
 - the extension remains local first for scanning, reporting, and settings
+- the remaining work is calibration, export, polish, store readiness, and the later website-to-extension account bridge
 
 Until a real website to extension entitlement bridge ships, any temporary Plus entry in the extension should still behave like a website handoff.
 
