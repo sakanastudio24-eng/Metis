@@ -29,7 +29,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - CTA, copy report: `Copy report`
 - CTA, export: `Export`
 - CTA, account handoff: `Manage account`
-- CTA, Plus handoff: `Upgrade`
+- CTA, Plus action: `Upgrade`
 
 ## Page and side panel copy
 
@@ -116,7 +116,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 - Tag: `Plus suggestion`
 - Body:
-  `Plus Beta access is managed on the Metis website.`
+  `Upgrade opens the local Metis+ preview in the page report.`
 - CTA:
   `Manage account`
 - CTA:

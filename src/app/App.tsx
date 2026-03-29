@@ -271,6 +271,7 @@ export default function App() {
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
+  const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const [settingsReady, setSettingsReady] = useState(false);
@@ -368,10 +369,12 @@ export default function App() {
       setScanScope(uiState.scanScope);
       setPlusAnswers(uiState.plusAnswers);
       setIsPlusRefinementOpen(uiState.isPlusRefinementOpen);
+      setIsPlusUser(uiState.isPlusUser);
     } else {
       setScanScope(settings.preferredScanScope);
       setPlusAnswers({});
       setIsPlusRefinementOpen(false);
+      setIsPlusUser(false);
     }
   };
 
@@ -552,7 +555,7 @@ export default function App() {
     });
   };
 
-  const handleOpenPageReport = async () => {
+  const handleOpenPageReport = async (options?: { openPlusPreview?: boolean }) => {
     if (!activeTabId) {
       return;
     }
@@ -561,12 +564,31 @@ export default function App() {
     // back inside the tab so it can use the full page viewport.
     await sendRuntimeMessage({
       type: "METIS_OPEN_PAGE_REPORT",
-      tabId: activeTabId
+      tabId: activeTabId,
+      openPlusPreview: options?.openPlusPreview
     });
   };
 
   const handleOpenAccountPortal = () => {
     window.open(METIS_ACCOUNT_URL, "_blank", "noopener,noreferrer");
+  };
+
+  const handleUpgradeToPlus = async () => {
+    if (!activeTabId) {
+      return;
+    }
+
+    // Upgrade is local for now. It turns on the Plus preview inside the page
+    // report instead of handing the user off to a separate account flow.
+    setIsPlusUser(true);
+    setIsPlusRefinementOpen(true);
+    await patchSessionUi({
+      isPlusUser: true,
+      isPlusRefinementOpen: true
+    });
+    await handleOpenPageReport({
+      openPlusPreview: true
+    });
   };
 
   const handleOpenExport = () => {
@@ -637,7 +659,9 @@ export default function App() {
           <SidePanelHeader
             hostname={viewModel?.hostname ?? session.currentUrl}
             onManageAccount={handleOpenAccountPortal}
-            onUpgrade={handleOpenAccountPortal}
+            onUpgrade={() => {
+              void handleUpgradeToPlus();
+            }}
             onSettings={handleOpenSettings}
           />
 

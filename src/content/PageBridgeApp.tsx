@@ -180,6 +180,7 @@ export function PageBridgeApp() {
   const [scanScope, setScanScope] = useState<ScanScope>("single");
   const [plusAnswers, setPlusAnswers] = useState<PlusRefinementAnswers>({});
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
+  const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const scanTimeoutRef = useRef<number | null>(null);
@@ -291,6 +292,12 @@ export function PageBridgeApp() {
         setScanScope(nextSession.uiState.scanScope);
         setPlusAnswers(nextSession.uiState.plusAnswers);
         setIsPlusRefinementOpen(nextSession.uiState.isPlusRefinementOpen);
+        setIsPlusUser(nextSession.uiState.isPlusUser);
+      } else {
+        setScanScope("single");
+        setPlusAnswers({});
+        setIsPlusRefinementOpen(false);
+        setIsPlusUser(false);
       }
     });
 
@@ -320,6 +327,10 @@ export function PageBridgeApp() {
       // the page bridge so the report can use the full tab viewport.
       if (runtimeMessage.type === "METIS_OPEN_PAGE_REPORT") {
         setHovered(false);
+        if (runtimeMessage.openPlusPreview) {
+          setIsPlusUser(true);
+          setIsPlusRefinementOpen(true);
+        }
         setIsReportOpen(true);
         sendResponse({ ok: true });
         return true;
@@ -334,6 +345,12 @@ export function PageBridgeApp() {
           setScanScope(runtimeMessage.session.uiState.scanScope);
           setPlusAnswers(runtimeMessage.session.uiState.plusAnswers);
           setIsPlusRefinementOpen(runtimeMessage.session.uiState.isPlusRefinementOpen);
+          setIsPlusUser(runtimeMessage.session.uiState.isPlusUser);
+        } else {
+          setScanScope("single");
+          setPlusAnswers({});
+          setIsPlusRefinementOpen(false);
+          setIsPlusUser(false);
         }
 
         sendResponse({ ok: true });
@@ -760,10 +777,10 @@ export function PageBridgeApp() {
                   onAnswer={handleAnswer}
                   onBackQuestion={handleBackQuestion}
                   canGoBack={previousQuestion !== null}
-                  onCopyReport={() => {
-                    void handleCopyReport();
-                  }}
-                  isPlusUser={false}
+                onCopyReport={() => {
+                  void handleCopyReport();
+                }}
+                  isPlusUser={isPlusUser}
                   refreshTick={0}
                   onClose={() => setIsReportOpen(false)}
                   showSampleProgress

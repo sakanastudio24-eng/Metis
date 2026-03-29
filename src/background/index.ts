@@ -254,10 +254,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         }
 
         await ensureContentBridge(runtimeMessage.tabId);
-        await chrome.tabs.sendMessage(runtimeMessage.tabId, {
-          type: "METIS_OPEN_PAGE_REPORT",
-          tabId: runtimeMessage.tabId
-        } satisfies MetisRuntimeMessage);
+        await chrome.tabs.sendMessage(runtimeMessage.tabId, runtimeMessage);
         sendResponse({ ok: true });
         return;
       }
