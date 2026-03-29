@@ -96,14 +96,15 @@ Use it to review product wording before editing UI files.
 - Header, score copy prefix:
   `Metis Cost Report`
 - Body, export footer:
-  `Scanned by Metis (ward.studio/metis)`
+  `Scanned by Metis (metis.zward.studio)`
 
 ## Plus and refinement copy
 
 - Tag: `Plus suggestion`
-- Toast, success title: `Metis+ unlocked`
-- Toast, success body:
-  `The prototype Plus experience is now enabled in this session.`
+- Body:
+  `Plus Beta access is managed on the Metis website.`
+- CTA:
+  `Manage account`
 
 ## Export shell copy
 

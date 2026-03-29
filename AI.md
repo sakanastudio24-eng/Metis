@@ -18,7 +18,7 @@ Current surface split:
 - a lightweight content bridge is always mounted on normal pages
 - clicking the `M` hover starts the tab session and opens the side panel
 - scans run from the page bridge, not from the service worker
-- the fullscreen report and Metis+ overlay open back in the page DOM
+- the fullscreen report opens back in the page DOM
 - the side panel stays compact and stable across page changes
 
 ## Core pipeline
@@ -46,6 +46,11 @@ Important implementation boundaries:
 - AI/provider presence is contextual, not automatically wasteful
 - the side panel should stay narrow and stable
 - large immersive reads belong in the page DOM, not in the side panel
+- account management belongs to `Metis-Web`, not the extension
+- extension settings stay local to the extension UI
+- Plus is website-managed beta access only
+- temporary Plus Beta entry from the extension is allowed only as a website-linked bridge, not as local purchase or fake entitlement
+- all public product links should resolve to `https://metis.zward.studio`
 
 ## Key files
 
@@ -60,6 +65,7 @@ Important implementation boundaries:
 ## Docs worth reading first
 
 - `README.md`
+- `docs/repo-alignment.md`
 - `docs/flow-overview.md`
 - `docs/extension-runtime-flow.md`
 - `docs/sidepanel-session-flow.md`
@@ -82,6 +88,7 @@ Important implementation boundaries:
 - only add or update docs when they add real value to future work
 - if a doc feels redundant or should be merged into another doc, ask the user before removing or merging it
 - when a flow changes, update the matching flow doc instead of creating overlapping notes
+- when ownership boundaries change between website and extension, update `docs/repo-alignment.md`
 - never inspect `.env` files directly
 - if environment shape matters, ask the user or provide an example env layout instead
 - when reporting work back, include the git segmentation for the feature that was added or changed
@@ -105,3 +112,8 @@ Important implementation boundaries:
 ## Main risk before shipping
 
 The biggest review-sensitive area is still broad always-on page access through `"<all_urls>"` plus always-mounted content scripts.
+
+## Alignment note
+
+- account, entitlement, and beta access must stay website-managed unless a real sync bridge ships
+- use `docs/repo-alignment.md` as the extension-side ownership packet before changing auth-adjacent UI or copy
