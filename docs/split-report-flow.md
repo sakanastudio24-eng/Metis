@@ -67,6 +67,8 @@ If a route stays under 50 retained requests, under 500 KB, and clear of duplicat
 
 Hosting and CDN should stay supporting context unless they are paired with heavier transfer or repeated work. They should not read like the main problem by themselves.
 
+Modern framework routes should also soften duplicate interpretation a little. Chunk-heavy routes can legitimately replay assets, but duplicate API work should still read as stronger waste than repeated script loading.
+
 ## Confidence
 
 This is the trust read.
@@ -126,6 +128,16 @@ Plus only adds depth:
 - fix order
 - scale simulation
 - recommendation detail
+
+When the user is in the local upgraded state, the fullscreen report should also expose `Degrade to free`.
+
+That control only changes presentation tier. It must not change:
+
+- score
+- control
+- confidence
+- issue order
+- cost direction
 
 The fairness questions are shared across Free and Plus.
 

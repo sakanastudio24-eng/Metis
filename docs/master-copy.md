@@ -30,6 +30,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - CTA, export: `Export`
 - CTA, account handoff: `Manage account`
 - CTA, Plus action: `Upgrade`
+- CTA, local Plus downgrade: `Degrade to free`
 
 ## Page and side panel copy
 
@@ -155,6 +156,8 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Body, fairness framing:
   `This route is heavy for a marketing page.`
 - Body, fairness framing:
+  `This route shows moderate complexity for a marketing page.`
+- Body, fairness framing:
   `This route is heavier, but some of that is expected for a dashboard.`
 - Body, fairness framing:
   `This route is specific and dynamic, so some extra activity is expected.`
@@ -166,6 +169,8 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Score means avoidable cost pressure. Control means whether the route complexity looks justified.`
 - Body rule:
   `If the current route only resolves hosting or CDN, keep the grouped stack section quiet instead of making the report look more complete than it is.`
+- Body rule:
+  `Only call a marketing route heavy when both request pressure and payload pressure are meaningfully elevated.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
 - Header: `Endpoint Detail`
@@ -189,6 +194,8 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Manage account`
 - CTA:
   `Upgrade`
+- CTA:
+  `Degrade to free`
 
 ## Export shell copy
 
