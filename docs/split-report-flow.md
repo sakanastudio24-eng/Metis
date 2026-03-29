@@ -71,6 +71,28 @@ The split makes the product say:
 
 That is more believable than one flat score.
 
+## Free and Plus
+
+Free and Plus must read from the same base report truth.
+
+That means both modes share:
+
+- score
+- control
+- confidence
+- estimate range
+- top issue order
+- main insight
+
+Plus only adds depth:
+
+- route context
+- fix order
+- scale simulation
+- recommendation detail
+
+Plus must not replace the base read with a different story.
+
 ## Where it lives
 
 - [src/app/components/figures/SplitScoreSummary.tsx](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/src/app/components/figures/SplitScoreSummary.tsx)

@@ -94,9 +94,13 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ## Report copy
 
-- Header: `Metis Cost Report`
+- Header: `Metis report for {hostname}`
 - Header: `Metis+ Full Report`
 - Header: `Confidence`
+- Header: `Estimated waste`
+- Header: `Top drivers`
+- Header: `Insight`
+- Header: `Plus read`
 - Tag: `Metis+`
 - Tag: `Low`
 - Tag: `Moderate`
@@ -113,12 +117,18 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Metis has enough signal to guide the read, but not the full picture.`
 - Body, high confidence:
   `Metis has a strong signal set for this route.`
+- Body, estimate summary:
+  `Current waste estimate is roughly {range}.`
+- Body, Plus read:
+  `Plus adds context and fix order without changing the base report read.`
 
 ## Plus and refinement copy
 
 - Tag: `Plus suggestion`
 - Body:
   `Upgrade opens the fullscreen Metis+ report preview.`
+- Body:
+  `Metis+ keeps the same score and estimate, then adds more detail.`
 - CTA:
   `Manage account`
 - CTA:
@@ -160,6 +170,9 @@ Use it before changing UI wording, fallback copy, or product labels.
 - do not blame AI or provider presence by default
 - use questions for missing business context
 - keep `Plus suggestion` as a tag, not a sentence lead
+- keep Free and Plus on the same core report truth
+- use plain sentences in copied and exported reports
+- avoid bullet dashes in report text when a simple list or label reads better
 
 ## Legal copy
 
