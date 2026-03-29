@@ -20,6 +20,21 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.6.0
+
+Release type: Minor
+
+This release finishes the final v1 calibration pass so modern framework routes read more fairly, hosting stays quieter, and upgraded sessions can drop back to the Free presentation locally.
+
+What changed
+
+- Raised image thresholds so modern marketing and docs pages do not look harsh too early.
+- Softened duplicate score and control pressure on modern framework routes without hiding real duplicate waste.
+- Reduced the control drop from image-heavy routes so images affect score more than control.
+- Tightened hosting and CDN issue gating so they only surface when paired with heavier payload and duplicate work.
+- Tightened marketing-page wording so routes are only called heavy when both request and payload pressure are elevated.
+- Added a local `Degrade to free` control in the upgraded fullscreen report.
+
 ## 0.5.0
 
 Release type: Minor
