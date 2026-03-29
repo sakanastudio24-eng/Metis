@@ -928,7 +928,7 @@ export function FullReportLayout({
                     textTransform: "uppercase"
                   }}
                 >
-                  <AcronymText text="Improve Accuracy" />
+                  <AcronymText text="Add Page Context" />
                 </div>
                 <div
                   style={{
@@ -938,7 +938,7 @@ export function FullReportLayout({
                     marginTop: 12
                   }}
                 >
-                  <AcronymText text="Improve Accuracy" />
+                  <AcronymText text="Add Page Context" />
                 </div>
                 <div
                   style={{
@@ -951,7 +951,7 @@ export function FullReportLayout({
                     marginTop: 10
                   }}
                 >
-                  Updates score in real time
+                  Keeps the read fair without changing the scan
                 </div>
                 <div
                   style={{
@@ -963,7 +963,7 @@ export function FullReportLayout({
                     maxWidth: 760
                   }}
                 >
-                  Answer a few stack and traffic questions to sharpen the cost interpretation without changing the underlying scan.
+                  Answer a couple of quick context questions so Metis can judge this route more fairly. The raw scan stays the same.
                 </div>
               </div>
               <motion.button
@@ -980,7 +980,7 @@ export function FullReportLayout({
                 whileHover={{ scale: 1.03, boxShadow: "0 10px 28px rgba(220,94,94,0.28)" }}
                 whileTap={{ scale: 0.98 }}
               >
-                <AcronymText text={isRefinementOpen ? "Hide questions" : "Refine This Report"} />
+                <AcronymText text={isRefinementOpen ? "Hide questions" : "Answer context questions"} />
               </motion.button>
             </div>
 

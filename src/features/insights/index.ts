@@ -6,6 +6,7 @@ import type {
   CostInsight,
   DetectedIssue,
   IssueCategory,
+  PlusRefinementAnswers,
   RawScanSnapshot,
   ScoreBreakdown,
   ScoreDeduction,
@@ -127,11 +128,88 @@ function buildWarmingInsight(snapshot: RawScanSnapshot): CostInsight {
   };
 }
 
+function isHeavyRouteCategory(category: IssueCategory | null) {
+  return [
+    "requestCount",
+    "duplicateRequests",
+    "pageWeight",
+    "largeImages",
+    "aiSpendSurface",
+    "hostingCdnSpendSurface"
+  ].includes(category ?? "");
+}
+
+function applyContextFraming(
+  insight: CostInsight,
+  answers: PlusRefinementAnswers
+): CostInsight {
+  if (!insight.primaryCategory || !isHeavyRouteCategory(insight.primaryCategory)) {
+    return insight;
+  }
+
+  if (answers.appType === "marketing" || answers.appType === "portfolio") {
+    return {
+      ...insight,
+      summary: "This route is heavy for a marketing page."
+    };
+  }
+
+  if (answers.appType === "docsContent") {
+    return {
+      ...insight,
+      summary: "This route is a little heavier than expected for a docs page."
+    };
+  }
+
+  if (
+    ["saasDashboard", "ecommerce", "marketplace", "internalTool"].includes(
+      answers.appType ?? ""
+    )
+  ) {
+    return {
+      ...insight,
+      summary: "This route is heavier, but some of that is expected for a dashboard."
+    };
+  }
+
+  if (answers.appType === "aiApp") {
+    return {
+      ...insight,
+      summary: "This route is active and interactive, so some extra activity is expected."
+    };
+  }
+
+  if (
+    answers.representativeExperience === "specificRoute" &&
+    answers.pageDynamics === "highlyDynamic"
+  ) {
+    return {
+      ...insight,
+      summary: "This route is specific and dynamic, so some extra activity is expected."
+    };
+  }
+
+  return insight;
+}
+
+function buildContextDetail(answers: PlusRefinementAnswers) {
+  if (answers.representativeExperience === "specificRoute") {
+    return "Metis is reading this as a specific route, not the whole public experience.";
+  }
+
+  if (answers.representativeExperience === "mainPublicPage") {
+    return "Metis is reading this as part of the main public experience.";
+  }
+
+  return null;
+}
+
 export function buildInsight(
   snapshot: RawScanSnapshot,
   issues: DetectedIssue[],
   score: ScoreBreakdown,
-  confidence: ConfidenceAssessment
+  confidence: ConfidenceAssessment,
+  answers: PlusRefinementAnswers = {}
 ): CostInsight {
   if (score.label === "warming up") {
     return buildWarmingInsight(snapshot);
@@ -149,13 +227,19 @@ export function buildInsight(
     INSIGHT_SUMMARY_TEMPLATES[primaryCategory]?.[score.label] ??
     INSIGHT_SUMMARY_TEMPLATES.default[score.label];
 
-  const insight: CostInsight = {
+  const contextDetail = buildContextDetail(answers);
+  const insight: CostInsight = applyContextFraming(
+    {
     summary: summaryTemplate,
-    supportingDetail: buildSupportingDetail(strongestIssue),
+    supportingDetail: contextDetail
+      ? `${buildSupportingDetail(strongestIssue)} ${contextDetail}`
+      : buildSupportingDetail(strongestIssue),
     estimateLabel: INSIGHT_ESTIMATE_LABELS[score.label],
     nextStep: INSIGHT_NEXT_STEPS[primaryCategory] ?? INSIGHT_NEXT_STEPS.default,
     primaryCategory
-  };
+    },
+    answers
+  );
 
   if (confidence.label === "High") {
     return insight;

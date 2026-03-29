@@ -26,13 +26,16 @@ export type SiteSizeBand = "under10" | "10To50" | "50To200" | "200Plus" | "notSu
 export type AppType =
   | "marketing"
   | "portfolio"
+  | "docsContent"
   | "ecommerce"
   | "saasDashboard"
   | "mediaHeavy"
   | "aiApp"
   | "marketplace"
-  | "internalTool";
+  | "internalTool"
+  | "notSure";
 export type PageDynamics = "mostlyStatic" | "mixed" | "highlyDynamic" | "notSure";
+export type RepresentativeExperience = "mainPublicPage" | "specificRoute" | "notSure";
 export type PaidApiUsage = "yes" | "no" | "notSure";
 export type AiUsage = "yesOften" | "sometimes" | "no" | "notSure";
 export type MediaImportance = "core" | "somewhat" | "no";
@@ -449,6 +452,7 @@ export interface PlusRefinementAnswers {
   monthlyVisits?: MonthlyVisitsBand;
   siteSize?: SiteSizeBand;
   appType?: AppType;
+  representativeExperience?: RepresentativeExperience;
   pageDynamics?: PageDynamics;
   paidApiUsage?: PaidApiUsage;
   aiUsage?: AiUsage;

@@ -13,6 +13,7 @@ import type {
   OptimizationCoverage,
   PageDynamics,
   PaidApiUsage,
+  RepresentativeExperience,
   SiteSizeBand,
   StackAiProvider,
   StackAnalytics,
@@ -21,7 +22,7 @@ import type {
   StackPayment
 } from "../../shared/types/audit";
 
-type QuestionGroup = "Stack" | "Traffic" | "Cost sensitivity";
+type QuestionGroup = "Context" | "Stack" | "Traffic" | "Cost sensitivity";
 export type InsightArea =
   | "computeRisk"
   | "bandwidthCost"
@@ -74,35 +75,52 @@ export interface PlusQuestionDefinition {
   options: PlusQuestionOption[];
 }
 
-export const PLUS_CORE_KEYS: Array<keyof PlusRefinementAnswers> = [
-  "hostingProvider",
-  "monthlyVisits",
-  "appType"
+export const FAIRNESS_QUESTION_KEYS: Array<keyof PlusRefinementAnswers> = [
+  "appType",
+  "representativeExperience"
 ];
+
+export const PLUS_CORE_KEYS: Array<keyof PlusRefinementAnswers> = FAIRNESS_QUESTION_KEYS;
 
 export const PLUS_QUESTION_DEFINITIONS: PlusQuestionDefinition[] = [
   {
     key: "appType",
-    label: "App Type",
-    helper: "This reduces false positives and changes what normal looks like.",
+    label: "What type of page is this?",
+    helper: "This keeps Metis fair about what normal looks like on this route.",
     improves: [
       "baselineExpectations",
       "falsePositiveControl",
       "recommendationRelevance"
     ],
     whyItMatters:
-      "A route that looks heavy on a portfolio may be acceptable on a dashboard or marketplace.",
-    group: "Stack",
+      "A light public page and a logged-in app route should not be judged the same way.",
+    group: "Context",
     required: true,
     options: [
-      { value: "marketing", label: "Marketing site" },
-      { value: "portfolio", label: "Portfolio" },
-      { value: "ecommerce", label: "Ecommerce" },
-      { value: "saasDashboard", label: "SaaS dashboard" },
-      { value: "mediaHeavy", label: "Content-heavy" },
-      { value: "aiApp", label: "AI-heavy" },
-      { value: "marketplace", label: "Marketplace" },
-      { value: "internalTool", label: "Internal tool" }
+      { value: "marketing", label: "Marketing / landing page" },
+      { value: "saasDashboard", label: "Product / dashboard" },
+      { value: "aiApp", label: "AI / interactive app" },
+      { value: "docsContent", label: "Docs / content page" },
+      { value: "notSure", label: "Not sure" }
+    ]
+  },
+  {
+    key: "representativeExperience",
+    label: "Is this representative of your main public experience?",
+    helper: "This tells Metis whether to read the route as the main experience or a more specific path.",
+    improves: [
+      "falsePositiveControl",
+      "requestCountInterpretation",
+      "recommendationAccuracy"
+    ],
+    whyItMatters:
+      "A dashboard route or a specific path can carry more activity than a main public page without meaning the whole site is wasteful.",
+    group: "Context",
+    required: true,
+    options: [
+      { value: "mainPublicPage", label: "Yes, this is the main page" },
+      { value: "specificRoute", label: "No, this is a specific route" },
+      { value: "notSure", label: "Not sure" }
     ]
   },
   {
@@ -344,13 +362,20 @@ export const PLUS_LABELS = {
   appType: {
     marketing: "marketing site",
     portfolio: "portfolio",
+    docsContent: "docs or content page",
     ecommerce: "ecommerce site",
     saasDashboard: "SaaS dashboard",
     mediaHeavy: "media-heavy site",
     aiApp: "AI app",
     marketplace: "marketplace",
-    internalTool: "internal tool"
+    internalTool: "internal tool",
+    notSure: "unknown page type"
   } satisfies Record<AppType, string>,
+  representativeExperience: {
+    mainPublicPage: "main public page",
+    specificRoute: "specific route",
+    notSure: "unknown route role"
+  } satisfies Record<RepresentativeExperience, string>,
   pageDynamics: {
     mostlyStatic: "mostly static route",
     mixed: "mixed route",

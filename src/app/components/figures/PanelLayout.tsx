@@ -9,19 +9,100 @@ import { SplitScoreSummary } from "./SplitScoreSummary";
 import { TopIssuesList } from "./TopIssuesList";
 import { DetectedStackBadges } from "./DetectedStackBadges";
 import { AcronymText } from "./AcronymTooltipText";
+import type { PlusQuestionDefinition } from "../../../features/refinement/config";
+import type { PlusRefinementAnswers } from "../../../shared/types/audit";
 
 interface PanelLayoutProps {
   viewModel: MetisDesignViewModel | null;
   compact?: boolean;
   refreshTick?: number;
   showSampleProgress?: boolean;
+  currentFairnessQuestion?: PlusQuestionDefinition | null;
+  onAnswer?: (key: keyof PlusRefinementAnswers, value: string) => void;
+}
+
+function FairnessQuestionCard({
+  question,
+  onAnswer
+}: {
+  question: PlusQuestionDefinition;
+  onAnswer: (key: keyof PlusRefinementAnswers, value: string) => void;
+}) {
+  return (
+    <motion.div
+      className="w-full rounded-[24px] px-5 py-5"
+      style={{
+        background: "rgba(220,94,94,0.08)",
+        border: "1px solid rgba(220,94,94,0.18)"
+      }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.24, delay: 0.08, ease: "easeOut" }}
+    >
+      <div
+        style={{
+          color: "#dc8d72",
+          fontFamily: "Inter, sans-serif",
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase"
+        }}
+      >
+        Add page context
+      </div>
+      <div
+        style={{
+          color: "white",
+          fontFamily: "Jua, sans-serif",
+          fontSize: 18,
+          marginTop: 10
+        }}
+      >
+        <AcronymText text={question.label} />
+      </div>
+      <div
+        style={{
+          color: "rgba(255,255,255,0.6)",
+          fontFamily: "Inter, sans-serif",
+          fontSize: 12,
+          lineHeight: "18px",
+          marginTop: 8
+        }}
+      >
+        <AcronymText text={question.helper} />
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {question.options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onAnswer(question.key, option.value)}
+            className="rounded-full px-3.5 py-2"
+            style={{
+              background: option.brandColor ? `${option.brandColor}20` : "rgba(255,255,255,0.06)",
+              border: `1px solid ${option.brandColor ? `${option.brandColor}3d` : "rgba(255,255,255,0.1)"}`,
+              color: option.brandColor ?? "rgba(255,255,255,0.82)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 12,
+              fontWeight: 600
+            }}
+          >
+            <AcronymText text={option.label} />
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
 }
 
 export function PanelLayout({
   viewModel,
   compact = false,
   refreshTick = 0,
-  showSampleProgress = true
+  showSampleProgress = true,
+  currentFairnessQuestion = null,
+  onAnswer
 }: PanelLayoutProps) {
   if (!viewModel) {
     return (
@@ -77,6 +158,13 @@ export function PanelLayout({
             <AcronymText text={viewModel.quickInsight} />
           </div>
         </motion.div>
+
+        {currentFairnessQuestion && onAnswer ? (
+          <FairnessQuestionCard
+            question={currentFairnessQuestion}
+            onAnswer={onAnswer}
+          />
+        ) : null}
       </motion.div>
 
       <motion.div

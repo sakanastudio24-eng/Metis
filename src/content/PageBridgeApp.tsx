@@ -214,14 +214,14 @@ export function PageBridgeApp() {
   const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
-  const scoreBreakdown = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
+  const scoreBreakdown = activeSnapshot ? scoreSnapshot(activeSnapshot, issues, effectiveAnswers) : null;
   const confidence =
     activeSnapshot && stackDetection && scoreBreakdown
       ? assessConfidence(activeSnapshot, stackDetection, scoreBreakdown)
       : null;
   const insight =
     activeSnapshot && scoreBreakdown && confidence
-      ? buildInsight(activeSnapshot, issues, scoreBreakdown, confidence)
+      ? buildInsight(activeSnapshot, issues, scoreBreakdown, confidence, effectiveAnswers)
       : null;
   const plusReport =
     activeSnapshot && scoreBreakdown && insight
@@ -256,12 +256,14 @@ export function PageBridgeApp() {
       return effectiveAnswers[definition.dependsOn.key] === definition.dependsOn.value;
     });
 
-    return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])].filter(
-      (definition) => effectiveAnswers[definition.key] === undefined
-    );
+    return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])];
   }, [effectiveAnswers, viewModel?.stackQuestionDefinitions]);
+  const pendingQuestionDefinitions = useMemo(
+    () => questionDefinitions.filter((definition) => effectiveAnswers[definition.key] === undefined),
+    [effectiveAnswers, questionDefinitions]
+  );
   const currentQuestion =
-    questionDefinitions.find((definition) => plusAnswers[definition.key] === undefined) ?? null;
+    pendingQuestionDefinitions[0] ?? null;
   const answeredQuestions = useMemo(
     () =>
       questionDefinitions.filter((definition) => plusAnswers[definition.key] !== undefined),

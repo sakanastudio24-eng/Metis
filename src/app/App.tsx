@@ -8,6 +8,7 @@ import { detectIssues } from "../features/detection";
 import { buildInsight } from "../features/insights";
 import { buildPlusOptimizationReport } from "../features/refinement";
 import {
+  FAIRNESS_QUESTION_KEYS,
   PLUS_CORE_KEYS,
   PLUS_QUESTION_DEFINITIONS
 } from "../features/refinement/config";
@@ -326,14 +327,14 @@ export default function App() {
   const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
-  const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues) : null;
+  const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues, effectiveAnswers) : null;
   const confidence =
     activeSnapshot && stackDetection && score
       ? assessConfidence(activeSnapshot, stackDetection, score)
       : null;
   const insight =
     activeSnapshot && score && confidence
-      ? buildInsight(activeSnapshot, issues, score, confidence)
+      ? buildInsight(activeSnapshot, issues, score, confidence, effectiveAnswers)
       : null;
   const plusReport =
     activeSnapshot && score && insight
@@ -368,12 +369,20 @@ export default function App() {
       return effectiveAnswers[definition.dependsOn.key] === definition.dependsOn.value;
     });
 
-    return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])].filter(
-      (definition) => effectiveAnswers[definition.key] === undefined
-    );
+    return [...baseDefinitions, ...(viewModel?.stackQuestionDefinitions ?? [])];
   }, [effectiveAnswers, viewModel?.stackQuestionDefinitions]);
+  const pendingQuestionDefinitions = useMemo(
+    () => questionDefinitions.filter((definition) => effectiveAnswers[definition.key] === undefined),
+    [effectiveAnswers, questionDefinitions]
+  );
   const currentQuestion =
-    questionDefinitions.find((definition) => plusAnswers[definition.key] === undefined) ?? null;
+    pendingQuestionDefinitions[0] ?? null;
+  const currentFairnessQuestion =
+    questionDefinitions.find(
+      (definition) =>
+        FAIRNESS_QUESTION_KEYS.includes(definition.key) &&
+        effectiveAnswers[definition.key] === undefined
+    ) ?? null;
   const answeredQuestions = useMemo(
     () =>
       questionDefinitions.filter((definition) => plusAnswers[definition.key] !== undefined),
@@ -706,6 +715,8 @@ export default function App() {
               compact
               refreshTick={0}
               showSampleProgress={settings.showSampleProgress}
+              currentFairnessQuestion={currentFairnessQuestion}
+              onAnswer={handleAnswer}
             />
           </div>
 

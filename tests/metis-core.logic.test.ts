@@ -308,6 +308,7 @@ test("plus refinement raises priority with traffic, free plan, and paid APIs", (
     hostingPlan: "free",
     monthlyVisits: "100kPlus",
     appType: "marketing",
+    representativeExperience: "mainPublicPage",
     highTrafficRoute: "yes",
     paidApiUsage: "yes"
   });
@@ -606,6 +607,93 @@ test("low confidence softens insight wording without changing score", () => {
   assert.equal(confidence.label, "Low");
   assert.match(insight.summary, /part of this route/i);
   assert.equal(score.score, scoreSnapshot(snapshot, issues).score);
+});
+
+test("dashboard context softens score and lifts control without hiding duplicate waste", () => {
+  const resources = [
+    ...Array.from({ length: 14 }, (_, index) =>
+      createResource(`https://example.com/api/dashboard?slot=${index}`, {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 70_000
+      })
+    ),
+    createResource("https://example.com/_next/static/chunks/app.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 260_000
+    })
+  ];
+  const snapshot = createSnapshot(resources);
+  const neutralIssues = detectIssues(snapshot, {});
+  const neutralScore = scoreSnapshot(snapshot, neutralIssues, {});
+  const contextualAnswers = {
+    appType: "saasDashboard" as const,
+    representativeExperience: "specificRoute" as const,
+    pageDynamics: "highlyDynamic" as const
+  };
+  const contextualIssues = detectIssues(snapshot, contextualAnswers);
+  const contextualScore = scoreSnapshot(snapshot, contextualIssues, contextualAnswers);
+  const neutralControl = assessControl(snapshot, neutralIssues, {});
+  const contextualControl = assessControl(snapshot, contextualIssues, contextualAnswers);
+
+  assert.equal(snapshot.metrics.requestCount, 15);
+  assert.ok(neutralIssues.some((issue) => issue.category === "duplicateRequests"));
+  assert.ok(contextualIssues.some((issue) => issue.category === "duplicateRequests"));
+  assert.ok(contextualScore.score > neutralScore.score);
+  assert.ok(contextualControl.score > neutralControl.score);
+});
+
+test("not sure context keeps scoring neutral", () => {
+  const resources = Array.from({ length: 11 }, (_, index) =>
+    createResource(`https://example.com/api/feed?slot=${index}`, {
+      category: "api",
+      initiatorType: "fetch",
+      encodedBodySize: 60_000
+    })
+  );
+  const snapshot = createSnapshot(resources);
+  const issues = detectIssues(snapshot, {});
+  const neutralScore = scoreSnapshot(snapshot, issues, {});
+  const neutralControl = assessControl(snapshot, issues, {});
+  const unsureAnswers = {
+    appType: "notSure" as const,
+    representativeExperience: "notSure" as const,
+    pageDynamics: "notSure" as const
+  };
+
+  assert.equal(scoreSnapshot(snapshot, issues, unsureAnswers).score, neutralScore.score);
+  assert.equal(assessControl(snapshot, issues, unsureAnswers).score, neutralControl.score);
+});
+
+test("context framing stays fair for specific dashboard routes", () => {
+  const resources = [
+    ...Array.from({ length: 10 }, (_, index) =>
+      createResource(`https://example.com/api/table?slot=${index}`, {
+        category: "api",
+        initiatorType: "fetch",
+        encodedBodySize: 65_000
+      })
+    ),
+    createResource("https://example.com/chunk.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 190_000
+    })
+  ];
+  const snapshot = createSnapshot(resources);
+  const answers = {
+    appType: "saasDashboard" as const,
+    representativeExperience: "specificRoute" as const,
+    pageDynamics: "highlyDynamic" as const
+  };
+  const issues = detectIssues(snapshot, answers);
+  const score = scoreSnapshot(snapshot, issues, answers);
+  const confidence = buildConfidenceForSnapshot(snapshot, score);
+  const insight = buildInsight(snapshot, issues, score, confidence, answers);
+
+  assert.match(insight.summary, /expected for a dashboard/i);
+  assert.match(insight.supportingDetail, /specific route/i);
 });
 
 test("design view model splits metadata and builds scale simulation rows", () => {

@@ -23,6 +23,14 @@ function isModernFramework(frameworkIds: string[]) {
   return frameworkIds.some((id) => ["react", "nextjs", "vue", "svelte"].includes(id));
 }
 
+function isMarketingContext(answers: PlusRefinementAnswers) {
+  return ["marketing", "portfolio"].includes(answers.appType ?? "");
+}
+
+function isDocsContext(answers: PlusRefinementAnswers) {
+  return ["docsContent", "mediaHeavy"].includes(answers.appType ?? "");
+}
+
 function supportsHeavyAppContext(answers: PlusRefinementAnswers) {
   return ["aiApp", "saasDashboard", "mediaHeavy", "ecommerce", "marketplace", "internalTool"].includes(
     answers.appType ?? ""
@@ -95,11 +103,19 @@ export function assessControl(
   const hasHeavyPayload = metrics.totalEncodedBodySize >= DETECTION_THRESHOLDS.pageWeight.medium;
   const hasElevatedRequestCount = metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.medium;
   const hasHighRequestCount = metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.high;
+  const hasSpecificRouteContext = answers.representativeExperience === "specificRoute";
+  const hasMainPublicPageContext = answers.representativeExperience === "mainPublicPage";
   const hasStaticContext =
-    ["marketing", "portfolio"].includes(answers.appType ?? "") ||
-    answers.pageDynamics === "mostlyStatic";
+    isMarketingContext(answers) ||
+    answers.pageDynamics === "mostlyStatic" ||
+    hasMainPublicPageContext;
   const hasContextualSupport =
-    hasHostingSupport || hasAiSurface || supportsHeavyAppContext(answers) || isModernFramework(frameworkIds);
+    hasHostingSupport ||
+    hasAiSurface ||
+    supportsHeavyAppContext(answers) ||
+    isDocsContext(answers) ||
+    hasSpecificRouteContext ||
+    isModernFramework(frameworkIds);
 
   if (aiIds.length > 0) {
     credits.push({
@@ -149,6 +165,22 @@ export function assessControl(
     });
   }
 
+  if (isDocsContext(answers)) {
+    credits.push({
+      id: "docs-context-support",
+      points: 4,
+      reason: "Content-heavy pages can carry more assets than a simple landing page without looking out of control."
+    });
+  }
+
+  if (hasSpecificRouteContext) {
+    credits.push({
+      id: "specific-route-context",
+      points: 7,
+      reason: "This was marked as a specific route, so some extra route-level activity is more expected."
+    });
+  }
+
   if (metrics.duplicateEndpointCount >= DETECTION_THRESHOLDS.duplicateRequests.low.duplicateEndpointCount) {
     penalties.push({
       id: "duplicate-endpoints",
@@ -181,7 +213,12 @@ export function assessControl(
     });
   }
 
-  if (hasHighRequestCount && hasStaticContext && !hasIssue(issues, "duplicateRequests")) {
+  if (
+    hasHighRequestCount &&
+    hasStaticContext &&
+    !hasSpecificRouteContext &&
+    !hasIssue(issues, "duplicateRequests")
+  ) {
     penalties.push({
       id: "static-high-request-count",
       points: CONTROL_CONFIG.penalties.staticHighRequestCount,

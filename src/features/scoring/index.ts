@@ -2,11 +2,13 @@
 // It applies public severity penalties, category multipliers, and label thresholds.
 import type {
   DetectedIssue,
+  PlusRefinementAnswers,
   RawScanSnapshot,
   ScoreBreakdown,
   ScoreLabel
 } from "../../shared/types/audit";
 import { SCORE_CONFIG } from "./config";
+import { getContextScoreMultiplier } from "./context";
 
 function roundScoreValue(value: number) {
   return Math.round(value * 10) / 10;
@@ -14,17 +16,21 @@ function roundScoreValue(value: number) {
 
 export function scoreSnapshot(
   snapshot: RawScanSnapshot,
-  issues: DetectedIssue[]
+  issues: DetectedIssue[],
+  answers: PlusRefinementAnswers = {}
 ): ScoreBreakdown {
   const deductions = issues.map((issue) => ({
     reason: issue.title,
     points: roundScoreValue(
       SCORE_CONFIG.severityPenalty[issue.severity] *
-        SCORE_CONFIG.categoryMultiplier[issue.category]
+        SCORE_CONFIG.categoryMultiplier[issue.category] *
+        getContextScoreMultiplier(issue.category, answers)
     ),
     category: issue.category,
     severity: issue.severity,
-    multiplier: SCORE_CONFIG.categoryMultiplier[issue.category]
+    multiplier:
+      SCORE_CONFIG.categoryMultiplier[issue.category] *
+      getContextScoreMultiplier(issue.category, answers)
   }));
 
   const totalDeduction = deductions.reduce((total, deduction) => total + deduction.points, 0);

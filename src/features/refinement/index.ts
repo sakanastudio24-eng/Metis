@@ -90,15 +90,22 @@ function buildContextPrefix(answers: PlusRefinementAnswers) {
     parts.push(`On ${PLUS_LABELS.hostingProvider[answers.hostingProvider]}`);
   }
 
-  if (answers.monthlyVisits) {
+  if (answers.monthlyVisits && answers.monthlyVisits !== "notSure") {
     parts.push(PLUS_LABELS.monthlyVisits[answers.monthlyVisits]);
   }
 
-  if (answers.appType) {
+  if (answers.appType && answers.appType !== "notSure") {
     parts.push(`for this ${PLUS_LABELS.appType[answers.appType]}`);
   }
 
-  if (answers.siteSize) {
+  if (
+    answers.representativeExperience &&
+    answers.representativeExperience !== "notSure"
+  ) {
+    parts.push(`on a ${PLUS_LABELS.representativeExperience[answers.representativeExperience]}`);
+  }
+
+  if (answers.siteSize && answers.siteSize !== "notSure") {
     parts.push(`across ${PLUS_LABELS.siteSize[answers.siteSize]}`);
   }
 
@@ -145,6 +152,10 @@ function buildCostSensitivityNote(
 
   if (answers.highTrafficRoute === "yes" && primaryCategory === "analyticsAdsRumSurface") {
     notes.push("Because this is a high-traffic route, every extra analytics or ad-tech tag compounds faster than it would on a low-traffic page.");
+  }
+
+  if (answers.representativeExperience === "specificRoute") {
+    notes.push("Because this is a specific route, read this as route-level overhead, not a verdict on the whole site.");
   }
 
   return notes.join(" ");
