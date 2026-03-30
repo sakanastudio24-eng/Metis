@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.10.2
+
+Release type: Patch
+
+This release simplifies the settings UI and hardens the side-panel open path so Metis can still launch cleanly when scanning is already active on the page.
+
+What changed
+
+- Simplified permissions into small on and off tags in both popup and local settings, with hover detail kept below the row.
+- Replaced the placeholder account copy with a concrete local name and email and centered the dashboard action.
+- Sent the side-panel open request in parallel with session start so the launcher keeps Chrome's user-gesture requirement.
+- Made the background side-panel open path fail cleanly instead of throwing through the runtime message channel.
+
 ## 0.10.1
 
 Release type: Patch
