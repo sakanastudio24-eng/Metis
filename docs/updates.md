@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.11.1
+
+Release type: Patch
+
+This release adds a plain launcher fallback for pages where Chrome refuses to open the side panel from the injected Metis button.
+
+What changed
+
+- If the page launcher cannot open the side panel, Metis now opens popup settings instead of silently failing.
+- Added a direct `Open Metis panel` action to the popup so the user can reopen the real side panel from a stronger extension gesture.
+- Made the launcher hover card larger, moved it higher on the page, and added a settings action directly inside the hover card.
+- The launcher now briefly reappears after the panel closes so reopening is easier from the page surface.
+
 ## 0.11.0
 
 Release type: Minor
