@@ -87,12 +87,22 @@ async function primeOpenTabsWithBridge() {
   );
 }
 
+function restoreToolbarPopupBehavior() {
+  void chrome.sidePanel
+    .setPanelBehavior({ openPanelOnActionClick: false })
+    .catch((error) => {
+      console.warn("[Metis] failed to restore toolbar popup behavior", error);
+    });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   console.info("[Metis] background service worker ready");
+  restoreToolbarPopupBehavior();
   void primeOpenTabsWithBridge();
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  restoreToolbarPopupBehavior();
   void primeOpenTabsWithBridge();
 });
 
