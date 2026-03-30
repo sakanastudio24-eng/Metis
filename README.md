@@ -16,6 +16,8 @@ Release history and version policy live in [docs/updates.md](/Users/zech/Downloa
 
 The approved scoring rollback reference lives in [docs/approved-score-model-v1.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/approved-score-model-v1.md).
 
+The running product postmortem and design-history reference lives in [docs/postmortem.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/postmortem.md).
+
 The current pre-ship release line starts at `0.1.0`. Normal product work now moves on minor versions. Patch versions are reserved for small fixes after a minor when needed. The first public ship will be `1.0.0`.
 
 ## What works now
@@ -67,14 +69,15 @@ If you are getting oriented, read these in order.
 1. [docs/flow-overview.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/flow-overview.md)
 2. [docs/updates.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/updates.md)
 3. [docs/approved-score-model-v1.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/approved-score-model-v1.md)
-4. [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/extension-runtime-flow.md)
-5. [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/sidepanel-session-flow.md)
-6. [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-flow.md)
-7. [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md)
-8. [docs/front-facing-foundation.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/front-facing-foundation.md)
-9. [docs/design-system-logic.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-logic.md)
-10. [docs/production-roadmap.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/production-roadmap.md)
-11. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
+4. [docs/postmortem.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/postmortem.md)
+5. [docs/extension-runtime-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/extension-runtime-flow.md)
+6. [docs/sidepanel-session-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/sidepanel-session-flow.md)
+7. [docs/design-system-flow.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-flow.md)
+8. [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md)
+9. [docs/front-facing-foundation.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/front-facing-foundation.md)
+10. [docs/design-system-logic.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-logic.md)
+11. [docs/production-roadmap.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/production-roadmap.md)
+12. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
 
 ## Setup
 
