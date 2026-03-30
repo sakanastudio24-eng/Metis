@@ -50,10 +50,10 @@ function getBaseProfile(answers: PlusRefinementAnswers): ContextScoreProfile {
     case "unknown":
     default:
       return {
-        request: 1,
-        payload: 1,
-        duplicate: 1,
-        aiOrApi: 1
+        request: context.routeRole === "main" ? 1.1 : 1,
+        payload: context.routeRole === "main" ? 1.12 : 1,
+        duplicate: context.routeRole === "main" ? 1.06 : 1,
+        aiOrApi: context.routeRole === "main" ? 1.04 : 1
       };
   }
 }
@@ -110,13 +110,17 @@ export function getContextScoreMultiplier(
     }
   }
 
+  if ((category === "largeImages" || category === "pageWeight") && hasModernFramework(signals.frameworkIds)) {
+    multiplier *= 0.94;
+  }
+
   if (category === "duplicateRequests") {
-    return clamp(multiplier, 0.6, 1.02);
+    return clamp(multiplier, 0.6, 1.08);
   }
 
   if (category === "thirdPartySprawl") {
     return clamp(multiplier, 0.95, 1.02);
   }
 
-  return clamp(multiplier, 0.55, 1.02);
+  return clamp(multiplier, 0.55, 1.15);
 }

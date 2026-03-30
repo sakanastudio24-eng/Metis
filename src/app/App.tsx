@@ -127,6 +127,16 @@ function buildAutoRefinementAnswers(
   };
 }
 
+function buildAnswersBeforeRouteContext(
+  inferredAnswers: Partial<PlusRefinementAnswers>,
+  plusAnswers: PlusRefinementAnswers
+): PlusRefinementAnswers {
+  return {
+    ...inferredAnswers,
+    ...stripPageScopedFairnessAnswers(plusAnswers)
+  };
+}
+
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
   try {
     return (await chrome.runtime.sendMessage(message)) as T;
@@ -333,10 +343,19 @@ export default function App() {
     }),
     [currentPageFairnessAnswers, inferredAnswers, plusAnswers]
   );
+  const answersBeforeRouteContext = useMemo(
+    () => buildAnswersBeforeRouteContext(inferredAnswers, plusAnswers),
+    [inferredAnswers, plusAnswers]
+  );
   const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
+  const baselineIssues = activeSnapshot ? detectIssues(activeSnapshot, answersBeforeRouteContext) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
+  const baselineControl =
+    activeSnapshot ? assessControl(activeSnapshot, baselineIssues, answersBeforeRouteContext) : null;
   const score = activeSnapshot ? scoreSnapshot(activeSnapshot, issues, effectiveAnswers) : null;
+  const baselineScore =
+    activeSnapshot ? scoreSnapshot(activeSnapshot, baselineIssues, answersBeforeRouteContext) : null;
   const confidence =
     activeSnapshot && stackDetection && score
       ? assessConfidence(activeSnapshot, stackDetection, score)
@@ -351,7 +370,7 @@ export default function App() {
       : null;
   const pageCount = Math.max(visitedSnapshots.length, 1);
   const viewModel =
-    activeSnapshot && score && control && confidence
+    activeSnapshot && score && control && confidence && baselineScore && baselineControl
       ? buildMetisDesignViewModel({
           snapshot: activeSnapshot,
           issues,
@@ -364,7 +383,14 @@ export default function App() {
           multipageEvidence,
           answers: effectiveAnswers,
           plusReport,
-          requiredQuestionCount: PLUS_CORE_KEYS.length
+          requiredQuestionCount: PLUS_CORE_KEYS.length,
+          contextPreview: {
+            beforeScore: baselineScore,
+            beforeControl: baselineControl,
+            hasActiveContext:
+              currentPageFairnessAnswers.appType !== undefined ||
+              currentPageFairnessAnswers.representativeExperience !== undefined
+          }
         })
       : null;
   const exportDocument = viewModel

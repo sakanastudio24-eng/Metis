@@ -6,6 +6,7 @@ import {
   Minus,
   ShieldCheck
 } from "lucide-react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import type { ScanScope } from "../../types/scanScope";
 import type { MetisDesignViewModel } from "./liveAdapter";
@@ -240,10 +241,15 @@ export function SplitScoreSummary({
   scanScope = "single",
   onSetScanScope
 }: SplitScoreSummaryProps) {
+  const [contextPreviewMode, setContextPreviewMode] = useState<"after" | "before">("after");
+  const activeContextSnapshot =
+    !compact && contextPreviewMode === "before"
+      ? viewModel.contextPreview.before
+      : viewModel.contextPreview.after;
   const combinedTone =
-    viewModel.combinedScore >= 65
+    activeContextSnapshot.combinedScore >= 65
       ? "#22c55e"
-      : viewModel.combinedScore >= 40
+      : activeContextSnapshot.combinedScore >= 40
         ? "#f97316"
         : "#dc5e5e";
 
@@ -268,7 +274,7 @@ export function SplitScoreSummary({
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <ScoreVisualization
-              score={viewModel.combinedScore}
+              score={activeContextSnapshot.combinedScore}
               size={compact ? 88 : 116}
               color={combinedTone}
               trackColor="rgba(255,255,255,0.08)"
@@ -296,7 +302,7 @@ export function SplitScoreSummary({
                   marginTop: 8
                 }}
               >
-                {viewModel.combinedScore}/100
+                {activeContextSnapshot.combinedScore}/100
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <div
@@ -309,7 +315,7 @@ export function SplitScoreSummary({
                     fontWeight: 700
                   }}
                 >
-                  <AcronymText text={`Score ${viewModel.combinedBreakdown.costRisk}/100`} />
+                  <AcronymText text={`Score ${activeContextSnapshot.combinedBreakdown.costRisk}/100`} />
                 </div>
                 <div
                   className="rounded-full px-3 py-1.5"
@@ -321,7 +327,7 @@ export function SplitScoreSummary({
                     fontWeight: 700
                   }}
                 >
-                  <AcronymText text={`Control ${viewModel.combinedBreakdown.control}/100`} />
+                  <AcronymText text={`Control ${activeContextSnapshot.combinedBreakdown.control}/100`} />
                 </div>
               </div>
             </div>
@@ -377,6 +383,50 @@ export function SplitScoreSummary({
               </div>
               <div
                 style={{
+                  color: "rgba(255,255,255,0.34)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  marginTop: 12,
+                  marginBottom: 10
+                }}
+              >
+                <AcronymText text="Context View" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setContextPreviewMode("before")}
+                  className="rounded-full px-3 py-2"
+                  style={{
+                    background: contextPreviewMode === "before" ? "#ff7a1a" : "#0f2740",
+                    color: contextPreviewMode === "before" ? "#0c1623" : "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text="Before context" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContextPreviewMode("after")}
+                  className="rounded-full px-3 py-2"
+                  style={{
+                    background: contextPreviewMode === "after" ? "#ff7a1a" : "#0f2740",
+                    color: contextPreviewMode === "after" ? "#0c1623" : "white",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700
+                  }}
+                >
+                  <AcronymText text="After context" />
+                </button>
+              </div>
+              <div
+                style={{
                   color: "rgba(255,255,255,0.48)",
                   fontFamily: "Inter, sans-serif",
                   fontSize: 11,
@@ -385,7 +435,19 @@ export function SplitScoreSummary({
                   maxWidth: 220
                 }}
               >
-                <AcronymText text="Score stays tied to this route. Multipage adds supporting context only." />
+                <AcronymText text={viewModel.contextPreview.summary} />
+              </div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.4)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 11,
+                  lineHeight: "17px",
+                  marginTop: 8,
+                  maxWidth: 220
+                }}
+              >
+                <AcronymText text={viewModel.contextPreview.detail} />
               </div>
             </div>
           ) : null}
@@ -451,23 +513,23 @@ export function SplitScoreSummary({
       </motion.div>
 
       <SummaryCard
-        title={viewModel.splitSummary.costRisk.title}
-        score={viewModel.splitSummary.costRisk.score}
-        label={viewModel.splitSummary.costRisk.label}
-        color={viewModel.splitSummary.costRisk.color}
-        background={viewModel.splitSummary.costRisk.background}
-        summary={compact ? viewModel.estimateRange : viewModel.splitSummary.costRisk.summary}
+        title={activeContextSnapshot.splitSummary.costRisk.title}
+        score={activeContextSnapshot.splitSummary.costRisk.score}
+        label={activeContextSnapshot.splitSummary.costRisk.label}
+        color={activeContextSnapshot.splitSummary.costRisk.color}
+        background={activeContextSnapshot.splitSummary.costRisk.background}
+        summary={compact ? viewModel.estimateRange : activeContextSnapshot.splitSummary.costRisk.summary}
         compact={compact}
         icon={AlertTriangle}
       />
       <SummaryCard
-        title={viewModel.splitSummary.control.title}
-        score={viewModel.splitSummary.control.score}
-        label={viewModel.splitSummary.control.label}
-        color={viewModel.splitSummary.control.color}
-        background={viewModel.splitSummary.control.background}
-        summary={viewModel.splitSummary.control.summary}
-        reasons={compact ? [] : viewModel.controlReasons}
+        title={activeContextSnapshot.splitSummary.control.title}
+        score={activeContextSnapshot.splitSummary.control.score}
+        label={activeContextSnapshot.splitSummary.control.label}
+        color={activeContextSnapshot.splitSummary.control.color}
+        background={activeContextSnapshot.splitSummary.control.background}
+        summary={activeContextSnapshot.splitSummary.control.summary}
+        reasons={compact ? [] : activeContextSnapshot.controlReasons}
         compact={compact}
         delay={0.04}
         icon={ShieldCheck}

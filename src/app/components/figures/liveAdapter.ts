@@ -87,6 +87,29 @@ export interface DesignSplitSummaryCard {
   reasons?: string[];
 }
 
+export interface DesignContextPreviewSnapshot {
+  combinedScore: number;
+  combinedBreakdown: {
+    costRisk: number;
+    control: number;
+  };
+  splitSummary: {
+    costRisk: DesignSplitSummaryCard;
+    control: DesignSplitSummaryCard;
+  };
+  controlReasons: string[];
+}
+
+export interface DesignContextPreview {
+  hasActiveContext: boolean;
+  before: DesignContextPreviewSnapshot;
+  after: DesignContextPreviewSnapshot;
+  scoreDelta: number;
+  controlDelta: number;
+  summary: string;
+  detail: string;
+}
+
 export interface DesignScaleSimulationRow {
   trafficLabel: string;
   scenario: string;
@@ -137,6 +160,7 @@ export interface MetisDesignViewModel {
     costRisk: DesignSplitSummaryCard;
     control: DesignSplitSummaryCard;
   };
+  contextPreview: DesignContextPreview;
   estimateRange: string;
   quickInsight: string;
   supportingDetail: string;
@@ -601,6 +625,103 @@ function buildBaseReportCore({
   };
 }
 
+function buildContextPreviewSnapshot(baseReportCore: ReturnType<typeof buildBaseReportCore>) {
+  const costRiskContribution = Math.round(baseReportCore.roundedRiskScore / 2);
+  const controlContribution = Math.round(baseReportCore.roundedControlScore / 2);
+
+  return {
+    combinedScore: costRiskContribution + controlContribution,
+    combinedBreakdown: {
+      costRisk: costRiskContribution,
+      control: controlContribution
+    },
+    splitSummary: baseReportCore.splitSummary,
+    controlReasons: baseReportCore.splitSummary.control.reasons ?? []
+  };
+}
+
+function buildContextPreview({
+  beforeCore,
+  afterCore,
+  hasActiveContext,
+  answers
+}: {
+  beforeCore: ReturnType<typeof buildBaseReportCore>;
+  afterCore: ReturnType<typeof buildBaseReportCore>;
+  hasActiveContext: boolean;
+  answers: PlusRefinementAnswers;
+}): DesignContextPreview {
+  const before = buildContextPreviewSnapshot(beforeCore);
+  const after = buildContextPreviewSnapshot(afterCore);
+  const scoreDelta = afterCore.roundedRiskScore - beforeCore.roundedRiskScore;
+  const controlDelta = afterCore.roundedControlScore - beforeCore.roundedControlScore;
+
+  if (!hasActiveContext) {
+    return {
+      hasActiveContext: false,
+      before,
+      after,
+      scoreDelta,
+      controlDelta,
+      summary: "No route context is applied yet.",
+      detail: "Answer the page type questions to compare the neutral read against the contextual read."
+    };
+  }
+
+  if (scoreDelta === 0 && controlDelta === 0) {
+    return {
+      hasActiveContext: true,
+      before,
+      after,
+      scoreDelta,
+      controlDelta,
+      summary: "Context is active, but it is not materially changing this route.",
+      detail: "The route already sits close to Metis' neutral read, so the context answers are mostly affecting interpretation."
+    };
+  }
+
+  if (
+    answers.appType === "marketing" &&
+    answers.representativeExperience === "mainPublicPage"
+  ) {
+    const scoreDirection = scoreDelta === 0 ? "holds" : scoreDelta > 0 ? `raises score by ${scoreDelta}` : `lowers score by ${Math.abs(scoreDelta)}`;
+    const controlDirection =
+      controlDelta === 0
+        ? "holds control steady"
+        : controlDelta > 0
+          ? `raises control by ${controlDelta}`
+          : `lowers control by ${Math.abs(controlDelta)}`;
+
+    return {
+      hasActiveContext: true,
+      before,
+      after,
+      scoreDelta,
+      controlDelta,
+      summary: "Main-page context makes Metis read this route a little more strictly.",
+      detail: `Because this route is marked as the main public marketing experience, Metis ${scoreDirection} and ${controlDirection}.`
+    };
+  }
+
+  const scoreDirection = scoreDelta === 0 ? "holds score steady" : scoreDelta > 0 ? `raises score by ${scoreDelta}` : `lowers score by ${Math.abs(scoreDelta)}`;
+  const controlDirection =
+    controlDelta === 0
+      ? "holds control steady"
+      : controlDelta > 0
+        ? `raises control by ${controlDelta}`
+        : `lowers control by ${Math.abs(controlDelta)}`;
+
+  return {
+    hasActiveContext: true,
+    before,
+    after,
+    scoreDelta,
+    controlDelta,
+    summary: "Route context is softening the raw read.",
+    detail: `Metis is giving some complexity more credit because this route is marked as app-like, dynamic, or separate from the main public page. It ${scoreDirection} and ${controlDirection}.`
+  };
+}
+
 function buildDefaultMultipageEvidence(pageCount: number): MultipageEvidence {
   const sampledPagesCount = Math.max(pageCount, 1);
 
@@ -758,7 +879,8 @@ export function buildMetisDesignViewModel({
   multipageEvidence,
   answers,
   plusReport,
-  requiredQuestionCount
+  requiredQuestionCount,
+  contextPreview
 }: {
   snapshot: RawScanSnapshot;
   issues: DetectedIssue[];
@@ -772,6 +894,11 @@ export function buildMetisDesignViewModel({
   answers: PlusRefinementAnswers;
   plusReport: PlusOptimizationReport | null;
   requiredQuestionCount: number;
+  contextPreview?: {
+    beforeScore: ScoreBreakdown;
+    beforeControl: ControlAssessment;
+    hasActiveContext: boolean;
+  };
 }): MetisDesignViewModel {
   const detectedStack = detectStack(snapshot, answers);
   const pricingContext = resolvePricingContext(snapshot, detectedStack.detection, answers);
@@ -779,6 +906,14 @@ export function buildMetisDesignViewModel({
     snapshot,
     score,
     control,
+    insight,
+    answers,
+    pageCount
+  });
+  const beforeContextCore = buildBaseReportCore({
+    snapshot,
+    score: contextPreview?.beforeScore ?? score,
+    control: contextPreview?.beforeControl ?? control,
     insight,
     answers,
     pageCount
@@ -793,6 +928,12 @@ export function buildMetisDesignViewModel({
   const costRiskContribution = Math.round(baseReportCore.roundedRiskScore / 2);
   const controlContribution = Math.round(baseReportCore.roundedControlScore / 2);
   const combinedScore = costRiskContribution + controlContribution;
+  const contextCompare = buildContextPreview({
+    beforeCore: beforeContextCore,
+    afterCore: baseReportCore,
+    hasActiveContext: contextPreview?.hasActiveContext ?? false,
+    answers
+  });
 
   // This adapter is the only place where the product core is translated into
   // report-ready language. If copy, estimate framing, or section ordering
@@ -834,6 +975,7 @@ export function buildMetisDesignViewModel({
       },
       control: baseReportCore.splitSummary.control
     },
+    contextPreview: contextCompare,
     estimateRange: `~$${Math.round(monthlyWaste * 0.6)} to $${Math.round(monthlyWaste * 1.1)}/month estimated waste`,
     quickInsight: baseReportCore.quickInsight,
     supportingDetail: baseReportCore.supportingDetail,

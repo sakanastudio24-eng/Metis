@@ -30,6 +30,7 @@ export const CONTROL_CONFIG = {
       high: 9
     },
     heavyThirdPartySprawl: 12,
+    mainPublicMarketingRoute: 4,
     unjustifiedPayload: 10,
     staticHighRequestCount: 10
   }

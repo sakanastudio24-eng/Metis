@@ -113,6 +113,8 @@ export function assessControl(
   const hasHighRequestCount = metrics.requestCount >= DETECTION_THRESHOLDS.requestCount.high;
   const hasSpecificRouteContext = routeContext.routeRole === "specific";
   const hasMainPublicPageContext = routeContext.routeRole === "main";
+  const hasMarketingMainContext =
+    routeContext.pageClass === "marketing" && hasMainPublicPageContext;
   const hasStaticContext =
     routeContext.pageClass === "marketing" ||
     answers.pageDynamics === "mostlyStatic" ||
@@ -252,6 +254,9 @@ export function assessControl(
     const imagePenalty =
       routeContext.pageClass === "docs"
         ? Math.max(1, Math.round(basePenalty * 0.6))
+        : isModernFramework(frameworkIds) &&
+            metrics.meaningfulImageBytes < DETECTION_THRESHOLDS.largeImages.low.meaningfulImageBytes
+          ? Math.max(1, Math.round(basePenalty * 0.7))
         : basePenalty;
 
     penalties.push({
@@ -266,6 +271,17 @@ export function assessControl(
       id: "heavy-third-party-sprawl",
       points: CONTROL_CONFIG.penalties.heavyThirdPartySprawl,
       reason: "Heavy third-party sprawl is difficult to justify because each extra vendor adds overhead."
+    });
+  }
+
+  if (
+    hasMarketingMainContext &&
+    (issues.length > 0 || hasHeavyPayload || hasElevatedRequestCount)
+  ) {
+    penalties.push({
+      id: "main-public-marketing-route",
+      points: CONTROL_CONFIG.penalties.mainPublicMarketingRoute,
+      reason: "Main public marketing pages should stay tighter because they represent the primary experience."
     });
   }
 

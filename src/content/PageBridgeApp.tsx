@@ -151,6 +151,16 @@ function buildAutoRefinementAnswers(
   };
 }
 
+function buildAnswersBeforeRouteContext(
+  inferredAnswers: Partial<PlusRefinementAnswers>,
+  plusAnswers: PlusRefinementAnswers
+): PlusRefinementAnswers {
+  return {
+    ...inferredAnswers,
+    ...stripPageScopedFairnessAnswers(plusAnswers)
+  };
+}
+
 export function PageBridgeApp() {
   const [hovered, setHovered] = useState(false);
   const [session, setSession] = useState<MetisTabSessionState | null>(null);
@@ -226,10 +236,19 @@ export function PageBridgeApp() {
     }),
     [currentPageFairnessAnswers, inferredAnswers, plusAnswers]
   );
+  const answersBeforeRouteContext = useMemo(
+    () => buildAnswersBeforeRouteContext(inferredAnswers, plusAnswers),
+    [inferredAnswers, plusAnswers]
+  );
   const stackDetection = activeSnapshot ? detectMoneyStack(activeSnapshot, effectiveAnswers) : null;
   const issues = activeSnapshot ? detectIssues(activeSnapshot, effectiveAnswers) : [];
+  const baselineIssues = activeSnapshot ? detectIssues(activeSnapshot, answersBeforeRouteContext) : [];
   const control = activeSnapshot ? assessControl(activeSnapshot, issues, effectiveAnswers) : null;
+  const baselineControl =
+    activeSnapshot ? assessControl(activeSnapshot, baselineIssues, answersBeforeRouteContext) : null;
   const scoreBreakdown = activeSnapshot ? scoreSnapshot(activeSnapshot, issues, effectiveAnswers) : null;
+  const baselineScore =
+    activeSnapshot ? scoreSnapshot(activeSnapshot, baselineIssues, answersBeforeRouteContext) : null;
   const confidence =
     activeSnapshot && stackDetection && scoreBreakdown
       ? assessConfidence(activeSnapshot, stackDetection, scoreBreakdown)
@@ -244,7 +263,7 @@ export function PageBridgeApp() {
       : null;
   const pageCount = Math.max(visitedSnapshots.length, 1);
   const viewModel =
-    activeSnapshot && scoreBreakdown && control && confidence
+    activeSnapshot && scoreBreakdown && control && confidence && baselineScore && baselineControl
       ? buildMetisDesignViewModel({
           snapshot: activeSnapshot,
           issues,
@@ -257,7 +276,14 @@ export function PageBridgeApp() {
           multipageEvidence,
           answers: effectiveAnswers,
           plusReport,
-          requiredQuestionCount: PLUS_CORE_KEYS.length
+          requiredQuestionCount: PLUS_CORE_KEYS.length,
+          contextPreview: {
+            beforeScore: baselineScore,
+            beforeControl: baselineControl,
+            hasActiveContext:
+              currentPageFairnessAnswers.appType !== undefined ||
+              currentPageFairnessAnswers.representativeExperience !== undefined
+          }
         })
       : null;
   const exportDocument = viewModel

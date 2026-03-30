@@ -76,6 +76,43 @@ function meetsLargeImageThreshold(
   );
 }
 
+function getLargeImageSeverity(
+  snapshot: RawScanSnapshot,
+  hasModernFramework: boolean
+): "low" | "medium" | "high" | null {
+  const { meaningfulImageBytes, meaningfulImageCount } = snapshot.metrics;
+  const { largeImages } = DETECTION_THRESHOLDS;
+
+  let severity: "low" | "medium" | "high" | null = null;
+
+  if (meetsLargeImageThreshold(snapshot, largeImages.high)) {
+    severity = "high";
+  } else if (meetsLargeImageThreshold(snapshot, largeImages.medium)) {
+    severity = "medium";
+  } else if (meetsLargeImageThreshold(snapshot, largeImages.low)) {
+    severity = "low";
+  }
+
+  if (!severity || !hasModernFramework) {
+    return severity;
+  }
+
+  const bytesStayLow = meaningfulImageBytes < largeImages.low.meaningfulImageBytes;
+  const bytesStayModerate = meaningfulImageBytes < largeImages.medium.meaningfulImageBytes;
+  const countTriggeredHigh = meaningfulImageCount >= largeImages.high.meaningfulImageCount;
+  const countTriggeredMedium = meaningfulImageCount >= largeImages.medium.meaningfulImageCount;
+
+  if (severity === "high" && countTriggeredHigh && bytesStayModerate) {
+    return "medium";
+  }
+
+  if (severity === "medium" && countTriggeredMedium && bytesStayLow) {
+    return "low";
+  }
+
+  return severity;
+}
+
 function isScoredHostingVendor(vendor: { id: string }) {
   return !["aws", "aws-s3", "aws-api-gateway", "cloudfront"].includes(vendor.id);
 }
@@ -280,7 +317,9 @@ export function detectIssues(
     });
   }
 
-  if (meetsLargeImageThreshold(snapshot, DETECTION_THRESHOLDS.largeImages.high)) {
+  const largeImageSeverity = getLargeImageSeverity(snapshot, hasModernFramework);
+
+  if (largeImageSeverity === "high") {
     issues.push({
       id: "large-images",
       title: "Large images are driving a meaningful share of page weight",
@@ -293,7 +332,7 @@ export function detectIssues(
       },
       threshold: DETECTION_THRESHOLDS.largeImages.high
     });
-  } else if (meetsLargeImageThreshold(snapshot, DETECTION_THRESHOLDS.largeImages.medium)) {
+  } else if (largeImageSeverity === "medium") {
     issues.push({
       id: "large-images",
       title: "Image weight is starting to dominate the page",
@@ -306,7 +345,7 @@ export function detectIssues(
       },
       threshold: DETECTION_THRESHOLDS.largeImages.medium
     });
-  } else if (meetsLargeImageThreshold(snapshot, DETECTION_THRESHOLDS.largeImages.low)) {
+  } else if (largeImageSeverity === "low") {
     issues.push({
       id: "large-images",
       title: "A few images are already carrying real weight",

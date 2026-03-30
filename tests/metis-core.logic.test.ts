@@ -888,6 +888,48 @@ test("not sure context keeps scoring neutral", () => {
   assert.equal(assessControl(snapshot, issues, unsureAnswers).score, neutralControl.score);
 });
 
+test("marketing main-page context changes the read slightly from the neutral baseline", () => {
+  const resources = [
+    ...Array.from({ length: 12 }, (_, index) =>
+      createResource(`https://cdn.example.net/hero-${index}.webp`, {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 70_000,
+        isThirdParty: true,
+        isMeaningfulImage: true
+      })
+    ),
+    createResource("https://example.com/_next/static/chunks/main.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 180_000
+    })
+  ];
+  const snapshot = createSnapshot(resources, {
+    stackSignals: [
+      {
+        name: "https://example.com/_next/static/chunks/main.js",
+        hostname: "example.com",
+        pathname: "/_next/static/chunks/main.js",
+        source: "resource"
+      }
+    ]
+  });
+  const neutralIssues = detectIssues(snapshot, {});
+  const neutralScore = scoreSnapshot(snapshot, neutralIssues, {});
+  const neutralControl = assessControl(snapshot, neutralIssues, {});
+  const contextualAnswers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+  const contextualIssues = detectIssues(snapshot, contextualAnswers);
+  const contextualScore = scoreSnapshot(snapshot, contextualIssues, contextualAnswers);
+  const contextualControl = assessControl(snapshot, contextualIssues, contextualAnswers);
+
+  assert.ok(contextualScore.score < neutralScore.score);
+  assert.ok(contextualControl.score < neutralControl.score);
+});
+
 test("context framing stays fair for specific dashboard routes", () => {
   const resources = [
     ...Array.from({ length: 30 }, (_, index) =>
@@ -1335,6 +1377,39 @@ test("modern framework routes soften duplicate chunk pressure without hiding dup
   assert.ok(frameworkControl.score > neutralControl.score);
 });
 
+test("modern framework image-count routes downgrade image severity when bytes stay low", () => {
+  const snapshot = createSnapshot(
+    Array.from({ length: 12 }, (_, index) =>
+      createResource(`https://cdn.example.net/gallery-${index}.webp`, {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 70_000,
+        isThirdParty: true,
+        isMeaningfulImage: true
+      })
+    ),
+    {
+      stackSignals: [
+        {
+          name: "https://example.com/_next/static/chunks/main.js",
+          hostname: "example.com",
+          pathname: "/_next/static/chunks/main.js",
+          source: "resource"
+        }
+      ]
+    }
+  );
+
+  const issues = detectIssues(snapshot, {
+    appType: "marketing",
+    representativeExperience: "mainPublicPage"
+  });
+  const imageIssue = issues.find((issue) => issue.category === "largeImages");
+
+  assert.ok(imageIssue);
+  assert.equal(imageIssue?.severity, "low");
+});
+
 test("design view model splits metadata and builds scale simulation rows", () => {
   const resources = [
     createResource("https://example.com/_next/static/chunks/app.js", {
@@ -1417,6 +1492,70 @@ test("design view model splits metadata and builds scale simulation rows", () =>
   );
   assert.ok(["Controlled", "Mixed", "Uncontrolled"].includes(viewModel.controlLabel));
   assert.ok(["Low", "Limited", "Moderate", "High"].includes(viewModel.confidenceLabel));
+  assert.equal(viewModel.contextPreview.hasActiveContext, false);
+});
+
+test("design view model exposes before-and-after context preview data", () => {
+  const snapshot = createSnapshot([
+    ...Array.from({ length: 12 }, (_, index) =>
+      createResource(`https://cdn.example.net/gallery-${index}.webp`, {
+        category: "image",
+        initiatorType: "img",
+        encodedBodySize: 70_000,
+        isThirdParty: true,
+        isMeaningfulImage: true
+      })
+    ),
+    createResource("https://example.com/_next/static/chunks/main.js", {
+      category: "script",
+      initiatorType: "script",
+      encodedBodySize: 180_000
+    })
+  ], {
+    stackSignals: [
+      {
+        name: "https://example.com/_next/static/chunks/main.js",
+        hostname: "example.com",
+        pathname: "/_next/static/chunks/main.js",
+        source: "resource"
+      }
+    ]
+  });
+  const contextualAnswers = {
+    appType: "marketing" as const,
+    representativeExperience: "mainPublicPage" as const
+  };
+  const neutralIssues = detectIssues(snapshot, {});
+  const neutralScore = scoreSnapshot(snapshot, neutralIssues, {});
+  const neutralControl = assessControl(snapshot, neutralIssues, {});
+  const contextualIssues = detectIssues(snapshot, contextualAnswers);
+  const contextualScore = scoreSnapshot(snapshot, contextualIssues, contextualAnswers);
+  const contextualControl = assessControl(snapshot, contextualIssues, contextualAnswers);
+  const confidence = buildConfidenceForSnapshot(snapshot, contextualScore);
+  const insight = buildInsight(snapshot, contextualIssues, contextualScore, confidence, contextualAnswers);
+
+  const viewModel = buildMetisDesignViewModel({
+    snapshot,
+    issues: contextualIssues,
+    control: contextualControl,
+    confidence,
+    score: contextualScore,
+    insight,
+    scope: "single",
+    pageCount: 1,
+    answers: contextualAnswers,
+    plusReport: null,
+    requiredQuestionCount: 3,
+    contextPreview: {
+      beforeScore: neutralScore,
+      beforeControl: neutralControl,
+      hasActiveContext: true
+    }
+  });
+
+  assert.equal(viewModel.contextPreview.hasActiveContext, true);
+  assert.equal(viewModel.contextPreview.before.splitSummary.costRisk.score, Math.round(neutralScore.score));
+  assert.equal(viewModel.contextPreview.after.splitSummary.costRisk.score, Math.round(contextualScore.score));
 });
 
 test("plus report stays additive and does not replace the base report read", () => {
