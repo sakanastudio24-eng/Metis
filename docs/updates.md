@@ -20,6 +20,20 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.12.0
+
+Release type: Minor
+
+This release implements the first real communication-contract layer for auth, access state, storage normalization, and purposeful upload queueing without changing Metis's local-first scan behavior.
+
+What changed
+
+- Added the contract-backed auth bridge for `/auth/success`, including origin and payload validation, extension ACK, and background validation through `POST /v1/extension/validate`.
+- Added a canonical connected access model so signed-in, free, and Plus Beta behavior can be derived from validated session state instead of local UI guesses.
+- Added contract storage keys and migration paths for `metis_session`, `metis_user_settings`, `metis_last_scan`, and `metis_upload_queue`.
+- Added a local upload queue for analytics events, summarized scan uploads, and premium report requests, with retry and simple route-level dedupe.
+- Updated popup and live extension surfaces so signed-out users see the sign-in handoff while connected users show validated account state.
+
 ## 0.11.1
 
 Release type: Patch
