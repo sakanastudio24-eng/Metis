@@ -76,6 +76,21 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ### Permissions
 
+- Header: `What each permission enables`
+- Body:
+  `Metis does not run on browser internal pages. It only works on normal web pages after you activate it.`
+- Header: `Web pages`
+- Body:
+  `Metis runs on normal http and https pages. It starts scanning only after you activate it, then follows same-site routes in that session.`
+- Header: `Storage`
+- Body:
+  `Keeps local settings, saved snapshots, and site history on this device.`
+- Header: `Scripting`
+- Body:
+  `Lets Metis reopen the page bridge and repair scanning when the page needs a fresh injection.`
+- Header: `Side panel`
+- Body:
+  `Keeps the compact Metis workspace attached to the current tab while you review a route.`
 - Header: `Current mode`
 - Body:
   `The page hover is visible on normal sites, but Metis does not begin scanning until you click it. After activation, Metis scans the current page and same-site routes you open in that session.`
