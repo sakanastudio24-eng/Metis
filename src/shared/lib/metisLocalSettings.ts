@@ -1,6 +1,8 @@
 import type { MetisLocalSettings } from "../types/audit";
-
-const STORAGE_KEY = "metis:settings";
+import {
+  LEGACY_METIS_USER_SETTINGS_KEY,
+  METIS_USER_SETTINGS_KEY
+} from "./metisStorageKeys";
 
 export const DEFAULT_METIS_SETTINGS: MetisLocalSettings = {
   preferredScanScope: "single",
@@ -147,8 +149,22 @@ export async function getMetisLocalSettings(): Promise<MetisLocalSettings> {
 
   return new Promise((resolve) => {
     try {
-      storage.get([STORAGE_KEY], (result) => {
-        resolveStorageValue(DEFAULT_METIS_SETTINGS, resolve, normalizeSettings(result[STORAGE_KEY]));
+      storage.get([METIS_USER_SETTINGS_KEY, LEGACY_METIS_USER_SETTINGS_KEY], (result) => {
+        const storedSettings =
+          result[METIS_USER_SETTINGS_KEY] ?? result[LEGACY_METIS_USER_SETTINGS_KEY];
+        const normalizedSettings = normalizeSettings(storedSettings);
+
+        if (
+          storedSettings !== undefined &&
+          result[METIS_USER_SETTINGS_KEY] === undefined
+        ) {
+          storage.set({ [METIS_USER_SETTINGS_KEY]: normalizedSettings }, () => {
+            resolveStorageValue(DEFAULT_METIS_SETTINGS, resolve, normalizedSettings);
+          });
+          return;
+        }
+
+        resolveStorageValue(DEFAULT_METIS_SETTINGS, resolve, normalizedSettings);
       });
     } catch {
       resolve(DEFAULT_METIS_SETTINGS);
@@ -171,7 +187,7 @@ export async function saveMetisLocalSettings(
 
   await new Promise<void>((resolve) => {
     try {
-      storage.set({ [STORAGE_KEY]: mergedSettings }, () => {
+      storage.set({ [METIS_USER_SETTINGS_KEY]: mergedSettings }, () => {
         resolveStorageValue(undefined, resolve, undefined);
       });
     } catch {

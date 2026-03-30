@@ -5,6 +5,11 @@ import { Toaster, toast } from "sonner";
 import "../styles/tailwind.css";
 import { clearPageScanStore, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
 import {
+  deriveMetisAccessState,
+  getConnectedAccountSnapshot,
+  getStoredMetisWebSession
+} from "../shared/lib/metisAuthSession";
+import {
   DEFAULT_METIS_SETTINGS,
   getMetisLocalSettings,
   saveMetisLocalSettings
@@ -24,7 +29,12 @@ import {
   METIS_ACCOUNT_URL,
   METIS_SITE_URL
 } from "../shared/lib/metisLinks";
-import type { MetisLocalSettings } from "../shared/types/audit";
+import {
+  LEGACY_METIS_USER_SETTINGS_KEY,
+  METIS_USER_SETTINGS_KEY,
+  METIS_WEB_SESSION_KEY
+} from "../shared/lib/metisStorageKeys";
+import type { MetisAccessState, MetisLocalSettings } from "../shared/types/audit";
 import type { MetisRuntimeMessage } from "../shared/types/runtime";
 
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
@@ -353,26 +363,39 @@ function PopupApp() {
     baselineOriginCount: 0,
     visitedOriginCount: 0
   });
+  const [accessState, setAccessState] = useState<MetisAccessState>(deriveMetisAccessState(null));
+  const [connectedAccountName, setConnectedAccountName] = useState(METIS_ACCOUNT_NAME);
+  const [connectedAccountEmail, setConnectedAccountEmail] = useState<string | null>(null);
 
   const extensionVersion = useMemo(() => chrome.runtime.getManifest().version, []);
   const privacyUrl = useMemo(() => chrome.runtime.getURL("privacy.html"), []);
   const termsUrl = useMemo(() => chrome.runtime.getURL("terms.html"), []);
 
   const refreshStorageState = async () => {
-    const [pageSummary, siteSummary] = await Promise.all([
+    const [pageSummary, siteSummary, storedSession] = await Promise.all([
       getPageScanStoreSummary(),
-      getSiteHistorySummary()
+      getSiteHistorySummary(),
+      getStoredMetisWebSession()
     ]);
 
     setSavedPageCount(pageSummary.savedPageCount);
     setSiteHistory(siteSummary);
+    setAccessState(deriveMetisAccessState(storedSession));
+    const connectedAccount = getConnectedAccountSnapshot(storedSession);
+    setConnectedAccountName(connectedAccount?.displayName ?? METIS_ACCOUNT_NAME);
+    setConnectedAccountEmail(connectedAccount?.email ?? null);
   };
 
   useEffect(() => {
     let cancelled = false;
 
-    void Promise.all([getMetisLocalSettings(), getPageScanStoreSummary(), getSiteHistorySummary()]).then(
-      ([storedSettings, pageSummary, siteSummary]) => {
+    void Promise.all([
+      getMetisLocalSettings(),
+      getPageScanStoreSummary(),
+      getSiteHistorySummary(),
+      getStoredMetisWebSession()
+    ]).then(
+      ([storedSettings, pageSummary, siteSummary, storedSession]) => {
         if (cancelled) {
           return;
         }
@@ -380,6 +403,10 @@ function PopupApp() {
         setSettings(storedSettings);
         setSavedPageCount(pageSummary.savedPageCount);
         setSiteHistory(siteSummary);
+        setAccessState(deriveMetisAccessState(storedSession));
+        const connectedAccount = getConnectedAccountSnapshot(storedSession);
+        setConnectedAccountName(connectedAccount?.displayName ?? METIS_ACCOUNT_NAME);
+        setConnectedAccountEmail(connectedAccount?.email ?? null);
         setReady(true);
       }
     );
@@ -396,6 +423,31 @@ function PopupApp() {
 
     void saveMetisLocalSettings(settings);
   }, [ready, settings]);
+
+  useEffect(() => {
+    const handleStorageChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== "local") {
+        return;
+      }
+
+      if (
+        changes[METIS_USER_SETTINGS_KEY] ||
+        changes[LEGACY_METIS_USER_SETTINGS_KEY] ||
+        changes[METIS_WEB_SESSION_KEY]
+      ) {
+        void refreshStorageState();
+        void getMetisLocalSettings().then(setSettings);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, []);
 
   const handleClearSnapshots = async () => {
     await clearPageScanStore();
@@ -450,6 +502,16 @@ function PopupApp() {
 
     toast.error("Metis could not open the panel", {
       description: "Refresh the page and try again from the popup."
+    });
+  };
+
+  const handleOpenSignIn = async () => {
+    await sendRuntimeMessage({
+      type: "METIS_OPEN_SIGN_IN",
+      source: "popup"
+    });
+    toast.message("Sign in to unlock full insights", {
+      description: "Metis opened the website sign-in flow in a new tab."
     });
   };
 
@@ -524,13 +586,34 @@ function PopupApp() {
           title="Account"
           detail="Account identity and dashboard access stay on the Metis website."
         >
+          <div
+            className="rounded-[16px] border px-3 py-3"
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+          >
+            <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+              {accessState.isAuthenticated ? "Connected to Metis ✓" : "Sign in to unlock full insights"}
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.52)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                lineHeight: "16px",
+                marginTop: 6
+              }}
+            >
+              {accessState.isAuthenticated
+                ? `Tier: ${accessState.tier.replace("_", " ")}`
+                : "The extension keeps scanning locally, but account-linked access starts on the website."}
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
               <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 Name
               </div>
               <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-                {METIS_ACCOUNT_NAME}
+                {connectedAccountName}
               </div>
             </div>
             <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
@@ -538,10 +621,16 @@ function PopupApp() {
                 Email
               </div>
               <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-                {METIS_ACCOUNT_EMAIL}
+                {connectedAccountEmail ?? METIS_ACCOUNT_EMAIL}
               </div>
             </div>
           </div>
+          {!accessState.isAuthenticated ? (
+            <ActionButton onClick={() => void handleOpenSignIn()}>
+              <Mail size={12} />
+              Sign in
+            </ActionButton>
+          ) : null}
           <a
             href={METIS_ACCOUNT_URL}
             target="_blank"

@@ -36,7 +36,12 @@ import {
   getMetisLocalSettings,
   saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
+import { getDefaultMetisAccessState } from "../shared/lib/metisAuthSession";
 import { METIS_ACCOUNT_URL } from "../shared/lib/metisLinks";
+import {
+  LEGACY_METIS_USER_SETTINGS_KEY,
+  METIS_USER_SETTINGS_KEY
+} from "../shared/lib/metisStorageKeys";
 import type {
   MetisRuntimeMessage,
   MetisSessionUiState,
@@ -313,6 +318,7 @@ export default function App() {
   };
 
   const rawSnapshot = session?.rawSnapshot ?? null;
+  const accessState = session?.accessState ?? getDefaultMetisAccessState();
   const visitedSnapshots = session?.visitedSnapshots ?? [];
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot);
   const multipageEvidence = useMemo(
@@ -512,7 +518,10 @@ export default function App() {
       changes: Record<string, chrome.storage.StorageChange>,
       areaName: string
     ) => {
-      if (areaName !== "local" || !changes["metis:settings"]) {
+      if (
+        areaName !== "local" ||
+        (!changes[METIS_USER_SETTINGS_KEY] && !changes[LEGACY_METIS_USER_SETTINGS_KEY])
+      ) {
         return;
       }
 
@@ -564,9 +573,16 @@ export default function App() {
 
       if (
         runtimeMessage.type === "METIS_SESSION_CHANGED" ||
-        runtimeMessage.type === "METIS_RECONNECT_REQUIRED"
+        runtimeMessage.type === "METIS_RECONNECT_REQUIRED" ||
+        runtimeMessage.type === "METIS_AUTH_STATE_CHANGED"
       ) {
         void refreshActiveSession();
+      }
+
+      if (runtimeMessage.type === "METIS_UPLOAD_REQUEST_QUEUED") {
+        toast.success("Premium request queued", {
+          description: "Metis saved your premium request and will retry delivery if the network is busy."
+        });
       }
     };
 
@@ -690,16 +706,41 @@ export default function App() {
   };
 
   const handleOpenAccountPortal = () => {
+    if (!accessState.isAuthenticated) {
+      void sendRuntimeMessage({
+        type: "METIS_OPEN_SIGN_IN",
+        source: "panel"
+      });
+      return;
+    }
+
     window.open(METIS_ACCOUNT_URL, "_blank", "noopener,noreferrer");
   };
 
   const handleUpgradeToPlus = async () => {
+    if (!accessState.isAuthenticated) {
+      await sendRuntimeMessage({
+        type: "METIS_OPEN_SIGN_IN",
+        source: "panel"
+      });
+      toast.message("Sign in to unlock full insights", {
+        description: "Metis opened the website sign-in flow in a new tab."
+      });
+      return;
+    }
+
+    if (!accessState.allowPlusUi) {
+      handleOpenAccountPortal();
+      toast.message("Connected account required", {
+        description: "Your website account controls Plus access for the extension."
+      });
+      return;
+    }
+
     if (!activeTabId) {
       return;
     }
 
-    // Upgrade is local for now. It opens the fullscreen report in its Plus
-    // state instead of forcing a separate billing or onboarding step.
     setIsPlusUser(true);
     await patchSessionUi({
       isPlusUser: true,

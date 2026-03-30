@@ -1,4 +1,8 @@
 import type {
+  MetisAccessState,
+  MetisAuthSuccessBridgeMessage,
+  MetisConnectedAccount,
+  MetisUploadQueueItem,
   PageScopedFairnessAnswers,
   PlusRefinementAnswers,
   RawScanSnapshot
@@ -20,6 +24,8 @@ export interface MetisTabSessionState {
   isActive: boolean;
   isSidePanelOpen: boolean;
   bridgeStatus: MetisBridgeStatus;
+  accessState: MetisAccessState;
+  connectedAccount: MetisConnectedAccount | null;
   lastUpdatedAt: number | null;
   rawSnapshot: RawScanSnapshot | null;
   baselineSnapshot: RawScanSnapshot | null;
@@ -40,14 +46,17 @@ export type MetisRuntimeMessage =
   | { type: "METIS_OPEN_SIDE_PANEL" }
   | { type: "METIS_OPEN_PANEL_FROM_POPUP" }
   | { type: "METIS_OPEN_TOOLBAR_SETTINGS" }
+  | { type: "METIS_OPEN_SIGN_IN"; source: "popup" | "panel" | "report" | "content" }
   | { type: "METIS_OPEN_PAGE_REPORT"; tabId: number; openPlusPreview?: boolean }
   | { type: "METIS_START_TAB_SESSION" }
   | { type: "METIS_ACTIVATE_FROM_TOOLBAR" }
   | { type: "METIS_RECONNECT_ACTIVE_TAB" }
   | { type: "METIS_SCAN_UPDATE"; payload: MetisScanUpdatePayload }
+  | { type: "METIS_AUTH_STATE_CHANGED"; payload: MetisAuthSuccessBridgeMessage }
   | { type: "METIS_GET_ACTIVE_TAB_SESSION" }
   | { type: "METIS_SET_PANEL_VISIBILITY"; tabId: number; isOpen: boolean }
   | { type: "METIS_PATCH_TAB_SESSION"; patch: Partial<MetisSessionUiState> }
+  | { type: "METIS_UPLOAD_REQUEST_QUEUED"; item: MetisUploadQueueItem }
   | { type: "METIS_SESSION_CHANGED"; tabId: number; session: MetisTabSessionState | null }
   | { type: "METIS_RECONNECT_REQUIRED"; tabId: number };
 

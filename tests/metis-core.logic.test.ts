@@ -33,11 +33,35 @@ import {
 import { buildMetisDesignViewModel } from "../src/app/components/figures/liveAdapter";
 import { isSoftRefresh, shouldReplayLoading } from "../src/app/components/figures/loadingState";
 import {
+  buildStoredMetisWebSession,
+  deriveMetisAccessState,
+  getStoredMetisWebSession,
+  saveStoredMetisWebSession
+} from "../src/shared/lib/metisAuthSession";
+import {
   DEFAULT_METIS_SETTINGS,
   getMetisLocalSettings,
   saveMetisLocalSettings
 } from "../src/shared/lib/metisLocalSettings";
+import {
+  enqueueMetisAnalyticsEvent,
+  enqueueMetisPremiumReportRequest,
+  enqueueMetisScanSummary,
+  getMetisUploadQueueState
+} from "../src/shared/lib/metisUploadQueue";
 import { buildStoredVisitedSnapshot } from "../src/shared/lib/siteBaseline";
+import {
+  getMetisTabSession,
+  upsertMetisTabSession
+} from "../src/shared/lib/tabSessionStore";
+import {
+  LEGACY_METIS_TAB_SESSIONS_KEY,
+  LEGACY_METIS_USER_SETTINGS_KEY,
+  METIS_RUNTIME_SESSION_KEY,
+  METIS_UPLOAD_QUEUE_KEY,
+  METIS_USER_SETTINGS_KEY,
+  METIS_WEB_SESSION_KEY
+} from "../src/shared/lib/metisStorageKeys";
 import {
   buildPageScanSnapshot,
   comparePageScans,
@@ -2461,6 +2485,226 @@ test("local settings persist through chrome storage when available", async () =>
     assert.equal(loadedSettings.showSampleProgress, false);
     assert.equal(loadedSettings.bridgeRepairEnabled, false);
     assert.equal(loadedSettings.sidePanelWorkspaceEnabled, false);
+  } finally {
+    if (previousChrome === undefined) {
+      delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+    } else {
+      (globalThis as typeof globalThis & { chrome?: unknown }).chrome = previousChrome;
+    }
+  }
+});
+
+test("local settings migrate from legacy storage key into contract key", async () => {
+  const storageState: Record<string, unknown> = {
+    [LEGACY_METIS_USER_SETTINGS_KEY]: {
+      preferredScanScope: "multi",
+      motionPreference: "reduced",
+      bridgeRepairEnabled: false
+    }
+  };
+  const previousChrome = (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+
+  (globalThis as typeof globalThis & { chrome?: unknown }).chrome = {
+    runtime: { id: "metis-test", lastError: undefined },
+    storage: {
+      local: {
+        get(keys: string[], callback: (result: Record<string, unknown>) => void) {
+          const result = Object.fromEntries(keys.map((key) => [key, storageState[key]]));
+          callback(result);
+        },
+        set(items: Record<string, unknown>, callback: () => void) {
+          Object.assign(storageState, items);
+          callback();
+        }
+      }
+    }
+  };
+
+  try {
+    const loadedSettings = await getMetisLocalSettings();
+
+    assert.equal(loadedSettings.preferredScanScope, "multi");
+    assert.equal(loadedSettings.motionPreference, "reduced");
+    assert.equal(loadedSettings.bridgeRepairEnabled, false);
+    assert.ok(storageState[METIS_USER_SETTINGS_KEY]);
+  } finally {
+    if (previousChrome === undefined) {
+      delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+    } else {
+      (globalThis as typeof globalThis & { chrome?: unknown }).chrome = previousChrome;
+    }
+  }
+});
+
+test("auth session storage derives connected access state", async () => {
+  const storageState: Record<string, unknown> = {};
+  const previousChrome = (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+
+  (globalThis as typeof globalThis & { chrome?: unknown }).chrome = {
+    runtime: { id: "metis-test", lastError: undefined },
+    storage: {
+      local: {
+        get(keys: string[], callback: (result: Record<string, unknown>) => void) {
+          const result = Object.fromEntries(keys.map((key) => [key, storageState[key]]));
+          callback(result);
+        },
+        set(items: Record<string, unknown>, callback: () => void) {
+          Object.assign(storageState, items);
+          callback();
+        }
+      }
+    }
+  };
+
+  try {
+    const session = buildStoredMetisWebSession(
+      {
+        type: "METIS_AUTH_SUCCESS",
+        source: "metis-web",
+        version: 1,
+        session: {
+          accessToken: "token-123",
+          expiresAt: 12345,
+          user: {
+            id: "user_123",
+            email: "avery@metis.studio"
+          }
+        }
+      },
+      {
+        plan: "plus_beta",
+        plusBetaEnabled: true,
+        apiBetaEnabled: false,
+        allowPlusUi: true,
+        allowReportEmail: true
+      }
+    );
+
+    await saveStoredMetisWebSession(session);
+    const storedSession = await getStoredMetisWebSession();
+    const accessState = deriveMetisAccessState(storedSession);
+
+    assert.equal(storedSession?.accessToken, "token-123");
+    assert.equal(storedSession?.user.email, "avery@metis.studio");
+    assert.equal(accessState.isAuthenticated, true);
+    assert.equal(accessState.tier, "plus_beta");
+    assert.equal(accessState.allowPlusUi, true);
+  } finally {
+    if (previousChrome === undefined) {
+      delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+    } else {
+      (globalThis as typeof globalThis & { chrome?: unknown }).chrome = previousChrome;
+    }
+  }
+});
+
+test("upload queue debounces repeated route summaries and stores premium requests separately", async () => {
+  const storageState: Record<string, unknown> = {};
+  const previousChrome = (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+
+  (globalThis as typeof globalThis & { chrome?: unknown }).chrome = {
+    runtime: { id: "metis-test", lastError: undefined },
+    storage: {
+      local: {
+        get(keys: string[], callback: (result: Record<string, unknown>) => void) {
+          const result = Object.fromEntries(keys.map((key) => [key, storageState[key]]));
+          callback(result);
+        },
+        set(items: Record<string, unknown>, callback: () => void) {
+          Object.assign(storageState, items);
+          callback();
+        }
+      }
+    }
+  };
+
+  try {
+    const firstSummary = await enqueueMetisScanSummary({
+      route: "https://example.com/pricing",
+      score: 82,
+      issueCount: 2,
+      confidence: "Moderate"
+    });
+    const secondSummary = await enqueueMetisScanSummary({
+      route: "https://example.com/pricing",
+      score: 80,
+      issueCount: 3,
+      confidence: "Moderate"
+    });
+    const analyticsEvent = await enqueueMetisAnalyticsEvent({
+      type: "panel_opened",
+      occurredAt: Date.now(),
+      route: "https://example.com/pricing"
+    });
+    const premiumRequest = await enqueueMetisPremiumReportRequest({
+      route: "https://example.com/pricing",
+      requestedAt: Date.now(),
+      source: "panel"
+    });
+    const queueState = await getMetisUploadQueueState();
+
+    assert.ok(firstSummary);
+    assert.equal(secondSummary, null);
+    assert.ok(analyticsEvent);
+    assert.equal(premiumRequest.kind, "premium_report_request");
+    assert.equal(queueState.items.length, 3);
+    assert.ok(storageState[METIS_UPLOAD_QUEUE_KEY]);
+  } finally {
+    if (previousChrome === undefined) {
+      delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+    } else {
+      (globalThis as typeof globalThis & { chrome?: unknown }).chrome = previousChrome;
+    }
+  }
+});
+
+test("tab session store migrates legacy session key and backfills access defaults", async () => {
+  const sessionStorageState: Record<string, unknown> = {
+    [LEGACY_METIS_TAB_SESSIONS_KEY]: {
+      "7": {
+        tabId: 7,
+        windowId: 3,
+        currentUrl: "https://example.com/",
+        isActive: true,
+        isSidePanelOpen: false,
+        bridgeStatus: "ready",
+        lastUpdatedAt: null,
+        rawSnapshot: null,
+        baselineSnapshot: null,
+        visitedSnapshots: [],
+        uiState: {
+          scanScope: "single",
+          plusAnswers: {},
+          pageFairnessByKey: {},
+          isPlusRefinementOpen: false,
+          isPlusUser: false
+        }
+      }
+    }
+  };
+  const previousChrome = (globalThis as typeof globalThis & { chrome?: unknown }).chrome;
+
+  (globalThis as typeof globalThis & { chrome?: unknown }).chrome = {
+    storage: {
+      session: {
+        async get(keys: string | string[]) {
+          const keyList = Array.isArray(keys) ? keys : [keys];
+          return Object.fromEntries(keyList.map((key) => [key, sessionStorageState[key]]));
+        },
+        async set(items: Record<string, unknown>) {
+          Object.assign(sessionStorageState, items);
+        }
+      }
+    }
+  };
+
+  try {
+    const session = await getMetisTabSession(7);
+
+    assert.equal(session?.tabId, 7);
+    assert.equal(session?.accessState.isAuthenticated, false);
+    assert.equal(session?.connectedAccount, null);
+    assert.ok(sessionStorageState[METIS_RUNTIME_SESSION_KEY]);
   } finally {
     if (previousChrome === undefined) {
       delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;

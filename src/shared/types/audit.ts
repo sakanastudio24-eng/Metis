@@ -336,6 +336,107 @@ export interface MetisLocalSettings {
   showSampleProgress: boolean;
 }
 
+export type MetisAccessTier = "free" | "plus_beta" | "paid";
+
+export interface MetisAccessState {
+  isAuthenticated: boolean;
+  tier: MetisAccessTier;
+  allowPlusUi: boolean;
+  allowReportEmail: boolean;
+  plusBetaEnabled: boolean;
+  apiBetaEnabled: boolean;
+}
+
+export interface MetisConnectedAccount {
+  id: string;
+  email: string | null;
+  displayName: string;
+}
+
+export interface MetisAuthSuccessBridgeMessage {
+  type: "METIS_AUTH_SUCCESS";
+  source: "metis-web";
+  version: 1;
+  session: {
+    accessToken: string;
+    expiresAt: number | null;
+    user: {
+      id: string;
+      email: string | null;
+    };
+  };
+}
+
+export interface MetisAuthSuccessAck {
+  type: "METIS_AUTH_SUCCESS_ACK";
+  source: "metis-extension";
+  version: 1;
+  ok: true;
+}
+
+export interface StoredMetisWebSession {
+  accessToken: string;
+  expiresAt: number | null;
+  user: {
+    id: string;
+    email: string | null;
+  };
+  account: {
+    plan: MetisAccessTier;
+    plusBetaEnabled: boolean;
+    apiBetaEnabled: boolean;
+    allowPlusUi: boolean;
+    allowReportEmail: boolean;
+  };
+  connectedAt: number;
+}
+
+export interface StoredMetisLastScan {
+  route: string;
+  scoredAt: number;
+  requestCount: number;
+  duplicateEndpointCount: number;
+  issueCount: number;
+}
+
+export interface MetisAnalyticsEventPayload {
+  type: string;
+  occurredAt: number;
+  route?: string;
+}
+
+export interface MetisScanSummaryUploadPayload {
+  route: string;
+  score: number | null;
+  issueCount: number;
+  confidence: string | null;
+}
+
+export interface MetisPremiumReportRequestPayload {
+  route: string;
+  requestedAt: number;
+  source: "panel" | "report" | "popup";
+}
+
+export interface MetisUploadQueueItem {
+  id: string;
+  kind: "event" | "scan_summary" | "premium_report_request";
+  payload:
+    | MetisAnalyticsEventPayload
+    | MetisScanSummaryUploadPayload
+    | MetisPremiumReportRequestPayload;
+  route: string | null;
+  createdAt: number;
+  attemptCount: number;
+  lastAttemptAt: number | null;
+}
+
+export interface MetisUploadQueueState {
+  items: MetisUploadQueueItem[];
+  lastSummaryByRoute: Record<string, number>;
+  lastEventByKey: Record<string, number>;
+}
+
 export interface ExportReportSection {
   id: string;
   title: string;

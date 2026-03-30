@@ -40,11 +40,21 @@ import {
   getMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
 import {
+  isAllowedMetisAuthOrigin,
+  isAllowedMetisAuthPathname,
+  isMetisAuthSuccessBridgeMessage
+} from "../shared/lib/metisAuthSession";
+import {
   buildStoredVisitedSnapshot,
   getOrCreateSiteBaseline,
   upsertVisitedSiteSnapshot
 } from "../shared/lib/siteBaseline";
+import {
+  LEGACY_METIS_USER_SETTINGS_KEY,
+  METIS_USER_SETTINGS_KEY
+} from "../shared/lib/metisStorageKeys";
 import type {
+  MetisAuthSuccessAck,
   MetisLocalSettings,
   PageScanComparison,
   PageScanSnapshot,
@@ -400,6 +410,19 @@ export function PageBridgeApp() {
         return true;
       }
 
+      if (runtimeMessage.type === "METIS_AUTH_STATE_CHANGED") {
+        sendResponse({ ok: true });
+        return true;
+      }
+
+      if (runtimeMessage.type === "METIS_UPLOAD_REQUEST_QUEUED") {
+        toast.success("Premium request queued", {
+          description: "Metis saved your request and will retry delivery if the network is busy."
+        });
+        sendResponse({ ok: true });
+        return true;
+      }
+
       return false;
     };
 
@@ -416,7 +439,10 @@ export function PageBridgeApp() {
       changes: Record<string, chrome.storage.StorageChange>,
       areaName: string
     ) => {
-      if (areaName !== "local" || !changes["metis:settings"]) {
+      if (
+        areaName !== "local" ||
+        (!changes[METIS_USER_SETTINGS_KEY] && !changes[LEGACY_METIS_USER_SETTINGS_KEY])
+      ) {
         return;
       }
 
@@ -427,6 +453,45 @@ export function PageBridgeApp() {
 
     return () => {
       chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleAuthBridge = (event: MessageEvent<unknown>) => {
+      if (
+        !isAllowedMetisAuthOrigin(event.origin) ||
+        !isAllowedMetisAuthPathname(window.location.pathname) ||
+        !isMetisAuthSuccessBridgeMessage(event.data)
+      ) {
+        return;
+      }
+
+      void sendRuntimeMessage<{ ok?: boolean }>({
+        type: "METIS_AUTH_STATE_CHANGED",
+        payload: event.data
+      }).then((response) => {
+        if (!response?.ok) {
+          return;
+        }
+
+        const ack: MetisAuthSuccessAck = {
+          type: "METIS_AUTH_SUCCESS_ACK",
+          source: "metis-extension",
+          version: 1,
+          ok: true
+        };
+
+        window.postMessage(ack, window.location.origin);
+        toast.success("Connected to Metis ✓", {
+          description: "This website session is now available in the extension."
+        });
+      });
+    };
+
+    window.addEventListener("message", handleAuthBridge);
+
+    return () => {
+      window.removeEventListener("message", handleAuthBridge);
     };
   }, []);
 
