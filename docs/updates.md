@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.8.0
+
+Release type: Minor
+
+This release narrows Metis site access to normal web pages and makes the permission story much clearer inside the popup and local settings.
+
+What changed
+
+- Replaced `"<all_urls>"` with explicit `http` and `https` host patterns in the manifest and content script matches.
+- Added permission notes in the popup so each permission explains what Metis uses it for.
+- Added the same permission section to the in-app local settings modal.
+- Rounded the local settings sections into clearer cards and added extra bottom padding in the settings scroll area.
+
 ## 0.7.2
 
 Release type: Patch
