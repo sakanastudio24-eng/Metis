@@ -85,30 +85,29 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ### Permissions
 
-- Header: `Allow web-page scanning`
+- Header: `Permission ability`
 - Body:
-  `If off, Metis stops collecting new route scans until you turn it back on.`
-- Header: `Allow local history`
-- Body:
-  `If off, Metis stops saving snapshots and same-site progress on this device.`
-- Header: `What each permission enables`
-- Body:
-  `Metis does not run on browser internal pages. It only works on normal web pages after you activate it.`
+  `Turn Metis capabilities on or off here without leaving the extension.`
 - Header: `Web pages`
 - Body:
-  `Metis runs on normal http and https pages. It starts scanning only after you activate it, then follows same-site routes in that session.`
+  `When this is off, Metis stops collecting new route scans on normal http and https pages until you turn it back on.`
+- Body, ability:
+  `Scans current and same-site routes`
 - Header: `Storage`
 - Body:
-  `Keeps local settings, saved snapshots, and site history on this device.`
+  `When this is off, Metis stops saving snapshots and same-site progress locally. Your core settings still remain available so the extension can keep working.`
+- Body, ability:
+  `Keeps local history on this device`
 - Header: `Scripting`
 - Body:
-  `Lets Metis reopen the page bridge and repair scanning when the page needs a fresh injection.`
+  `When this is off, Metis stops reinjecting or repairing the page bridge on older tabs that need a fresh script pass.`
+- Body, ability:
+  `Repairs the page bridge`
 - Header: `Side panel`
 - Body:
-  `Keeps the compact Metis workspace attached to the current tab while you review a route.`
-- Header: `Current mode`
-- Body:
-  `The page hover is visible on normal sites, but Metis does not begin scanning until you click it. After activation, Metis scans the current page and same-site routes you open in that session.`
+  `When this is off, Metis stops opening the side panel workspace from the page flow and falls back to settings access from the toolbar instead.`
+- Body, ability:
+  `Opens the attached workspace`
 
 ### About
 

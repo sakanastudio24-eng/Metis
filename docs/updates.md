@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.10.0
+
+Release type: Minor
+
+This release turns the permissions section into a real capability center with hover detail, per-capability toggles, and stronger local control over how Metis opens and repairs itself.
+
+What changed
+
+- Reworked popup and in-app settings permissions into a single ability-style control row with hover detail and per-capability on and off controls.
+- Added toggles for page scanning, local history, bridge repair, and side panel workspace opening.
+- Wired side panel opening and bridge reinjection through local settings so they can be disabled inside the extension.
+- Kept the account section first in settings and preserved the broader stack detection work from the previous release line.
+
 ## 0.9.0
 
 Release type: Minor
