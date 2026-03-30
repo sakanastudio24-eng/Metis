@@ -20,6 +20,17 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.10.6
+
+Release type: Patch
+
+This release explicitly restores the toolbar icon to popup behavior for existing installs where Chrome had already persisted side-panel-on-click behavior.
+
+What changed
+
+- On install and startup, Metis now sets `openPanelOnActionClick` to `false` so the toolbar icon opens the popup settings again.
+- This fixes existing local installs that kept opening the side panel even after the earlier code path was removed.
+
 ## 0.10.5
 
 Release type: Patch
