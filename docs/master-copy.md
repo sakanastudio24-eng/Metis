@@ -49,10 +49,19 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ### Section titles
 
+- Header: `Account`
 - Header: `Scan behavior`
 - Header: `Data`
 - Header: `Permissions`
 - Header: `About`
+
+### Account
+
+- Header, stat label: `Name`
+- Header, stat label: `Email`
+- Body:
+  `Available on your dashboard`
+- CTA: `View my dashboard`
 
 ### Scan behavior
 
@@ -76,6 +85,12 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ### Permissions
 
+- Header: `Allow web-page scanning`
+- Body:
+  `If off, Metis stops collecting new route scans until you turn it back on.`
+- Header: `Allow local history`
+- Body:
+  `If off, Metis stops saving snapshots and same-site progress on this device.`
 - Header: `What each permission enables`
 - Body:
   `Metis does not run on browser internal pages. It only works on normal web pages after you activate it.`
@@ -208,6 +223,8 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Only call a marketing route heavy when both request pressure and payload pressure are meaningfully elevated.`
 - Body rule:
   `Multipage scan is supporting context only. It must not change score, control, confidence, issue order, or cost.`
+- Body rule:
+  `Stack detection should surface broader client-side technologies like monitoring, search, graphics, libraries, and misc page signals when there is direct browser-safe evidence.`
 - Body, Plus read:
   `Plus adds context and fix order without changing the base report read.`
 - Header: `Endpoint Detail`

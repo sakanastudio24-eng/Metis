@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.9.0
+
+Release type: Minor
+
+This release turns settings permissions into real local behavior controls, makes the settings surfaces scroll cleanly to the bottom, and broadens stack detection beyond the narrow money-only read.
+
+What changed
+
+- Added account access as the first settings section in both the popup and the local settings modal.
+- Turned the permissions section into real local toggles for web-page scanning and local history instead of notes only.
+- Fixed the popup and local settings modal so they can scroll all the way to the bottom.
+- Expanded stack fingerprint coverage for docs-style routes with monitoring, search, graphics, JavaScript libraries, and misc client-side signals like Sentry, Algolia, Open Graph, Prism, Three.js, React Flow, Lodash, core-js, BitPay, and Webpack.
+
 ## 0.8.0
 
 Release type: Minor
