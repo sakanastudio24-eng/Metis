@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.10.4
+
+Release type: Patch
+
+This release removes the detached-window fallback and retunes launch so Metis opens only in Chrome's native side panel again.
+
+What changed
+
+- Reverted the detached compact-workspace fallback that opened `sidepanel.html` in a separate window.
+- Moved the `METIS_OPEN_SIDE_PANEL` runtime path out of the worker's slower async switch so the native side panel open call happens immediately from the message handler.
+- Prefer the global side panel open call first and only fall back to a tab-specific open after enabling the panel for that tab.
+- Enabled `openPanelOnActionClick` on startup so Chrome has a native action-to-panel behavior configured as well.
+
 ## 0.10.3
 
 Release type: Patch
