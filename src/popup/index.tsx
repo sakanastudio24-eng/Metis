@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { Database, ExternalLink, Gauge, Shield, Sparkles, Trash2 } from "lucide-react";
+import { Database, ExternalLink, Gauge, LayoutDashboard, Mail, Shield, Sparkles, Trash2, UserRound } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "../styles/tailwind.css";
 import { clearPageScanStore, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
@@ -309,7 +309,7 @@ function PopupApp() {
 
   return (
     <div
-      className="min-h-[640px] w-[380px] px-4 py-4"
+      className="flex h-[640px] w-[380px] flex-col px-4 py-4"
       style={{
         background: "#0d1825",
         color: "white"
@@ -365,7 +365,49 @@ function PopupApp() {
         </div>
       </div>
 
-      <div className="metis-scroll max-h-[560px] space-y-4 overflow-y-auto pr-1 pb-5">
+      <div className="metis-scroll min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 pb-16">
+        <Section
+          icon={UserRound}
+          title="Account"
+          detail="Account identity and dashboard access stay on the Metis website."
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Name
+              </div>
+              <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                Available on your dashboard
+              </div>
+            </div>
+            <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Email
+              </div>
+              <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                Available on your dashboard
+              </div>
+            </div>
+          </div>
+          <a
+            href={METIS_ACCOUNT_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full px-3 py-2 no-underline"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.82)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 11,
+              fontWeight: 700
+            }}
+          >
+            <LayoutDashboard size={12} />
+            View my dashboard
+          </a>
+        </Section>
+
         <Section
           icon={Gauge}
           title="Scan behavior"
@@ -449,6 +491,28 @@ function PopupApp() {
           title="Permissions"
           detail="These permissions stay scoped to normal web pages and local extension behavior."
         >
+          <ToggleRow
+            title="Allow web-page scanning"
+            detail="If off, Metis stops collecting new route scans until you turn it back on."
+            active={settings.webPageScanningEnabled}
+            onClick={() =>
+              setSettings({
+                ...settings,
+                webPageScanningEnabled: !settings.webPageScanningEnabled
+              })
+            }
+          />
+          <ToggleRow
+            title="Allow local history"
+            detail="If off, Metis stops saving snapshots and same-site progress on this device."
+            active={settings.localHistoryEnabled}
+            onClick={() =>
+              setSettings({
+                ...settings,
+                localHistoryEnabled: !settings.localHistoryEnabled
+              })
+            }
+          />
           <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
             <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
               What each permission enables
@@ -511,6 +575,7 @@ function PopupApp() {
             />
           </div>
         </Section>
+        <div className="h-8" />
       </div>
     </div>
   );

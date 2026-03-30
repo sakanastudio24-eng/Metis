@@ -4,9 +4,12 @@ import {
   Download,
   FolderArchive,
   LayoutPanelTop,
+  LayoutDashboard,
+  Mail,
   RefreshCcw,
   Settings2,
   Trash2,
+  UserRound,
   X
 } from "lucide-react";
 import type {
@@ -14,6 +17,7 @@ import type {
   MetisLocalSettings
 } from "../../../shared/types/audit";
 import type { PageScanStoreSummary } from "../../../shared/lib/pageScanHistory";
+import { METIS_ACCOUNT_URL } from "../../../shared/lib/metisLinks";
 import { AcronymText } from "./AcronymTooltipText";
 
 const PERMISSION_NOTES = [
@@ -185,7 +189,7 @@ export function LocalSettingsModal({
       {modalBackdrop(onClose)}
       <div className="pointer-events-none fixed inset-0 z-[330] flex items-center justify-center p-5">
         <motion.div
-          className="pointer-events-auto w-full max-w-[720px] overflow-hidden rounded-[28px]"
+          className="pointer-events-auto flex max-h-[calc(100vh-40px)] w-full max-w-[720px] min-h-0 flex-col overflow-hidden rounded-[28px]"
           style={{
             background: "#0d1825",
             border: "1px solid rgba(255,255,255,0.09)",
@@ -213,8 +217,48 @@ export function LocalSettingsModal({
             </button>
           </div>
 
-          <div className="metis-scroll max-h-[72vh] overflow-y-auto px-6 py-6 pb-8">
+          <div className="metis-scroll min-h-0 flex-1 overflow-y-auto px-6 py-6 pb-20">
             <div className="space-y-6">
+              <SettingsSection title="Account">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-[20px] px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="inline-flex items-center gap-2 text-white/35" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
+                      <UserRound size={12} />
+                      <AcronymText text="Name" />
+                    </div>
+                    <div className="mt-3 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
+                      <AcronymText text="Available on your dashboard" />
+                    </div>
+                  </div>
+                  <div className="rounded-[20px] px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="inline-flex items-center gap-2 text-white/35" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
+                      <Mail size={12} />
+                      <AcronymText text="Email" />
+                    </div>
+                    <div className="mt-3 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
+                      <AcronymText text="Available on your dashboard" />
+                    </div>
+                  </div>
+                </div>
+                <a
+                  href={METIS_ACCOUNT_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 no-underline"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.82)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 12,
+                    fontWeight: 700
+                  }}
+                >
+                  <LayoutDashboard size={12} />
+                  <AcronymText text="View my dashboard" />
+                </a>
+              </SettingsSection>
+
               <SettingsSection title="Scan Behavior">
                 <div className="flex flex-wrap gap-2">
                   <PillButton
@@ -272,6 +316,28 @@ export function LocalSettingsModal({
               </SettingsSection>
 
               <SettingsSection title="Permissions">
+                <ToggleRow
+                  title="Allow web-page scanning"
+                  detail="If off, Metis stops collecting new route scans until you turn it back on."
+                  active={settings.webPageScanningEnabled}
+                  onClick={() =>
+                    onChange({
+                      ...settings,
+                      webPageScanningEnabled: !settings.webPageScanningEnabled
+                    })
+                  }
+                />
+                <ToggleRow
+                  title="Allow local history"
+                  detail="If off, Metis stops saving snapshots and same-site progress on this device."
+                  active={settings.localHistoryEnabled}
+                  onClick={() =>
+                    onChange({
+                      ...settings,
+                      localHistoryEnabled: !settings.localHistoryEnabled
+                    })
+                  }
+                />
                 <div
                   className="rounded-[20px] px-4 py-4"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
@@ -363,6 +429,7 @@ export function LocalSettingsModal({
                   </button>
                 </div>
               </SettingsSection>
+              <div className="h-8" />
             </div>
           </div>
         </motion.div>

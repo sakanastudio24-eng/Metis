@@ -7,6 +7,8 @@ export const DEFAULT_METIS_SETTINGS: MetisLocalSettings = {
   refreshMode: "smart",
   motionPreference: "full",
   autoRescanWhilePanelOpen: true,
+  webPageScanningEnabled: true,
+  localHistoryEnabled: true,
   scanDelayProfile: "balanced",
   attachedReport: true,
   showSampleProgress: true
@@ -104,6 +106,14 @@ function normalizeSettings(value: unknown): MetisLocalSettings {
       typeof value.autoRescanWhilePanelOpen === "boolean"
         ? value.autoRescanWhilePanelOpen
         : DEFAULT_METIS_SETTINGS.autoRescanWhilePanelOpen,
+    webPageScanningEnabled:
+      typeof value.webPageScanningEnabled === "boolean"
+        ? value.webPageScanningEnabled
+        : DEFAULT_METIS_SETTINGS.webPageScanningEnabled,
+    localHistoryEnabled:
+      typeof value.localHistoryEnabled === "boolean"
+        ? value.localHistoryEnabled
+        : DEFAULT_METIS_SETTINGS.localHistoryEnabled,
     scanDelayProfile: isScanDelayProfile(value.scanDelayProfile)
       ? value.scanDelayProfile
       : DEFAULT_METIS_SETTINGS.scanDelayProfile,

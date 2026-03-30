@@ -41,11 +41,14 @@ import {
   getMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
 import {
+  buildStoredVisitedSnapshot,
   getOrCreateSiteBaseline,
   upsertVisitedSiteSnapshot
 } from "../shared/lib/siteBaseline";
 import type {
   MetisLocalSettings,
+  PageScanComparison,
+  PageScanSnapshot,
   PlusRefinementAnswers,
   RawScanSnapshot
 } from "../shared/types/audit";
@@ -460,7 +463,7 @@ export function PageBridgeApp() {
     };
 
     const scheduleScan = (delay = initialScanDelay) => {
-      if (isStopped || !isSessionActive) {
+      if (isStopped || !isSessionActive || !settings.webPageScanningEnabled) {
         return;
       }
 
@@ -486,7 +489,7 @@ export function PageBridgeApp() {
     };
 
     const handlePostLoadSync = () => {
-      if (isStopped || !isSessionActive) {
+      if (isStopped || !isSessionActive || !settings.webPageScanningEnabled) {
         return;
       }
 
@@ -515,18 +518,33 @@ export function PageBridgeApp() {
     };
 
     const syncSnapshots = async () => {
-      if (isStopped || !isSessionActive) {
+      if (isStopped || !isSessionActive || !settings.webPageScanningEnabled) {
         return;
       }
-
       setIsUpdating(true);
 
       try {
         const snapshot = collectRawScanSnapshot();
         const compactSnapshot = buildPageScanSnapshot(snapshot);
-        const baseline = await getOrCreateSiteBaseline(snapshot);
-        const visited = await upsertVisitedSiteSnapshot(snapshot);
-        const pageScanHistory = await savePageScanAndCompare(compactSnapshot);
+        let baseline = snapshot;
+        let visited = [buildStoredVisitedSnapshot(snapshot)];
+        let pageScanHistory: {
+          previous: PageScanSnapshot | null;
+          comparison: PageScanComparison | null;
+          latestCapturedSnapshot: PageScanSnapshot | null;
+          latestCapturedComparison: PageScanComparison | null;
+        } = {
+          previous: null,
+          comparison: null,
+          latestCapturedSnapshot: null,
+          latestCapturedComparison: null
+        };
+
+        if (settings.localHistoryEnabled) {
+          baseline = await getOrCreateSiteBaseline(snapshot);
+          visited = await upsertVisitedSiteSnapshot(snapshot);
+          pageScanHistory = await savePageScanAndCompare(compactSnapshot);
+        }
         const issues = detectIssues(snapshot);
         const scoreBreakdown = scoreSnapshot(snapshot, issues);
 
@@ -588,15 +606,19 @@ export function PageBridgeApp() {
       }
     };
 
-    if (isSessionActive) {
+    if (isSessionActive && settings.webPageScanningEnabled) {
       scheduleScan(initialScanDelay);
     }
 
-    if (isSessionActive && document.readyState !== "complete") {
+    if (
+      isSessionActive &&
+      settings.webPageScanningEnabled &&
+      document.readyState !== "complete"
+    ) {
       window.addEventListener("load", handlePostLoadSync, { once: true });
     }
 
-    if (isSessionActive) {
+    if (isSessionActive && settings.webPageScanningEnabled) {
       navigationCheckId = window.setInterval(() => {
         handlePageChange();
       }, NAVIGATION_CHECK_INTERVAL_MS);
@@ -614,7 +636,13 @@ export function PageBridgeApp() {
     return () => {
       stopSync();
     };
-  }, [isSessionActive, settings.autoRescanWhilePanelOpen, settings.scanDelayProfile]);
+  }, [
+    isSessionActive,
+    settings.autoRescanWhilePanelOpen,
+    settings.localHistoryEnabled,
+    settings.scanDelayProfile,
+    settings.webPageScanningEnabled
+  ]);
 
   useEffect(() => {
     if (!(isReportOpen || isExportOpen)) {

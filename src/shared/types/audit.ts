@@ -322,6 +322,8 @@ export interface MetisLocalSettings {
   refreshMode: MetisRefreshMode;
   motionPreference: MetisMotionPreference;
   autoRescanWhilePanelOpen: boolean;
+  webPageScanningEnabled: boolean;
+  localHistoryEnabled: boolean;
   scanDelayProfile: MetisScanDelayProfile;
   attachedReport: boolean;
   showSampleProgress: boolean;
