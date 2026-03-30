@@ -38,6 +38,7 @@ export type MetisRuntimeMessage =
   | { type: "METIS_PING" }
   | { type: "METIS_BRIDGE_READY"; href: string }
   | { type: "METIS_OPEN_SIDE_PANEL" }
+  | { type: "METIS_OPEN_PANEL_FROM_POPUP" }
   | { type: "METIS_OPEN_TOOLBAR_SETTINGS" }
   | { type: "METIS_OPEN_PAGE_REPORT"; tabId: number; openPlusPreview?: boolean }
   | { type: "METIS_START_TAB_SESSION" }

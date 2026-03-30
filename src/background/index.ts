@@ -292,6 +292,48 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         return;
       }
 
+      case "METIS_OPEN_PANEL_FROM_POPUP": {
+        const [activeTab] = await chrome.tabs.query({
+          active: true,
+          lastFocusedWindow: true
+        });
+
+        if (!activeTab?.id || !activeTab.windowId || isRestrictedUrl(activeTab.url)) {
+          sendResponse({ ok: false });
+          return;
+        }
+
+        const bridgeReady = await ensureContentBridge(activeTab.id);
+
+        if (!bridgeReady) {
+          sendResponse({ ok: false });
+          return;
+        }
+
+        const session = await upsertMetisTabSession(activeTab.id, (current) => ({
+          tabId: activeTab.id!,
+          windowId: activeTab.windowId!,
+          currentUrl: current?.currentUrl ?? activeTab.url ?? "",
+          isActive: true,
+          isSidePanelOpen: current?.isSidePanelOpen ?? false,
+          bridgeStatus: current?.bridgeStatus ?? "ready",
+          lastUpdatedAt: current?.lastUpdatedAt ?? null,
+          rawSnapshot: current?.rawSnapshot ?? null,
+          baselineSnapshot: current?.baselineSnapshot ?? null,
+          visitedSnapshots: current?.visitedSnapshots ?? [],
+          uiState: current?.uiState ?? DEFAULT_METIS_SESSION_UI_STATE
+        }));
+
+        await chrome.tabs.sendMessage(activeTab.id, {
+          type: "METIS_ACTIVATE_FROM_TOOLBAR"
+        } satisfies MetisRuntimeMessage);
+        const opened = await openMetisSidePanel(activeTab.id, activeTab.windowId);
+
+        await broadcastSessionChange(activeTab.id);
+        sendResponse({ ok: opened, session });
+        return;
+      }
+
       case "METIS_OPEN_PAGE_REPORT": {
         if (!runtimeMessage.tabId) {
           sendResponse({ ok: false });

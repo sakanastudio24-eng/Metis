@@ -25,6 +25,15 @@ import {
   METIS_SITE_URL
 } from "../shared/lib/metisLinks";
 import type { MetisLocalSettings } from "../shared/types/audit";
+import type { MetisRuntimeMessage } from "../shared/types/runtime";
+
+async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
+  try {
+    return (await chrome.runtime.sendMessage(message)) as T;
+  } catch {
+    return null;
+  }
+}
 
 function Section({
   icon: Icon,
@@ -429,6 +438,21 @@ function PopupApp() {
     }
   };
 
+  const handleOpenMetisPanel = async () => {
+    const response = await sendRuntimeMessage<{ ok?: boolean }>({
+      type: "METIS_OPEN_PANEL_FROM_POPUP"
+    });
+
+    if (response?.ok) {
+      window.close();
+      return;
+    }
+
+    toast.error("Metis could not open the panel", {
+      description: "Refresh the page and try again from the popup."
+    });
+  };
+
   return (
     <div
       className="flex h-[640px] w-[380px] flex-col px-4 py-4"
@@ -485,6 +509,13 @@ function PopupApp() {
         >
           v{extensionVersion}
         </div>
+      </div>
+
+      <div className="mb-4 flex justify-center">
+        <ActionButton onClick={() => void handleOpenMetisPanel()}>
+          <LayoutDashboard size={14} />
+          Open Metis panel
+        </ActionButton>
       </div>
 
       <div className="metis-scroll min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 pb-16">

@@ -163,6 +163,7 @@ function buildAnswersBeforeRouteContext(
 
 export function PageBridgeApp() {
   const [hovered, setHovered] = useState(false);
+  const [launcherRecoveryMode, setLauncherRecoveryMode] = useState(false);
   const [session, setSession] = useState<MetisTabSessionState | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -633,6 +634,21 @@ export function PageBridgeApp() {
   ]);
 
   useEffect(() => {
+    if (isPanelOpen || isReportOpen || isExportOpen || !isSessionActive) {
+      return;
+    }
+
+    setHovered(true);
+    const hoverResetId = window.setTimeout(() => {
+      setHovered(false);
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(hoverResetId);
+    };
+  }, [isExportOpen, isPanelOpen, isReportOpen, isSessionActive]);
+
+  useEffect(() => {
     if (!(isReportOpen || isExportOpen)) {
       return;
     }
@@ -654,10 +670,27 @@ export function PageBridgeApp() {
     setIsPanelOpen(true);
     setHovered(false);
 
-    const openPanelPromise = sendRuntimeMessage({ type: "METIS_OPEN_SIDE_PANEL" });
+    const openPanelPromise = sendRuntimeMessage<{ ok?: boolean }>({ type: "METIS_OPEN_SIDE_PANEL" });
     const startSessionPromise = sendRuntimeMessage({ type: "METIS_START_TAB_SESSION" });
 
-    await Promise.all([openPanelPromise, startSessionPromise]);
+    const [openPanelResponse] = await Promise.all([openPanelPromise, startSessionPromise]);
+
+    if (!openPanelResponse?.ok) {
+      setIsPanelOpen(false);
+      setLauncherRecoveryMode(true);
+      setHovered(true);
+      void sendRuntimeMessage({ type: "METIS_OPEN_TOOLBAR_SETTINGS" });
+      toast.message("Metis opened settings instead", {
+        description: "Chrome blocked the panel open on this page. Use the popup button to reopen the panel."
+      });
+      return;
+    }
+
+    setLauncherRecoveryMode(false);
+  };
+
+  const handleOpenSettings = async () => {
+    await sendRuntimeMessage({ type: "METIS_OPEN_TOOLBAR_SETTINGS" });
   };
 
   const handleSetScanScope = (scope: ScanScope) => {
@@ -756,7 +789,9 @@ export function PageBridgeApp() {
         {!isPanelOpen && !isReportOpen && (
           <motion.div
             className="fixed right-0 z-[2147483647]"
-            style={{ bottom: "5rem" }}
+            style={{ bottom: "6.5rem" }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
             initial={{ opacity: 0, x: 18, scale: 0.92 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 20, scale: 0.92 }}
@@ -769,7 +804,7 @@ export function PageBridgeApp() {
             <AnimatePresence>
               {hovered && (
                 <motion.div
-                  className="absolute right-[68px] top-1/2 inline-flex h-[34px] -translate-y-1/2 items-center rounded-full px-4"
+                  className="absolute right-[78px] top-1/2 w-[290px] -translate-y-1/2 rounded-[20px] px-4 py-4"
                   style={{
                     background: "#0d1825",
                     border: "1px solid rgba(255,255,255,0.08)",
@@ -780,40 +815,92 @@ export function PageBridgeApp() {
                   exit={{ opacity: 0, x: 12 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <div className="flex items-center gap-2.5 whitespace-nowrap leading-none">
-                    <div
-                      style={{
-                        color: "rgba(255,255,255,0.38)",
-                        fontFamily: "Inter, sans-serif",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase"
-                      }}
-                    >
-                      Metis
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.38)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase"
+                        }}
+                      >
+                        Metis
+                      </div>
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.7)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 12,
+                          fontWeight: 700
+                        }}
+                      >
+                        Score: {score ?? "…"}
+                      </div>
                     </div>
-                    <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
                     <div
                       style={{
                         color: "white",
                         fontFamily: "Inter, sans-serif",
-                        fontSize: 12,
-                        fontWeight: 600
+                        fontSize: 14,
+                        fontWeight: 700,
+                        lineHeight: "20px"
                       }}
                     >
-                      Score: {score ?? "…"}
+                      {launcherRecoveryMode
+                        ? "Panel open was blocked on this page."
+                        : isSessionActive
+                          ? riskLabel
+                          : "Open Metis"}
                     </div>
-                    <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
                     <div
                       style={{
-                        color: "rgba(255,255,255,0.66)",
+                        color: "rgba(255,255,255,0.6)",
                         fontFamily: "Inter, sans-serif",
                         fontSize: 12,
-                        fontWeight: 500
+                        lineHeight: "18px"
                       }}
                     >
-                      {isSessionActive ? riskLabel : "Open Metis"}
+                      {launcherRecoveryMode
+                        ? "Use the Metis popup to reopen the real side panel."
+                        : "Open the panel or jump into settings from here."}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleActivate();
+                        }}
+                        className="rounded-full px-3 py-2"
+                        style={{
+                          background: "#dc5e5e",
+                          color: "white",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 11,
+                          fontWeight: 700
+                        }}
+                      >
+                        {launcherRecoveryMode ? "Try panel again" : "Open Metis"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleOpenSettings();
+                        }}
+                        className="rounded-full px-3 py-2"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.82)",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 11,
+                          fontWeight: 700
+                        }}
+                      >
+                        Settings
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -825,8 +912,6 @@ export function PageBridgeApp() {
               onClick={() => {
                 void handleActivate();
               }}
-              onMouseEnter={() => setHovered(true)}
-              onMouseLeave={() => setHovered(false)}
               className="group flex h-[56px] w-[56px] items-center justify-center shadow-2xl"
               style={{
                 background: "#0d1825",
