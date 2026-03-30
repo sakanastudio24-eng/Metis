@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import {
   Download,
@@ -17,31 +17,13 @@ import type {
   MetisLocalSettings
 } from "../../../shared/types/audit";
 import type { PageScanStoreSummary } from "../../../shared/lib/pageScanHistory";
+import {
+  buildPermissionControls,
+  getPermissionAbilityPercent,
+  type PermissionControlId
+} from "../../../shared/lib/metisPermissionControls";
 import { METIS_ACCOUNT_URL } from "../../../shared/lib/metisLinks";
 import { AcronymText } from "./AcronymTooltipText";
-
-const PERMISSION_NOTES = [
-  {
-    title: "Web pages",
-    detail:
-      "Metis runs on normal http and https pages. It starts scanning only after you activate it, then follows same-site routes in that session."
-  },
-  {
-    title: "Storage",
-    detail:
-      "Keeps local settings, saved snapshots, and site history on this device."
-  },
-  {
-    title: "Scripting",
-    detail:
-      "Lets Metis reopen the page bridge and repair scanning when the page needs a fresh injection."
-  },
-  {
-    title: "Side panel",
-    detail:
-      "Keeps the compact Metis workspace attached to the current tab while you review a route."
-  }
-] as const;
 
 function modalBackdrop(onClose: () => void) {
   return (
@@ -144,6 +126,143 @@ function ToggleRow({
   );
 }
 
+function PermissionAbilityRow({
+  settings,
+  selectedId,
+  onSelect,
+  onToggle
+}: {
+  settings: MetisLocalSettings;
+  selectedId: PermissionControlId;
+  onSelect: (id: PermissionControlId) => void;
+  onToggle: (id: PermissionControlId) => void;
+}) {
+  const controls = buildPermissionControls(settings);
+  const selected =
+    controls.find((control) => control.id === selectedId) ?? controls[0];
+  const enabledCount = controls.filter((control) => control.active).length;
+  const overallPercent = Math.round((enabledCount / controls.length) * 100);
+
+  return (
+    <div className="space-y-3">
+      <div
+        className="rounded-[20px] px-4 py-4"
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
+              <AcronymText text="Permission ability" />
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", fontSize: 11, marginTop: 4 }}>
+              <AcronymText text={`${enabledCount} of ${controls.length} capabilities active`} />
+            </div>
+          </div>
+          <div style={{ color: "rgba(255,255,255,0.76)", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
+            {overallPercent}%
+          </div>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${overallPercent}%`,
+              background: "linear-gradient(90deg, #dc8d72 0%, #f59e0b 100%)"
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="metis-scroll flex gap-3 overflow-x-auto pb-1">
+        {controls.map((control) => {
+          const abilityPercent = getPermissionAbilityPercent(control.active);
+
+          return (
+            <div
+              key={control.id}
+              role="button"
+              tabIndex={0}
+              onMouseEnter={() => onSelect(control.id)}
+              onFocus={() => onSelect(control.id)}
+              onClick={() => onSelect(control.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(control.id);
+                }
+              }}
+              className="min-w-[176px] rounded-[20px] px-4 py-4"
+              style={{
+                background:
+                  selected.id === control.id ? "rgba(220,94,94,0.12)" : "rgba(255,255,255,0.04)",
+                border:
+                  selected.id === control.id
+                    ? "1px solid rgba(220,94,94,0.24)"
+                    : "1px solid rgba(255,255,255,0.07)"
+              }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
+                    <AcronymText text={control.title} />
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.46)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "16px", marginTop: 4 }}>
+                    <AcronymText text={control.ability} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggle(control.id);
+                  }}
+                  className="rounded-full px-3 py-1.5"
+                  style={{
+                    background: control.active ? "rgba(34,197,94,0.14)" : "rgba(255,255,255,0.08)",
+                    color: control.active ? "#4ade80" : "rgba(255,255,255,0.55)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    flexShrink: 0
+                  }}
+                >
+                  {control.active ? "On" : "Off"}
+                </button>
+              </div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${abilityPercent}%`,
+                    background: control.active ? "#4ade80" : "rgba(255,255,255,0.28)"
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        className="rounded-[20px] px-4 py-4"
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
+            <AcronymText text={selected.title} />
+          </div>
+          <div style={{ color: "rgba(255,255,255,0.48)", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
+            <AcronymText text={selected.ability} />
+          </div>
+        </div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "17px", marginTop: 6 }}>
+          <AcronymText text={selected.description} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsSection({
   title,
   children
@@ -184,6 +303,38 @@ export function LocalSettingsModal({
   onClearSavedScans: () => void;
   onResetCurrentSiteProgress: () => void;
 }) {
+  const [selectedPermissionId, setSelectedPermissionId] =
+    useState<PermissionControlId>("webPages");
+
+  const handleTogglePermission = (permissionId: PermissionControlId) => {
+    switch (permissionId) {
+      case "webPages":
+        onChange({
+          ...settings,
+          webPageScanningEnabled: !settings.webPageScanningEnabled
+        });
+        return;
+      case "storage":
+        onChange({
+          ...settings,
+          localHistoryEnabled: !settings.localHistoryEnabled
+        });
+        return;
+      case "scripting":
+        onChange({
+          ...settings,
+          bridgeRepairEnabled: !settings.bridgeRepairEnabled
+        });
+        return;
+      case "sidePanel":
+        onChange({
+          ...settings,
+          sidePanelWorkspaceEnabled: !settings.sidePanelWorkspaceEnabled
+        });
+        return;
+    }
+  };
+
   return (
     <>
       {modalBackdrop(onClose)}
@@ -316,55 +467,12 @@ export function LocalSettingsModal({
               </SettingsSection>
 
               <SettingsSection title="Permissions">
-                <ToggleRow
-                  title="Allow web-page scanning"
-                  detail="If off, Metis stops collecting new route scans until you turn it back on."
-                  active={settings.webPageScanningEnabled}
-                  onClick={() =>
-                    onChange({
-                      ...settings,
-                      webPageScanningEnabled: !settings.webPageScanningEnabled
-                    })
-                  }
+                <PermissionAbilityRow
+                  settings={settings}
+                  selectedId={selectedPermissionId}
+                  onSelect={setSelectedPermissionId}
+                  onToggle={handleTogglePermission}
                 />
-                <ToggleRow
-                  title="Allow local history"
-                  detail="If off, Metis stops saving snapshots and same-site progress on this device."
-                  active={settings.localHistoryEnabled}
-                  onClick={() =>
-                    onChange({
-                      ...settings,
-                      localHistoryEnabled: !settings.localHistoryEnabled
-                    })
-                  }
-                />
-                <div
-                  className="rounded-[20px] px-4 py-4"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
-                >
-                  <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
-                    <AcronymText text="What each permission enables" />
-                  </div>
-                  <div style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "17px", marginTop: 6 }}>
-                    <AcronymText text="Metis does not run on browser internal pages. It only works on normal web pages after you activate it." />
-                  </div>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {PERMISSION_NOTES.map((note) => (
-                    <div
-                      key={note.title}
-                      className="rounded-[20px] px-4 py-4"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
-                    >
-                      <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
-                        <AcronymText text={note.title} />
-                      </div>
-                      <div style={{ color: "rgba(255,255,255,0.46)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "17px", marginTop: 6 }}>
-                        <AcronymText text={note.detail} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </SettingsSection>
 
               <SettingsSection title="Saved Analysis">

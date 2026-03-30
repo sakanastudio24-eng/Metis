@@ -9,6 +9,8 @@ export const DEFAULT_METIS_SETTINGS: MetisLocalSettings = {
   autoRescanWhilePanelOpen: true,
   webPageScanningEnabled: true,
   localHistoryEnabled: true,
+  bridgeRepairEnabled: true,
+  sidePanelWorkspaceEnabled: true,
   scanDelayProfile: "balanced",
   attachedReport: true,
   showSampleProgress: true
@@ -114,6 +116,14 @@ function normalizeSettings(value: unknown): MetisLocalSettings {
       typeof value.localHistoryEnabled === "boolean"
         ? value.localHistoryEnabled
         : DEFAULT_METIS_SETTINGS.localHistoryEnabled,
+    bridgeRepairEnabled:
+      typeof value.bridgeRepairEnabled === "boolean"
+        ? value.bridgeRepairEnabled
+        : DEFAULT_METIS_SETTINGS.bridgeRepairEnabled,
+    sidePanelWorkspaceEnabled:
+      typeof value.sidePanelWorkspaceEnabled === "boolean"
+        ? value.sidePanelWorkspaceEnabled
+        : DEFAULT_METIS_SETTINGS.sidePanelWorkspaceEnabled,
     scanDelayProfile: isScanDelayProfile(value.scanDelayProfile)
       ? value.scanDelayProfile
       : DEFAULT_METIS_SETTINGS.scanDelayProfile,

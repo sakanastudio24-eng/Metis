@@ -329,6 +329,8 @@ export interface MetisLocalSettings {
   autoRescanWhilePanelOpen: boolean;
   webPageScanningEnabled: boolean;
   localHistoryEnabled: boolean;
+  bridgeRepairEnabled: boolean;
+  sidePanelWorkspaceEnabled: boolean;
   scanDelayProfile: MetisScanDelayProfile;
   attachedReport: boolean;
   showSampleProgress: boolean;
