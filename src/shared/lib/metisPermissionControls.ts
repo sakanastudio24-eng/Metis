@@ -39,9 +39,9 @@ export function buildPermissionControls(settings: MetisLocalSettings): Permissio
     {
       id: "sidePanel",
       title: "Side panel",
-      ability: "Opens the attached workspace",
+      ability: "Keeps the attached workspace available",
       description:
-        "When this is off, Metis stops opening the side panel workspace from the page flow and falls back to settings access from the toolbar instead.",
+        "When this is off, Metis stops relying on the attached workspace as an automatic compact-review preference. A direct user-open can still bring Metis forward.",
       active: settings.sidePanelWorkspaceEnabled
     }
   ];
