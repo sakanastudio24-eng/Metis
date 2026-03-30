@@ -36,10 +36,7 @@ import {
   getMetisLocalSettings,
   saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
-import {
-  METIS_ACCOUNT_URL,
-  METIS_SITE_LABEL
-} from "../shared/lib/metisLinks";
+import { METIS_ACCOUNT_URL } from "../shared/lib/metisLinks";
 import type {
   MetisRuntimeMessage,
   MetisSessionUiState,
@@ -128,40 +125,6 @@ function buildAutoRefinementAnswers(
                       ? "mixpanel"
                       : undefined
   };
-}
-
-function buildReportCopyText(hostname: string, viewModel: ReturnType<typeof buildMetisDesignViewModel>) {
-  const topDrivers =
-    viewModel.topIssues.length > 0
-      ? viewModel.topIssues.slice(0, 3).map((issue, index) => `${index + 1}. ${issue.title}`)
-      : ["1. No major issues surfaced"];
-
-  return [
-    `Metis report for ${hostname}`,
-    "",
-    `Score: ${viewModel.score}/100 (${viewModel.riskLabel})`,
-    `Control: ${viewModel.controlScore}/100 (${viewModel.controlLabel})`,
-    `Confidence: ${viewModel.confidenceLabel}`,
-    viewModel.confidenceDetail,
-    "",
-    "Estimated waste",
-    viewModel.estimateRange,
-    viewModel.estimateSourceNote ?? null,
-    "",
-    "At 10k users",
-    viewModel.monthlyProjection,
-    "",
-    "Top drivers",
-    ...topDrivers,
-    "",
-    "Insight",
-    viewModel.quickInsight,
-    viewModel.supportingDetail,
-    "",
-    `Scanned by Metis (${METIS_SITE_LABEL})`
-  ]
-    .filter((line): line is string => typeof line === "string")
-    .join("\n");
 }
 
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
@@ -672,9 +635,8 @@ export default function App() {
       return;
     }
 
-    await navigator.clipboard.writeText(
-      buildReportCopyText(activeSnapshot?.page.hostname ?? "current-page", viewModel)
-    );
+    const document = buildExportReportDocument(viewModel, { isPlusUser });
+    await navigator.clipboard.writeText(buildExportOutlineText(document));
 
     toast.success("Report copied", {
       description: "Metis copied the current report summary to your clipboard."

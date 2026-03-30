@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import {
+  ArrowLeft,
   Download,
   FolderArchive,
   LayoutPanelTop,
@@ -166,7 +167,7 @@ function PermissionAbilityRow({
         </div>
       </div>
 
-      <div className="metis-scroll flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-2">
         {controls.map((control) => {
           return (
             <button
@@ -320,8 +321,21 @@ export function LocalSettingsModal({
                 </div>
               </div>
             </div>
-            <button type="button" onClick={onClose} className="rounded-full p-2 text-white/40">
-              <X size={16} />
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.76)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 700
+              }}
+            >
+              <ArrowLeft size={14} />
+              <AcronymText text="Back" />
             </button>
           </div>
 

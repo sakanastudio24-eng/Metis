@@ -87,22 +87,12 @@ async function primeOpenTabsWithBridge() {
   );
 }
 
-function configureSidePanelAction() {
-  void chrome.sidePanel
-    .setPanelBehavior({ openPanelOnActionClick: true })
-    .catch((error) => {
-      console.warn("[Metis] failed to configure side panel action", error);
-    });
-}
-
 chrome.runtime.onInstalled.addListener(() => {
   console.info("[Metis] background service worker ready");
-  configureSidePanelAction();
   void primeOpenTabsWithBridge();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  configureSidePanelAction();
   void primeOpenTabsWithBridge();
 });
 

@@ -202,7 +202,7 @@ function PermissionAbilityRow({
         </div>
       </div>
 
-      <div className="metis-scroll flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-2">
         {controls.map((control) => {
           return (
             <button
