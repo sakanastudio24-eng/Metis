@@ -147,6 +147,16 @@ That means:
 - Plus gets the same fairer read plus more depth
 - neither mode gets a different truth
 
+The fullscreen score summary should also expose a `Before context` and `After context` preview.
+
+That preview is there to explain the route-context effect, not to create a second final report.
+
+It should:
+
+- compare the neutral route read against the contextual route read
+- stay in the fullscreen score area only
+- leave the main exported report tied to the `After context` state
+
 Plus must not replace the base read with a different story.
 
 ## Where it lives

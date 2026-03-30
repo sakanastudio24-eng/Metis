@@ -20,6 +20,20 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.11.0
+
+Release type: Minor
+
+This release adds a real before-and-after context preview in the fullscreen score summary and makes modern framework marketing pages read more fairly when image count rises without matching transfer weight.
+
+What changed
+
+- Added `Before context` and `After context` controls to the fullscreen Combined Score area so route context changes are visible instead of implicit.
+- Computed a neutral baseline report read without page-context answers and compared it against the active contextual read without forking Free and Plus math.
+- Slightly tightened the `marketing + main public page` context path so the route-context answers create a real, visible shift instead of staying fully neutral.
+- Softened image severity on modern framework routes when image count is high but total image bytes remain low, which improves Notion-style marketing pages.
+- Added logic coverage for context preview data, marketing-main delta behavior, and low-byte image-count routes.
+
 ## 0.10.6
 
 Release type: Patch
