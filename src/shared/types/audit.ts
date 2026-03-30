@@ -141,7 +141,12 @@ export type MoneyStackGroup =
   | "aiProviders"
   | "analyticsAdsRum"
   | "framework"
-  | "payment";
+  | "payment"
+  | "monitoring"
+  | "search"
+  | "libraries"
+  | "graphics"
+  | "misc";
 
 export type MoneyStackVendorSource = TechnologyEvidenceSource;
 export type MoneyStackConfidence = "low" | "medium" | "high";

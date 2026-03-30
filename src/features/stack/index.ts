@@ -21,7 +21,12 @@ const GROUP_LABELS: Record<MoneyStackGroup, string> = {
   aiProviders: "AI Providers",
   analyticsAdsRum: "Analytics / Ads / RUM",
   framework: "Framework",
-  payment: "Payment"
+  payment: "Payment",
+  monitoring: "Monitoring / Issue Trackers",
+  search: "Search Engines",
+  libraries: "JavaScript Libraries",
+  graphics: "JavaScript Graphics",
+  misc: "Misc"
 };
 
 const COST_GROUP_IDS = ["hostingCdn", "aiProviders", "analyticsAdsRum"] as const;
@@ -82,6 +87,30 @@ export function collectDomStackSignals(pageHref: string): StackSignal[] {
   }
   if ("Stripe" in w) {
     addSignal(signals, "global:stripe", "dom", pageHref);
+  }
+  if ("Sentry" in w) {
+    addSignal(signals, "global:sentry", "dom", pageHref);
+  }
+  if ("Prism" in w) {
+    addSignal(signals, "global:prism", "dom", pageHref);
+  }
+  if ("THREE" in w) {
+    addSignal(signals, "global:three", "dom", pageHref);
+  }
+  if ("algoliasearch" in w) {
+    addSignal(signals, "global:algolia", "dom", pageHref);
+  }
+  if ("ReactFlow" in w) {
+    addSignal(signals, "global:reactflow", "dom", pageHref);
+  }
+  if ("_" in w) {
+    addSignal(signals, "global:lodash", "dom", pageHref);
+  }
+  if ("__webpack_require__" in w || Object.keys(w).some((key) => key.startsWith("webpackChunk"))) {
+    addSignal(signals, "global:webpack", "dom", pageHref);
+  }
+  if (document.querySelector('[property^="og:"]')) {
+    addSignal(signals, "meta:open-graph", "dom", pageHref);
   }
 
   document

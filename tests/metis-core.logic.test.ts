@@ -1966,6 +1966,150 @@ test("money stack detector treats Cloudflare Browser Insights as analytics and C
   assert.ok(hostingGroup?.vendors.some((vendor) => vendor.label === "AWS"));
 });
 
+test("money stack detector resolves broader docs-site stack fingerprints", () => {
+  const snapshot = createSnapshot([], {
+    page: {
+      href: "https://docs.stripe.com/revenue",
+      origin: "https://docs.stripe.com",
+      hostname: "docs.stripe.com",
+      pathname: "/revenue"
+    },
+    stackSignals: [
+      {
+        name: "https://www.google-analytics.com/g/collect?v=2",
+        hostname: "www.google-analytics.com",
+        pathname: "/g/collect",
+        source: "resource"
+      },
+      {
+        name: "https://browser.sentry-cdn.com/7.101.1/bundle.min.js",
+        hostname: "browser.sentry-cdn.com",
+        pathname: "/7.101.1/bundle.min.js",
+        source: "resource"
+      },
+      {
+        name: "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/npm/prismjs@1.29.0/prism.min.js",
+        source: "resource"
+      },
+      {
+        name: "https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/npm/lodash@4.17.21/lodash.min.js",
+        source: "resource"
+      },
+      {
+        name: "https://cdn.jsdelivr.net/npm/core-js@3.22.0/minified.js",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/npm/core-js@3.22.0/minified.js",
+        source: "resource"
+      },
+      {
+        name: "https://cdn.jsdelivr.net/npm/reactflow/dist/style.css",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/npm/reactflow/dist/style.css",
+        source: "resource"
+      },
+      {
+        name: "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/npm/three@0.157.0/build/three.module.js",
+        source: "resource"
+      },
+      {
+        name: "https://cdn.jsdelivr.net/npm/algoliasearch/dist/algoliasearch.umd.js",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/npm/algoliasearch/dist/algoliasearch.umd.js",
+        source: "resource"
+      },
+      {
+        name: "https://js.stripe.com/v3/",
+        hostname: "js.stripe.com",
+        pathname: "/v3/",
+        source: "resource"
+      },
+      {
+        name: "https://bitpay.com/checkout.js",
+        hostname: "bitpay.com",
+        pathname: "/checkout.js",
+        source: "resource"
+      },
+      {
+        name: "https://docs.stripe.com/_next/static/chunks/webpack-abc123.js",
+        hostname: "docs.stripe.com",
+        pathname: "/_next/static/chunks/webpack-abc123.js",
+        source: "resource"
+      },
+      {
+        name: "meta:open-graph",
+        hostname: "docs.stripe.com",
+        pathname: "/revenue",
+        source: "dom"
+      },
+      {
+        name: "global:react",
+        hostname: "docs.stripe.com",
+        pathname: "/revenue",
+        source: "dom"
+      }
+    ]
+  });
+
+  const detection = detectMoneyStack(snapshot, {});
+
+  assert.ok(
+    detection.groups.find((group) => group.id === "analyticsAdsRum")?.vendors.some(
+      (vendor) => vendor.label === "Google Analytics 4"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "framework")?.vendors.some(
+      (vendor) => vendor.label === "React 18"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "monitoring")?.vendors.some(
+      (vendor) => vendor.label === "Sentry"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "search")?.vendors.some(
+      (vendor) => vendor.label === "Algolia"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "graphics")?.vendors.some(
+      (vendor) => vendor.label === "Three.js"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "libraries")?.vendors.some(
+      (vendor) => vendor.label === "Lodash"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "libraries")?.vendors.some(
+      (vendor) => vendor.label === "core-js"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "payment")?.vendors.some(
+      (vendor) => vendor.label === "Stripe v3"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "payment")?.vendors.some(
+      (vendor) => vendor.label === "BitPay"
+    )
+  );
+  assert.ok(
+    detection.groups.find((group) => group.id === "misc")?.vendors.some(
+      (vendor) => vendor.label === "Open Graph"
+    )
+  );
+});
+
 test("generic AWS stack context does not create a hosting spend issue on its own", () => {
   const snapshot = createSnapshot([], {
     stackSignals: [

@@ -30,7 +30,17 @@ const BRAND = {
   segment: "#6ee7ff",
   plausible: "#a78bfa",
   mixpanel: "#8b5cf6",
+  sentry: "#8b5cf6",
+  algolia: "#5468ff",
+  prism: "#f97316",
+  three: "#38bdf8",
+  webpack: "#60a5fa",
+  openGraph: "#f472b6",
+  lodash: "#2563eb",
+  coreJs: "#22c55e",
+  reactFlow: "#06b6d4",
   stripe: "#6772e5",
+  bitpay: "#10b981",
   shopify: "#7ab55c",
   paddle: "#6d5efc"
 } as const;
@@ -367,6 +377,118 @@ export const TECHNOLOGY_FINGERPRINTS: TechnologyFingerprint[] = [
     ]
   },
   {
+    id: "sentry",
+    label: "Sentry",
+    group: "monitoring",
+    minScore: 4,
+    brandColor: BRAND.sentry,
+    costRelevant: false,
+    patterns: [
+      { source: "host", keyIncludes: ["sentry.io", "sentry-cdn.com"], minWeight: 4 },
+      { source: "resource", keyIncludes: ["sentry"], minWeight: 3 },
+      { source: "global", keyIncludes: ["global:sentry"], minWeight: 4 }
+    ]
+  },
+  {
+    id: "algolia",
+    label: "Algolia",
+    group: "search",
+    minScore: 4,
+    brandColor: BRAND.algolia,
+    costRelevant: false,
+    patterns: [
+      { source: "host", keyIncludes: ["algolia.net", "algolia.com"], minWeight: 4 },
+      { source: "resource", keyIncludes: ["algolia"], minWeight: 3 },
+      { source: "path", keyIncludes: ["algolia"], minWeight: 4 },
+      { source: "global", keyIncludes: ["global:algolia"], minWeight: 4 }
+    ]
+  },
+  {
+    id: "prism",
+    label: "Prism",
+    group: "misc",
+    minScore: 3,
+    brandColor: BRAND.prism,
+    costRelevant: false,
+    patterns: [
+      { source: "resource", keyIncludes: ["prism"], minWeight: 3 },
+      { source: "path", keyIncludes: ["prism"], minWeight: 4 },
+      { source: "global", keyIncludes: ["global:prism"], minWeight: 4 }
+    ]
+  },
+  {
+    id: "threejs",
+    label: "Three.js",
+    group: "graphics",
+    minScore: 3,
+    brandColor: BRAND.three,
+    costRelevant: false,
+    patterns: [
+      { source: "resource", keyIncludes: ["three.js", "three.min.js", "three.module.js"], minWeight: 3 },
+      { source: "path", keyIncludes: ["three", "three.module"], minWeight: 4 },
+      { source: "global", keyIncludes: ["global:three"], minWeight: 4 }
+    ]
+  },
+  {
+    id: "webpack",
+    label: "Webpack",
+    group: "misc",
+    minScore: 4,
+    brandColor: BRAND.webpack,
+    costRelevant: false,
+    patterns: [
+      { source: "global", keyIncludes: ["global:webpack"], minWeight: 4 },
+      { source: "resource", keyIncludes: ["webpack"], minWeight: 3 }
+    ]
+  },
+  {
+    id: "open-graph",
+    label: "Open Graph",
+    group: "misc",
+    minScore: 2,
+    brandColor: BRAND.openGraph,
+    costRelevant: false,
+    patterns: [{ source: "dom", keyIncludes: ["meta:open-graph"], minWeight: 2 }]
+  },
+  {
+    id: "lodash",
+    label: "Lodash",
+    group: "libraries",
+    minScore: 3,
+    brandColor: BRAND.lodash,
+    costRelevant: false,
+    patterns: [
+      { source: "resource", keyIncludes: ["lodash"], minWeight: 3 },
+      { source: "path", keyIncludes: ["lodash"], minWeight: 4 },
+      { source: "global", keyIncludes: ["global:lodash"], minWeight: 4 }
+    ]
+  },
+  {
+    id: "core-js",
+    label: "core-js",
+    group: "libraries",
+    minScore: 3,
+    brandColor: BRAND.coreJs,
+    costRelevant: false,
+    patterns: [
+      { source: "resource", keyIncludes: ["core-js"], minWeight: 3 },
+      { source: "path", keyIncludes: ["core-js"], minWeight: 4 }
+    ]
+  },
+  {
+    id: "react-flow",
+    label: "React Flow",
+    group: "libraries",
+    minScore: 3,
+    brandColor: BRAND.reactFlow,
+    costRelevant: false,
+    patterns: [
+      { source: "resource", keyIncludes: ["reactflow", "react-flow"], minWeight: 3 },
+      { source: "path", keyIncludes: ["reactflow", "react-flow"], minWeight: 4 },
+      { source: "global", keyIncludes: ["global:reactflow"], minWeight: 4 }
+    ]
+  },
+  {
     id: "stripe",
     label: "Stripe v3",
     group: "payment",
@@ -377,6 +499,18 @@ export const TECHNOLOGY_FINGERPRINTS: TechnologyFingerprint[] = [
       { source: "host", keyIncludes: ["js.stripe.com"], minWeight: 4 },
       { source: "global", keyIncludes: ["global:stripe"], minWeight: 4 },
       { source: "answer", keyIncludes: ["answer:stackPayment:stripe"], minWeight: 2 }
+    ]
+  },
+  {
+    id: "bitpay",
+    label: "BitPay",
+    group: "payment",
+    minScore: 4,
+    brandColor: BRAND.bitpay,
+    costRelevant: false,
+    patterns: [
+      { source: "host", keyIncludes: ["bitpay.com", "bitpay"], minWeight: 4 },
+      { source: "resource", keyIncludes: ["bitpay"], minWeight: 3 }
     ]
   },
   {
