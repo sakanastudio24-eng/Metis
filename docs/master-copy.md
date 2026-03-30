@@ -105,9 +105,9 @@ Use it before changing UI wording, fallback copy, or product labels.
   `Repairs the page bridge`
 - Header: `Side panel`
 - Body:
-  `When this is off, Metis stops opening the side panel workspace from the page flow and falls back to settings access from the toolbar instead.`
+  `When this is off, Metis stops relying on the attached workspace as an automatic compact-review preference. A direct user-open can still bring Metis forward.`
 - Body, ability:
-  `Opens the attached workspace`
+  `Keeps the attached workspace available`
 
 ### About
 

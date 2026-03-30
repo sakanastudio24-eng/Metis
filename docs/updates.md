@@ -20,6 +20,17 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.10.1
+
+Release type: Patch
+
+This release fixes a regression where the new side-panel capability control could block Metis from opening even when you explicitly clicked it.
+
+What changed
+
+- Direct user-open actions now force the Metis side panel to open instead of being blocked by the side-panel preference.
+- Kept the side-panel capability wording, but narrowed it to automatic compact-review behavior rather than primary launch.
+
 ## 0.10.0
 
 Release type: Minor
