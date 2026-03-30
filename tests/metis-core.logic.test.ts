@@ -2309,7 +2309,9 @@ test("local settings persist through chrome storage when available", async () =>
       ...DEFAULT_METIS_SETTINGS,
       preferredScanScope: "multi" as const,
       motionPreference: "reduced" as const,
-      showSampleProgress: false
+      showSampleProgress: false,
+      bridgeRepairEnabled: false,
+      sidePanelWorkspaceEnabled: false
     };
 
     await saveMetisLocalSettings(nextSettings);
@@ -2318,6 +2320,8 @@ test("local settings persist through chrome storage when available", async () =>
     assert.equal(loadedSettings.preferredScanScope, "multi");
     assert.equal(loadedSettings.motionPreference, "reduced");
     assert.equal(loadedSettings.showSampleProgress, false);
+    assert.equal(loadedSettings.bridgeRepairEnabled, false);
+    assert.equal(loadedSettings.sidePanelWorkspaceEnabled, false);
   } finally {
     if (previousChrome === undefined) {
       delete (globalThis as typeof globalThis & { chrome?: unknown }).chrome;

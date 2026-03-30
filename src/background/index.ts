@@ -2,6 +2,9 @@
 // Chrome side panel workspace. The service worker never scans the page itself;
 // it only brokers sessions and privileged Chrome APIs.
 import {
+  getMetisLocalSettings
+} from "../shared/lib/metisLocalSettings";
+import {
   getMetisTabSession,
   patchMetisTabSession,
   patchMetisTabSessionUiState,
@@ -42,6 +45,12 @@ async function ensureContentBridge(tabId: number) {
 
   if (alreadyInjected) {
     return true;
+  }
+
+  const settings = await getMetisLocalSettings();
+
+  if (!settings.bridgeRepairEnabled) {
+    return false;
   }
 
   await chrome.scripting.executeScript({
@@ -147,7 +156,14 @@ async function broadcastSessionChange(tabId: number) {
 }
 
 async function openMetisSidePanel(windowId: number) {
+  const settings = await getMetisLocalSettings();
+
+  if (!settings.sidePanelWorkspaceEnabled) {
+    return false;
+  }
+
   await chrome.sidePanel.open({ windowId });
+  return true;
 }
 
 async function openMetisToolbarSettings(windowId?: number) {
@@ -235,8 +251,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        await openMetisSidePanel(senderTab.windowId);
-        sendResponse({ ok: true });
+        const opened = await openMetisSidePanel(senderTab.windowId);
+
+        if (!opened) {
+          await openMetisToolbarSettings(senderTab.windowId);
+        }
+
+        sendResponse({ ok: opened });
         return;
       }
 
@@ -253,7 +274,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        await ensureContentBridge(runtimeMessage.tabId);
+        const bridgeReady = await ensureContentBridge(runtimeMessage.tabId);
+
+        if (!bridgeReady) {
+          sendResponse({ ok: false });
+          return;
+        }
+
         await chrome.tabs.sendMessage(runtimeMessage.tabId, runtimeMessage);
         sendResponse({ ok: true });
         return;
@@ -361,12 +388,24 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        await ensureContentBridge(activeTab.id);
+        const bridgeReady = await ensureContentBridge(activeTab.id);
+
+        if (!bridgeReady) {
+          await openMetisToolbarSettings(activeTab.windowId);
+          sendResponse({ ok: false });
+          return;
+        }
+
         await chrome.tabs.sendMessage(activeTab.id, {
           type: "METIS_ACTIVATE_FROM_TOOLBAR"
         } satisfies MetisRuntimeMessage);
-        await openMetisSidePanel(activeTab.windowId);
-        sendResponse({ ok: true });
+        const opened = await openMetisSidePanel(activeTab.windowId);
+
+        if (!opened) {
+          await openMetisToolbarSettings(activeTab.windowId);
+        }
+
+        sendResponse({ ok: opened });
         return;
       }
 
