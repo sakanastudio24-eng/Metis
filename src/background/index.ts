@@ -87,12 +87,22 @@ async function primeOpenTabsWithBridge() {
   );
 }
 
+function configureSidePanelAction() {
+  void chrome.sidePanel
+    .setPanelBehavior({ openPanelOnActionClick: true })
+    .catch((error) => {
+      console.warn("[Metis] failed to configure side panel action", error);
+    });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   console.info("[Metis] background service worker ready");
+  configureSidePanelAction();
   void primeOpenTabsWithBridge();
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  configureSidePanelAction();
   void primeOpenTabsWithBridge();
 });
 
@@ -157,28 +167,27 @@ async function broadcastSessionChange(tabId: number) {
 
 async function openMetisSidePanel(
   tabId: number,
-  windowId: number,
-  options?: { force?: boolean }
+  windowId: number
 ) {
-  const settings = await getMetisLocalSettings();
-
-  if (!options?.force && !settings.sidePanelWorkspaceEnabled) {
-    return false;
-  }
-
   try {
-    await chrome.sidePanel.setOptions({
-      tabId,
-      path: "sidepanel.html",
-      enabled: true
-    });
-    await chrome.sidePanel.open({ tabId });
+    await chrome.sidePanel.open({ windowId });
     return true;
-  } catch {
+  } catch (globalError) {
     try {
-      await chrome.sidePanel.open({ windowId });
+      await chrome.sidePanel.setOptions({
+        tabId,
+        path: "sidepanel.html",
+        enabled: true
+      });
+      await chrome.sidePanel.open({ tabId });
       return true;
-    } catch {
+    } catch (tabError) {
+      console.warn("[Metis] failed to open side panel", {
+        tabId,
+        windowId,
+        globalError,
+        tabError
+      });
       return false;
     }
   }
@@ -191,31 +200,6 @@ async function openMetisToolbarSettings(windowId?: number) {
   }
 
   await chrome.action.openPopup();
-}
-
-async function openMetisDetachedPanel(tabId: number) {
-  const detachedUrl = chrome.runtime.getURL(`sidepanel.html?tabId=${tabId}&detached=1`);
-
-  try {
-    await chrome.windows.create({
-      url: detachedUrl,
-      type: "popup",
-      width: 420,
-      height: 860,
-      focused: true
-    });
-    return true;
-  } catch {
-    try {
-      await chrome.tabs.create({
-        url: detachedUrl,
-        active: true
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
 }
 
 function getSenderTab(
@@ -257,6 +241,21 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 
   const runtimeMessage = message as MetisRuntimeMessage;
 
+  if (runtimeMessage.type === "METIS_OPEN_SIDE_PANEL") {
+    const senderTab = getSenderTab(sender);
+
+    if (!senderTab) {
+      sendResponse({ ok: false });
+      return false;
+    }
+
+    void openMetisSidePanel(senderTab.tabId, senderTab.windowId).then((opened) => {
+      sendResponse({ ok: opened });
+    });
+
+    return true;
+  }
+
   void (async () => {
     switch (runtimeMessage.type) {
       case "METIS_BRIDGE_READY": {
@@ -283,28 +282,6 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 
         await broadcastSessionChange(senderTab.tabId);
         sendResponse({ ok: true, session });
-        return;
-      }
-
-      case "METIS_OPEN_SIDE_PANEL": {
-        const senderTab = getSenderTab(sender);
-
-        if (!senderTab) {
-          sendResponse({ ok: false });
-          return;
-        }
-
-        const opened = await openMetisSidePanel(senderTab.tabId, senderTab.windowId, {
-          force: true
-        });
-
-        if (opened) {
-          sendResponse({ ok: true });
-          return;
-        }
-
-        const detachedOpened = await openMetisDetachedPanel(senderTab.tabId);
-        sendResponse({ ok: detachedOpened });
         return;
       }
 
@@ -397,15 +374,6 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         return;
       }
 
-      case "METIS_GET_TAB_SESSION": {
-        sendResponse({
-          ok: true,
-          tabId: runtimeMessage.tabId,
-          session: await getMetisTabSession(runtimeMessage.tabId)
-        });
-        return;
-      }
-
       case "METIS_SET_PANEL_VISIBILITY": {
         const session = await patchMetisTabSession(runtimeMessage.tabId, {
           isSidePanelOpen: runtimeMessage.isOpen
@@ -455,17 +423,8 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         await chrome.tabs.sendMessage(activeTab.id, {
           type: "METIS_ACTIVATE_FROM_TOOLBAR"
         } satisfies MetisRuntimeMessage);
-        const opened = await openMetisSidePanel(activeTab.id, activeTab.windowId, {
-          force: true
-        });
-
-        if (opened) {
-          sendResponse({ ok: true });
-          return;
-        }
-
-        const detachedOpened = await openMetisDetachedPanel(activeTab.id);
-        sendResponse({ ok: detachedOpened });
+        const opened = await openMetisSidePanel(activeTab.id, activeTab.windowId);
+        sendResponse({ ok: opened });
         return;
       }
 

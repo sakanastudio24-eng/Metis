@@ -57,22 +57,6 @@ import {
 } from "./components/figures/PrototypeChrome";
 import { buildMetisDesignViewModel } from "./components/figures/liveAdapter";
 
-function getForcedTabIdFromLocation() {
-  try {
-    const search = new URLSearchParams(window.location.search);
-    const value = search.get("tabId");
-
-    if (!value) {
-      return null;
-    }
-
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
 function buildCurrentSnapshot(rawSnapshot: RawScanSnapshot | null) {
   if (!rawSnapshot) {
     return null;
@@ -318,7 +302,6 @@ function ReconnectState({
 
 export default function App() {
   const sidePanelPresencePortRef = useRef<chrome.runtime.Port | null>(null);
-  const forcedTabId = useMemo(() => getForcedTabIdFromLocation(), []);
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
   const [session, setSession] = useState<MetisTabSessionState | null>(null);
   const [scanScope, setScanScope] = useState<ScanScope>("single");
@@ -469,28 +452,19 @@ export default function App() {
   // The side panel stays small and stable. Deeper reading and immersive actions
   // still happen back in the page DOM.
   const refreshActiveSession = async () => {
-    const response = forcedTabId
-      ? await sendRuntimeMessage<{
-          ok: boolean;
-          tabId: number | null;
-          session: MetisTabSessionState | null;
-        }>({
-          type: "METIS_GET_TAB_SESSION",
-          tabId: forcedTabId
-        })
-      : await sendRuntimeMessage<{
-          ok: boolean;
-          tabId: number | null;
-          session: MetisTabSessionState | null;
-        }>({
-          type: "METIS_GET_ACTIVE_TAB_SESSION"
-        });
+    const response = await sendRuntimeMessage<{
+      ok: boolean;
+      tabId: number | null;
+      session: MetisTabSessionState | null;
+    }>({
+      type: "METIS_GET_ACTIVE_TAB_SESSION"
+    });
 
     if (!response?.ok) {
       return;
     }
 
-    setActiveTabId(response.tabId ?? forcedTabId ?? null);
+    setActiveTabId(response.tabId ?? null);
     applySessionState(response.session ?? null);
   };
 
@@ -512,7 +486,7 @@ export default function App() {
       sidePanelPresencePortRef.current = null;
       port.disconnect();
     };
-  }, [forcedTabId]);
+  }, []);
 
   useEffect(() => {
     if (!activeTabId || !sidePanelPresencePortRef.current) {
@@ -612,19 +586,15 @@ export default function App() {
     };
 
     chrome.runtime.onMessage.addListener(handleRuntimeMessage);
-    if (!forcedTabId) {
-      chrome.tabs.onActivated.addListener(handleActivated);
-      chrome.windows.onFocusChanged.addListener(handleActivated);
-    }
+    chrome.tabs.onActivated.addListener(handleActivated);
+    chrome.windows.onFocusChanged.addListener(handleActivated);
 
     return () => {
       chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
-      if (!forcedTabId) {
-        chrome.tabs.onActivated.removeListener(handleActivated);
-        chrome.windows.onFocusChanged.removeListener(handleActivated);
-      }
+      chrome.tabs.onActivated.removeListener(handleActivated);
+      chrome.windows.onFocusChanged.removeListener(handleActivated);
     };
-  }, [activeTabId, forcedTabId]);
+  }, [activeTabId]);
 
   useEffect(() => {
     if (!session?.isActive || rawSnapshot) {
