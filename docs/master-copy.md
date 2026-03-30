@@ -60,7 +60,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 - Header, stat label: `Name`
 - Header, stat label: `Email`
 - Body:
-  `Available on your dashboard`
+  `Show the current local account placeholder.`
 - CTA: `View my dashboard`
 
 ### Scan behavior
@@ -87,7 +87,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 - Header: `Permission ability`
 - Body:
-  `Turn Metis capabilities on or off here without leaving the extension.`
+  `Turn Metis capabilities on or off here without leaving the extension. Hover a permission to see what it changes.`
 - Header: `Web pages`
 - Body:
   `When this is off, Metis stops collecting new route scans on normal http and https pages until you turn it back on.`
