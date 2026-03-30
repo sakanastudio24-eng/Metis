@@ -20,6 +20,18 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.10.3
+
+Release type: Patch
+
+This release adds a reliable detached compact-workspace fallback when Chrome refuses to open the native side panel from the page launcher.
+
+What changed
+
+- Added a detached `sidepanel.html` fallback window that stays bound to the current tab session when the native side panel open call fails.
+- Let the shared sidepanel app load a specific tab session by URL parameter so the detached workspace shows the same live route data.
+- Kept the launcher and reconnect path on the same runtime entry points, with the detached compact workspace used only as a fallback.
+
 ## 0.10.2
 
 Release type: Patch
