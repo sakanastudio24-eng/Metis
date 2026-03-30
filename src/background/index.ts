@@ -193,6 +193,31 @@ async function openMetisToolbarSettings(windowId?: number) {
   await chrome.action.openPopup();
 }
 
+async function openMetisDetachedPanel(tabId: number) {
+  const detachedUrl = chrome.runtime.getURL(`sidepanel.html?tabId=${tabId}&detached=1`);
+
+  try {
+    await chrome.windows.create({
+      url: detachedUrl,
+      type: "popup",
+      width: 420,
+      height: 860,
+      focused: true
+    });
+    return true;
+  } catch {
+    try {
+      await chrome.tabs.create({
+        url: detachedUrl,
+        active: true
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
 function getSenderTab(
   sender: chrome.runtime.MessageSender
 ): { tabId: number; windowId: number } | null {
@@ -273,7 +298,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           force: true
         });
 
-        sendResponse({ ok: opened });
+        if (opened) {
+          sendResponse({ ok: true });
+          return;
+        }
+
+        const detachedOpened = await openMetisDetachedPanel(senderTab.tabId);
+        sendResponse({ ok: detachedOpened });
         return;
       }
 
@@ -366,6 +397,15 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         return;
       }
 
+      case "METIS_GET_TAB_SESSION": {
+        sendResponse({
+          ok: true,
+          tabId: runtimeMessage.tabId,
+          session: await getMetisTabSession(runtimeMessage.tabId)
+        });
+        return;
+      }
+
       case "METIS_SET_PANEL_VISIBILITY": {
         const session = await patchMetisTabSession(runtimeMessage.tabId, {
           isSidePanelOpen: runtimeMessage.isOpen
@@ -419,7 +459,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           force: true
         });
 
-        sendResponse({ ok: opened });
+        if (opened) {
+          sendResponse({ ok: true });
+          return;
+        }
+
+        const detachedOpened = await openMetisDetachedPanel(activeTab.id);
+        sendResponse({ ok: detachedOpened });
         return;
       }
 
