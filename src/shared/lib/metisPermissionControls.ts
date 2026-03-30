@@ -46,7 +46,3 @@ export function buildPermissionControls(settings: MetisLocalSettings): Permissio
     }
   ];
 }
-
-export function getPermissionAbilityPercent(active: boolean) {
-  return active ? 100 : 18;
-}

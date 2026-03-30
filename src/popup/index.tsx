@@ -11,7 +11,6 @@ import {
 } from "../shared/lib/metisLocalSettings";
 import {
   buildPermissionControls,
-  getPermissionAbilityPercent,
   type PermissionControlId
 } from "../shared/lib/metisPermissionControls";
 import {
@@ -19,7 +18,12 @@ import {
   getSiteHistorySummary,
   type SiteHistorySummary
 } from "../shared/lib/siteBaseline";
-import { METIS_ACCOUNT_URL, METIS_SITE_URL } from "../shared/lib/metisLinks";
+import {
+  METIS_ACCOUNT_EMAIL,
+  METIS_ACCOUNT_NAME,
+  METIS_ACCOUNT_URL,
+  METIS_SITE_URL
+} from "../shared/lib/metisLinks";
 import type { MetisLocalSettings } from "../shared/types/audit";
 
 function Section({
@@ -169,7 +173,6 @@ function PermissionAbilityRow({
   const selected =
     controls.find((control) => control.id === selectedId) ?? controls[0];
   const enabledCount = controls.filter((control) => control.active).length;
-  const overallPercent = Math.round((enabledCount / controls.length) * 100);
 
   return (
     <div className="space-y-3">
@@ -194,39 +197,21 @@ function PermissionAbilityRow({
             </div>
           </div>
           <div style={{ color: "rgba(255,255,255,0.72)", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
-            {overallPercent}%
+            {selected.ability}
           </div>
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${overallPercent}%`,
-              background: "linear-gradient(90deg, #dc8d72 0%, #f59e0b 100%)"
-            }}
-          />
         </div>
       </div>
 
       <div className="metis-scroll flex gap-2 overflow-x-auto pb-1">
         {controls.map((control) => {
-          const abilityPercent = getPermissionAbilityPercent(control.active);
-
           return (
-            <div
+            <button
               key={control.id}
-              role="button"
-              tabIndex={0}
+              type="button"
               onMouseEnter={() => onSelect(control.id)}
               onFocus={() => onSelect(control.id)}
-              onClick={() => onSelect(control.id)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onSelect(control.id);
-                }
-              }}
-              className="min-w-[154px] rounded-[16px] border px-3 py-3"
+              onClick={() => onToggle(control.id)}
+              className="inline-flex min-w-fit items-center gap-2 rounded-full border px-3 py-2"
               style={{
                 background:
                   selected.id === control.id ? "rgba(220,94,94,0.12)" : "rgba(255,255,255,0.03)",
@@ -234,52 +219,22 @@ function PermissionAbilityRow({
                   selected.id === control.id ? "rgba(220,94,94,0.24)" : "rgba(255,255,255,0.07)"
               }}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-                    {control.title}
-                  </div>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.48)",
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: 10,
-                      lineHeight: "14px",
-                      marginTop: 4
-                    }}
-                  >
-                    {control.ability}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onToggle(control.id);
-                  }}
-                  className="rounded-full px-2.5 py-1"
-                  style={{
-                    background: control.active ? "rgba(34,197,94,0.14)" : "rgba(255,255,255,0.08)",
-                    color: control.active ? "#4ade80" : "rgba(255,255,255,0.55)",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    flexShrink: 0
-                  }}
-                >
-                  {control.active ? "On" : "Off"}
-                </button>
-              </div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${abilityPercent}%`,
-                    background: control.active ? "#4ade80" : "rgba(255,255,255,0.28)"
-                  }}
-                />
-              </div>
-            </div>
+              <span style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                {control.title}
+              </span>
+              <span
+                className="rounded-full px-2 py-0.5"
+                style={{
+                  background: control.active ? "rgba(34,197,94,0.14)" : "rgba(255,255,255,0.08)",
+                  color: control.active ? "#4ade80" : "rgba(255,255,255,0.55)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 10,
+                  fontWeight: 700
+                }}
+              >
+                {control.active ? "On" : "Off"}
+              </span>
+            </button>
           );
         })}
       </div>
@@ -291,9 +246,6 @@ function PermissionAbilityRow({
         <div className="flex items-center justify-between gap-4">
           <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
             {selected.title}
-          </div>
-          <div style={{ color: "rgba(255,255,255,0.48)", fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700 }}>
-            {selected.ability}
           </div>
         </div>
         <div
@@ -547,7 +499,7 @@ function PopupApp() {
                 Name
               </div>
               <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-                Available on your dashboard
+                {METIS_ACCOUNT_NAME}
               </div>
             </div>
             <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
@@ -555,7 +507,7 @@ function PopupApp() {
                 Email
               </div>
               <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-                Available on your dashboard
+                {METIS_ACCOUNT_EMAIL}
               </div>
             </div>
           </div>
@@ -563,7 +515,7 @@ function PopupApp() {
             href={METIS_ACCOUNT_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full px-3 py-2 no-underline"
+            className="flex w-full items-center justify-center gap-2 rounded-full px-3 py-2 no-underline"
             style={{
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.08)",

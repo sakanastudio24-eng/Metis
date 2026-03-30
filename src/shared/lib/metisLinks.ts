@@ -5,3 +5,5 @@
 export const METIS_SITE_URL = "https://metis.zward.studio";
 export const METIS_ACCOUNT_URL = `${METIS_SITE_URL}/account`;
 export const METIS_SITE_LABEL = "metis.zward.studio";
+export const METIS_ACCOUNT_NAME = "Avery Hale";
+export const METIS_ACCOUNT_EMAIL = "avery@metis.studio";
