@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.10.5
+
+Release type: Patch
+
+This release fixes report-copy parity for Free and Plus, restores the toolbar icon to settings, and stops permission tags from clipping in the settings surfaces.
+
+What changed
+
+- Switched the report copy button onto the same export-document builder that the export flow uses, so Plus copy now includes the same deeper sections as Plus export.
+- Changed the export modal header from an `X` close affordance to a `Back` button.
+- Removed the `openPanelOnActionClick` side-panel behavior so the Metis toolbar icon returns to opening settings.
+- Let permission tags wrap in popup and local settings so they do not get cut off on narrower layouts.
+
 ## 0.10.4
 
 Release type: Patch
