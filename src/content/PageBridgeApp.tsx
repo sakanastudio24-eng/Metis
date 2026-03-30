@@ -666,8 +666,10 @@ export function PageBridgeApp() {
     setIsPanelOpen(true);
     setHovered(false);
 
-    await sendRuntimeMessage({ type: "METIS_START_TAB_SESSION" });
-    await sendRuntimeMessage({ type: "METIS_OPEN_SIDE_PANEL" });
+    const openPanelPromise = sendRuntimeMessage({ type: "METIS_OPEN_SIDE_PANEL" });
+    const startSessionPromise = sendRuntimeMessage({ type: "METIS_START_TAB_SESSION" });
+
+    await Promise.all([openPanelPromise, startSessionPromise]);
   };
 
   const handleSetScanScope = (scope: ScanScope) => {

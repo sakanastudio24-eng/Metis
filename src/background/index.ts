@@ -155,15 +155,33 @@ async function broadcastSessionChange(tabId: number) {
   }
 }
 
-async function openMetisSidePanel(windowId: number, options?: { force?: boolean }) {
+async function openMetisSidePanel(
+  tabId: number,
+  windowId: number,
+  options?: { force?: boolean }
+) {
   const settings = await getMetisLocalSettings();
 
   if (!options?.force && !settings.sidePanelWorkspaceEnabled) {
     return false;
   }
 
-  await chrome.sidePanel.open({ windowId });
-  return true;
+  try {
+    await chrome.sidePanel.setOptions({
+      tabId,
+      path: "sidepanel.html",
+      enabled: true
+    });
+    await chrome.sidePanel.open({ tabId });
+    return true;
+  } catch {
+    try {
+      await chrome.sidePanel.open({ windowId });
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 async function openMetisToolbarSettings(windowId?: number) {
@@ -251,7 +269,9 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        const opened = await openMetisSidePanel(senderTab.windowId, { force: true });
+        const opened = await openMetisSidePanel(senderTab.tabId, senderTab.windowId, {
+          force: true
+        });
 
         sendResponse({ ok: opened });
         return;
@@ -395,7 +415,9 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         await chrome.tabs.sendMessage(activeTab.id, {
           type: "METIS_ACTIVATE_FROM_TOOLBAR"
         } satisfies MetisRuntimeMessage);
-        const opened = await openMetisSidePanel(activeTab.windowId, { force: true });
+        const opened = await openMetisSidePanel(activeTab.id, activeTab.windowId, {
+          force: true
+        });
 
         sendResponse({ ok: opened });
         return;
