@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import {
   Download,
@@ -14,6 +15,29 @@ import type {
 } from "../../../shared/types/audit";
 import type { PageScanStoreSummary } from "../../../shared/lib/pageScanHistory";
 import { AcronymText } from "./AcronymTooltipText";
+
+const PERMISSION_NOTES = [
+  {
+    title: "Web pages",
+    detail:
+      "Metis runs on normal http and https pages. It starts scanning only after you activate it, then follows same-site routes in that session."
+  },
+  {
+    title: "Storage",
+    detail:
+      "Keeps local settings, saved snapshots, and site history on this device."
+  },
+  {
+    title: "Scripting",
+    detail:
+      "Lets Metis reopen the page bridge and repair scanning when the page needs a fresh injection."
+  },
+  {
+    title: "Side panel",
+    detail:
+      "Keeps the compact Metis workspace attached to the current tab while you review a route."
+  }
+] as const;
 
 function modalBackdrop(onClose: () => void) {
   return (
@@ -116,6 +140,29 @@ function ToggleRow({
   );
 }
 
+function SettingsSection({
+  title,
+  children
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className="space-y-3 rounded-[24px] px-5 py-5"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)"
+      }}
+    >
+      <div className="metis-overline text-white/35">
+        <AcronymText text={title} />
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export function LocalSettingsModal({
   settings,
   scanSummary,
@@ -166,10 +213,9 @@ export function LocalSettingsModal({
             </button>
           </div>
 
-          <div className="metis-scroll max-h-[72vh] overflow-y-auto px-6 py-6">
+          <div className="metis-scroll max-h-[72vh] overflow-y-auto px-6 py-6 pb-8">
             <div className="space-y-6">
-              <section className="space-y-3">
-                <div className="metis-overline text-white/35">Scan Behavior</div>
+              <SettingsSection title="Scan Behavior">
                 <div className="flex flex-wrap gap-2">
                   <PillButton
                     active={settings.preferredScanScope === "single"}
@@ -212,10 +258,9 @@ export function LocalSettingsModal({
                     Reduced motion
                   </PillButton>
                 </div>
-              </section>
+              </SettingsSection>
 
-              <section className="space-y-3">
-                <div className="metis-overline text-white/35">Panel</div>
+              <SettingsSection title="Panel">
                 <ToggleRow
                   title="Show sampled-page progress"
                   detail="Keep the saved page count visible in the panel and full report."
@@ -224,10 +269,39 @@ export function LocalSettingsModal({
                     onChange({ ...settings, showSampleProgress: !settings.showSampleProgress })
                   }
                 />
-              </section>
+              </SettingsSection>
 
-              <section className="space-y-3">
-                <div className="metis-overline text-white/35">Saved Analysis</div>
+              <SettingsSection title="Permissions">
+                <div
+                  className="rounded-[20px] px-4 py-4"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+                >
+                  <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
+                    <AcronymText text="What each permission enables" />
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "17px", marginTop: 6 }}>
+                    <AcronymText text="Metis does not run on browser internal pages. It only works on normal web pages after you activate it." />
+                  </div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {PERMISSION_NOTES.map((note) => (
+                    <div
+                      key={note.title}
+                      className="rounded-[20px] px-4 py-4"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+                    >
+                      <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
+                        <AcronymText text={note.title} />
+                      </div>
+                      <div style={{ color: "rgba(255,255,255,0.46)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "17px", marginTop: 6 }}>
+                        <AcronymText text={note.detail} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SettingsSection>
+
+              <SettingsSection title="Saved Analysis">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="rounded-[20px] px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                     <div className="inline-flex items-center gap-2 text-white/35" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
@@ -288,7 +362,7 @@ export function LocalSettingsModal({
                     Clear saved snapshots
                   </button>
                 </div>
-              </section>
+              </SettingsSection>
             </div>
           </div>
         </motion.div>

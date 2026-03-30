@@ -17,6 +17,29 @@ import {
 import { METIS_ACCOUNT_URL, METIS_SITE_URL } from "../shared/lib/metisLinks";
 import type { MetisLocalSettings } from "../shared/types/audit";
 
+const PERMISSION_NOTES = [
+  {
+    title: "Web pages",
+    detail:
+      "Metis runs on normal http and https pages. It starts scanning only after you activate it, then follows same-site routes in that session."
+  },
+  {
+    title: "Storage",
+    detail:
+      "Keeps local settings, saved snapshots, and site history on this device."
+  },
+  {
+    title: "Scripting",
+    detail:
+      "Lets Metis reopen the page bridge and repair scanning when the page needs a fresh injection."
+  },
+  {
+    title: "Side panel",
+    detail:
+      "Keeps the compact Metis workspace attached to the current tab while you review a route."
+  }
+] as const;
+
 function Section({
   icon: Icon,
   title,
@@ -342,7 +365,7 @@ function PopupApp() {
         </div>
       </div>
 
-      <div className="metis-scroll max-h-[560px] space-y-4 overflow-y-auto pr-1">
+      <div className="metis-scroll max-h-[560px] space-y-4 overflow-y-auto pr-1 pb-5">
         <Section
           icon={Gauge}
           title="Scan behavior"
@@ -424,8 +447,32 @@ function PopupApp() {
         <Section
           icon={Shield}
           title="Permissions"
-          detail="Metis only starts scanning after you activate it."
+          detail="These permissions stay scoped to normal web pages and local extension behavior."
         >
+          <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+              What each permission enables
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.56)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "16px", marginTop: 5 }}>
+              Metis does not run on browser internal pages. It only works on normal web pages after you activate it.
+            </div>
+          </div>
+          <div className="space-y-2">
+            {PERMISSION_NOTES.map((note) => (
+              <div
+                key={note.title}
+                className="rounded-[16px] border px-3 py-3"
+                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+              >
+                <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                  {note.title}
+                </div>
+                <div style={{ color: "rgba(255,255,255,0.56)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "16px", marginTop: 5 }}>
+                  {note.detail}
+                </div>
+              </div>
+            ))}
+          </div>
           <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
             <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
               Current mode
