@@ -20,6 +20,17 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.13.3
+
+Release type: Patch
+
+This release rebalances the edge clip proportions so the injector reads wider and more consistent across pages.
+
+What changed
+
+- Increased the clip width again and slightly raised its height so the injector no longer reads like a thin strip.
+- Normalized the clip radius and preview offset so the edge shell feels more even and visually aligned.
+
 ## 0.13.2
 
 Release type: Patch
