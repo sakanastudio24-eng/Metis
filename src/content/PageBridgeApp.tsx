@@ -928,10 +928,6 @@ export function PageBridgeApp() {
     void handleActivate();
   };
 
-  const handleOpenSettings = async () => {
-    await sendRuntimeMessage({ type: "METIS_OPEN_TOOLBAR_SETTINGS" });
-  };
-
   const handleSetScanScope = (scope: ScanScope) => {
     setScanScope(scope);
     void patchSessionUi({ scanScope: scope });
@@ -1058,7 +1054,7 @@ export function PageBridgeApp() {
             <AnimatePresence>
               {hovered && (
                 <motion.div
-                  className="absolute right-[28px] top-1/2 w-[328px] -translate-y-1/2 rounded-[22px] px-5 py-5"
+                  className="absolute right-[40px] top-1/2 w-[360px] -translate-y-1/2 rounded-[24px] px-6 py-6"
                   style={{
                     background: "#0d1825",
                     border: "1px solid rgba(255,255,255,0.08)",
@@ -1069,7 +1065,7 @@ export function PageBridgeApp() {
                   exit={{ opacity: 0, x: 12 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div className="flex items-center justify-between gap-3">
                       <div
                         style={{
@@ -1107,7 +1103,7 @@ export function PageBridgeApp() {
                         ? "Panel open was blocked on this page."
                         : isSessionActive
                           ? riskLabel
-                          : "Open Metis"}
+                          : "Metis is ready"}
                     </div>
                     <div
                       style={{
@@ -1136,24 +1132,7 @@ export function PageBridgeApp() {
                           fontWeight: 700
                         }}
                       >
-                        {launcherRecoveryMode ? "Try panel again" : "Open Metis"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void handleOpenSettings();
-                        }}
-                        className="rounded-full px-3 py-2"
-                        style={{
-                          background: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          color: "rgba(255,255,255,0.82)",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 11,
-                          fontWeight: 700
-                        }}
-                      >
-                        Settings
+                        {launcherRecoveryMode ? "Try panel again" : "Open panel"}
                       </button>
                     </div>
                   </div>
@@ -1168,7 +1147,7 @@ export function PageBridgeApp() {
               onPointerMove={handleLauncherPointerMove}
               onPointerUp={handleLauncherPointerUp}
               onPointerCancel={handleLauncherPointerUp}
-              className="group flex h-[88px] w-[20px] items-center justify-center shadow-2xl"
+              className="group flex h-[88px] w-[28px] items-center justify-center shadow-2xl"
               style={{
                 background: "#0d1825",
                 border: "1px solid rgba(255,255,255,0.08)",
@@ -1181,7 +1160,7 @@ export function PageBridgeApp() {
               }}
               title="Open Metis"
               animate={{
-                width: hovered ? 24 : 20,
+                width: hovered ? 36 : 28,
                 backgroundColor: hovered ? "#132233" : "#0d1825"
               }}
               transition={{ duration: 0.16, ease: "easeOut" }}
