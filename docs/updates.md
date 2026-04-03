@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.13.2
+
+Release type: Patch
+
+This release removes the extra injector actions and makes the edge clip itself visibly wider.
+
+What changed
+
+- Removed the inline `Settings` action from the hover injector so the page surface stays focused on opening the panel.
+- Replaced the hover injector idle copy from `Open Metis` with `Metis is ready`.
+- Changed the main injector action label to `Open panel`.
+- Increased the edge clip width and hover expansion so the injector reads larger on the page edge.
+
 ## 0.13.1
 
 Release type: Patch

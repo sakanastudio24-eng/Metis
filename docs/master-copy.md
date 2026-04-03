@@ -22,7 +22,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ## Core actions
 
-- CTA, launcher tooltip: `Open Metis`
+- CTA, launcher tooltip: `Open panel`
 - CTA, launcher helper: `Drag up or down, then click for the side panel`
 - CTA, reconnect: `Close and reopen`
 - CTA, full report: `Full Report`
@@ -37,7 +37,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 ## Page and side panel copy
 
-- Body, hover idle state: `Open Metis`
+- Body, hover idle state: `Metis is ready`
 - Body, hover helper:
   `Drag this clip up or down, then click for the real side panel.`
 - Header, reconnect ready: `Start Metis on this page`
