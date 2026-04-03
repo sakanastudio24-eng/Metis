@@ -1054,7 +1054,7 @@ export function PageBridgeApp() {
             <AnimatePresence>
               {hovered && (
                 <motion.div
-                  className="absolute right-[40px] top-1/2 w-[360px] -translate-y-1/2 rounded-[24px] px-6 py-6"
+                  className="absolute right-[52px] top-1/2 w-[360px] -translate-y-1/2 rounded-[24px] px-6 py-6"
                   style={{
                     background: "#0d1825",
                     border: "1px solid rgba(255,255,255,0.08)",
@@ -1147,11 +1147,11 @@ export function PageBridgeApp() {
               onPointerMove={handleLauncherPointerMove}
               onPointerUp={handleLauncherPointerUp}
               onPointerCancel={handleLauncherPointerUp}
-              className="group flex h-[88px] w-[28px] items-center justify-center shadow-2xl"
+              className="group flex h-[92px] w-[40px] items-center justify-center shadow-2xl"
               style={{
                 background: "#0d1825",
                 border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "16px 0 0 16px",
+                borderRadius: "18px 0 0 18px",
                 borderRight: "none",
                 boxShadow: hovered
                   ? "0 18px 44px rgba(0,0,0,0.32), 0 0 0 1px rgba(220,94,94,0.16)"
@@ -1160,7 +1160,7 @@ export function PageBridgeApp() {
               }}
               title="Open Metis"
               animate={{
-                width: hovered ? 36 : 28,
+                width: hovered ? 48 : 40,
                 backgroundColor: hovered ? "#132233" : "#0d1825"
               }}
               transition={{ duration: 0.16, ease: "easeOut" }}
