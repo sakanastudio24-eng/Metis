@@ -334,6 +334,7 @@ export interface MetisLocalSettings {
   scanDelayProfile: MetisScanDelayProfile;
   attachedReport: boolean;
   showSampleProgress: boolean;
+  launcherTop: number | null;
 }
 
 export type MetisAccessTier = "free" | "plus_beta" | "paid";

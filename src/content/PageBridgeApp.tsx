@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FocusEvent as ReactFocusEvent,
+  type PointerEvent as ReactPointerEvent
+} from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import { assessConfidence } from "../features/confidence";
@@ -37,7 +44,8 @@ import {
 } from "../shared/lib/pageScanHistory";
 import {
   DEFAULT_METIS_SETTINGS,
-  getMetisLocalSettings
+  getMetisLocalSettings,
+  saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
 import {
   isAllowedMetisAuthOrigin,
@@ -72,12 +80,32 @@ const PANEL_OPEN_SCAN_DELAY_MS = 1000;
 const POST_LOAD_SCAN_DELAY_MS = 500;
 const SCAN_REFRESH_INTERVAL_MS = 3000;
 const NAVIGATION_CHECK_INTERVAL_MS = 500;
+const LAUNCHER_CLIP_HEIGHT_PX = 88;
+const LAUNCHER_EDGE_GUTTER_PX = 12;
+const LAUNCHER_DRAG_THRESHOLD_PX = 5;
 
 function isExtensionContextInvalidated(error: unknown) {
   return (
     error instanceof Error &&
     error.message.toLowerCase().includes("extension context invalidated")
   );
+}
+
+function getDefaultLauncherTop() {
+  return Math.max(
+    LAUNCHER_EDGE_GUTTER_PX,
+    window.innerHeight - (LAUNCHER_CLIP_HEIGHT_PX + 72)
+  );
+}
+
+function clampLauncherTop(nextTop: number) {
+  const minTop = LAUNCHER_EDGE_GUTTER_PX;
+  const maxTop = Math.max(
+    minTop,
+    window.innerHeight - LAUNCHER_CLIP_HEIGHT_PX - LAUNCHER_EDGE_GUTTER_PX
+  );
+
+  return Math.min(Math.max(nextTop, minTop), maxTop);
 }
 
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
@@ -174,6 +202,8 @@ function buildAnswersBeforeRouteContext(
 export function PageBridgeApp() {
   const [hovered, setHovered] = useState(false);
   const [launcherRecoveryMode, setLauncherRecoveryMode] = useState(false);
+  const [launcherTop, setLauncherTop] = useState<number | null>(null);
+  const [isLauncherDragging, setIsLauncherDragging] = useState(false);
   const [session, setSession] = useState<MetisTabSessionState | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -189,6 +219,13 @@ export function PageBridgeApp() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const scanTimeoutRef = useRef<number | null>(null);
+  const launcherShellRef = useRef<HTMLDivElement | null>(null);
+  const launcherTopRef = useRef<number | null>(null);
+  const launcherDragOffsetRef = useRef(0);
+  const launcherPointerStartYRef = useRef(0);
+  const launcherPointerIdRef = useRef<number | null>(null);
+  const launcherDragMovedRef = useRef(false);
+  const suppressLauncherClickRef = useRef(false);
 
   const applySessionState = (nextSession: MetisTabSessionState | null) => {
     setSession(nextSession);
@@ -455,6 +492,89 @@ export function PageBridgeApp() {
       chrome.storage.onChanged.removeListener(handleStorageChange);
     };
   }, []);
+
+  useEffect(() => {
+    const nextTop =
+      typeof settings.launcherTop === "number" ? settings.launcherTop : getDefaultLauncherTop();
+
+    // The clip and hover preview share one anchored Y position.
+    setLauncherTop(clampLauncherTop(nextTop));
+  }, [settings.launcherTop]);
+
+  useEffect(() => {
+    launcherTopRef.current = launcherTop;
+  }, [launcherTop]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setLauncherTop((currentTop) => clampLauncherTop(currentTop ?? getDefaultLauncherTop()));
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLauncherDragging) {
+      return;
+    }
+
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (
+        launcherPointerIdRef.current !== null &&
+        event.pointerId !== launcherPointerIdRef.current
+      ) {
+        return;
+      }
+
+      const nextTop = clampLauncherTop(event.clientY - launcherDragOffsetRef.current);
+      launcherDragMovedRef.current = true;
+      setLauncherTop(nextTop);
+      setHovered(false);
+    };
+
+    const finishDrag = () => {
+      document.body.style.userSelect = previousUserSelect;
+      setIsLauncherDragging(false);
+      launcherPointerIdRef.current = null;
+
+      if (launcherDragMovedRef.current) {
+        suppressLauncherClickRef.current = true;
+        const persistedTop = clampLauncherTop(
+          launcherTopRef.current ?? getDefaultLauncherTop()
+        );
+        void saveMetisLocalSettings({ launcherTop: persistedTop });
+      }
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (
+        launcherPointerIdRef.current !== null &&
+        event.pointerId !== launcherPointerIdRef.current
+      ) {
+        return;
+      }
+
+      finishDrag();
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+
+    return () => {
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [isLauncherDragging]);
 
   useEffect(() => {
     const handleAuthBridge = (event: MessageEvent<unknown>) => {
@@ -754,6 +874,60 @@ export function PageBridgeApp() {
     setLauncherRecoveryMode(false);
   };
 
+  const handleLauncherPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const shellTop =
+      launcherShellRef.current?.getBoundingClientRect().top ?? launcherTop ?? getDefaultLauncherTop();
+
+    launcherPointerIdRef.current = event.pointerId;
+    launcherPointerStartYRef.current = event.clientY;
+    launcherDragOffsetRef.current = event.clientY - shellTop;
+    launcherDragMovedRef.current = false;
+    setIsLauncherDragging(false);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleLauncherPointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerId !== launcherPointerIdRef.current) {
+      return;
+    }
+
+    if (
+      !isLauncherDragging &&
+      Math.abs(event.clientY - launcherPointerStartYRef.current) < LAUNCHER_DRAG_THRESHOLD_PX
+    ) {
+      return;
+    }
+
+    setIsLauncherDragging(true);
+  };
+
+  const handleLauncherPointerUp = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerId !== launcherPointerIdRef.current) {
+      return;
+    }
+
+    if (!isLauncherDragging) {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      launcherPointerIdRef.current = null;
+      launcherDragMovedRef.current = false;
+    }
+  };
+
+  const handleLauncherClick = () => {
+    if (suppressLauncherClickRef.current) {
+      suppressLauncherClickRef.current = false;
+      return;
+    }
+
+    void handleActivate();
+  };
+
   const handleOpenSettings = async () => {
     await sendRuntimeMessage({ type: "METIS_OPEN_TOOLBAR_SETTINGS" });
   };
@@ -851,12 +1025,27 @@ export function PageBridgeApp() {
   return (
     <>
       <AnimatePresence>
-        {!isPanelOpen && !isReportOpen && (
+        {!isPanelOpen && !isReportOpen && !isExportOpen && launcherTop !== null && (
           <motion.div
+            ref={launcherShellRef}
             className="fixed right-0 z-[2147483647]"
-            style={{ bottom: "6.5rem" }}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+            style={{ top: `${launcherTop}px` }}
+            onMouseEnter={() => {
+              if (!isLauncherDragging) {
+                setHovered(true);
+              }
+            }}
+            onMouseLeave={() => {
+              if (!isLauncherDragging) {
+                setHovered(false);
+              }
+            }}
+            onFocusCapture={() => setHovered(true)}
+            onBlurCapture={(event: ReactFocusEvent<HTMLDivElement>) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setHovered(false);
+              }
+            }}
             initial={{ opacity: 0, x: 18, scale: 0.92 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 20, scale: 0.92 }}
@@ -869,7 +1058,7 @@ export function PageBridgeApp() {
             <AnimatePresence>
               {hovered && (
                 <motion.div
-                  className="absolute right-[78px] top-1/2 w-[290px] -translate-y-1/2 rounded-[20px] px-4 py-4"
+                  className="absolute right-[26px] top-1/2 w-[276px] -translate-y-1/2 rounded-[20px] px-4 py-4"
                   style={{
                     background: "#0d1825",
                     border: "1px solid rgba(255,255,255,0.08)",
@@ -898,7 +1087,7 @@ export function PageBridgeApp() {
                         style={{
                           color: "rgba(255,255,255,0.7)",
                           fontFamily: "Inter, sans-serif",
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: 700
                         }}
                       >
@@ -929,8 +1118,8 @@ export function PageBridgeApp() {
                       }}
                     >
                       {launcherRecoveryMode
-                        ? "Use the Metis popup to reopen the real side panel."
-                        : "Open the panel or jump into settings from here."}
+                        ? "Use the Metis popup if Chrome blocks the side panel on this page."
+                        : "Drag this clip up or down, then click to open the real Metis side panel."}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -974,30 +1163,53 @@ export function PageBridgeApp() {
 
             <motion.button
               type="button"
-              onClick={() => {
-                void handleActivate();
-              }}
-              className="group flex h-[56px] w-[56px] items-center justify-center shadow-2xl"
+              onClick={handleLauncherClick}
+              onPointerDown={handleLauncherPointerDown}
+              onPointerMove={handleLauncherPointerMove}
+              onPointerUp={handleLauncherPointerUp}
+              onPointerCancel={handleLauncherPointerUp}
+              className="group flex h-[88px] w-[20px] items-center justify-center shadow-2xl"
               style={{
                 background: "#0d1825",
                 border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "14px 0 0 14px",
+                borderRadius: "16px 0 0 16px",
                 borderRight: "none",
-                boxShadow: "0 18px 44px rgba(0,0,0,0.32)"
+                boxShadow: hovered
+                  ? "0 18px 44px rgba(0,0,0,0.32), 0 0 0 1px rgba(220,94,94,0.16)"
+                  : "0 18px 44px rgba(0,0,0,0.32)",
+                cursor: isLauncherDragging ? "grabbing" : "grab"
               }}
               title="Open Metis"
+              animate={{
+                width: hovered ? 24 : 20,
+                backgroundColor: hovered ? "#132233" : "#0d1825"
+              }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
             >
               <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                className="flex flex-col items-center justify-center gap-1"
                 style={{
-                  background: isUpdating ? "rgba(34,197,94,0.16)" : "rgba(220,94,94,0.18)",
-                  color: isUpdating ? "#22c55e" : "#ffffff",
-                  fontFamily: "Jua, sans-serif",
-                  fontSize: 15,
-                  lineHeight: 1
+                  color: "#ffffff"
                 }}
               >
-                M
+                <span
+                  style={{
+                    display: "block",
+                    width: 7,
+                    height: 7,
+                    borderRadius: 9999,
+                    background: isUpdating ? "#22c55e" : "#dc5e5e"
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: "Jua, sans-serif",
+                    fontSize: 12,
+                    lineHeight: 1
+                  }}
+                >
+                  M
+                </span>
               </div>
             </motion.button>
           </motion.div>

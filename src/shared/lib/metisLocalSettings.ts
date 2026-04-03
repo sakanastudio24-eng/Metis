@@ -15,7 +15,8 @@ export const DEFAULT_METIS_SETTINGS: MetisLocalSettings = {
   sidePanelWorkspaceEnabled: true,
   scanDelayProfile: "balanced",
   attachedReport: true,
-  showSampleProgress: true
+  showSampleProgress: true,
+  launcherTop: null
 };
 
 type StorageAreaLike = {
@@ -136,7 +137,11 @@ function normalizeSettings(value: unknown): MetisLocalSettings {
     showSampleProgress:
       typeof value.showSampleProgress === "boolean"
         ? value.showSampleProgress
-        : DEFAULT_METIS_SETTINGS.showSampleProgress
+        : DEFAULT_METIS_SETTINGS.showSampleProgress,
+    launcherTop:
+      typeof value.launcherTop === "number" && Number.isFinite(value.launcherTop)
+        ? value.launcherTop
+        : DEFAULT_METIS_SETTINGS.launcherTop
   };
 }
 
