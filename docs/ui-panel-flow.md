@@ -4,9 +4,17 @@ This is the current UI flow for the live Metis surfaces.
 
 ## States
 
-- `hover`: narrow attached launcher on the right edge
+- `clip`: thin draggable launcher attached to the right edge
+- `preview`: compact attached preview shown on hover or focus
 - `panel`: compact Chrome side panel
 - `report`: fullscreen DOM report opened from the panel
+
+The injected page shell is a launcher only.
+
+- it owns one persisted Y position
+- the clip and preview stay aligned inside the same shell
+- click opens the native Chrome side panel
+- popup remains the fallback if Chrome blocks the native open
 
 ## Current Data Flow
 

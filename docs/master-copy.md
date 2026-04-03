@@ -23,6 +23,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 ## Core actions
 
 - CTA, launcher tooltip: `Open Metis`
+- CTA, launcher helper: `Drag up or down, then click to open Metis`
 - CTA, reconnect: `Close and reopen`
 - CTA, full report: `Full Report`
 - CTA, settings entry: `Settings`
@@ -37,6 +38,8 @@ Use it before changing UI wording, fallback copy, or product labels.
 ## Page and side panel copy
 
 - Body, hover idle state: `Open Metis`
+- Body, hover helper:
+  `Drag this clip up or down, then click to open the real Metis side panel.`
 - Header, reconnect ready: `Start Metis on this page`
 - Header, reconnect disconnected: `Close and reopen Metis`
 - Body, reconnect ready:

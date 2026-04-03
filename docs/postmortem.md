@@ -19,10 +19,16 @@ Use it when a behavior regresses, when a product choice starts looking arbitrary
 The launcher method that proved stable is:
 
 1. manifest-mounted content script on normal `http` and `https` pages
-2. fixed Shadow DOM launcher on the page edge
+2. fixed Shadow DOM edge clip on the page edge
 3. user click on the launcher starts the tab session
 4. the same click asks the background worker to open Chrome's native side panel
 5. the scan begins after activation, not before
+
+Launcher design rule:
+
+- keep the injected surface as a draggable edge clip with a lightweight preview
+- keep the native Chrome side panel as the real workspace
+- do not let the page launcher grow into a second full report surface
 
 Important lesson:
 

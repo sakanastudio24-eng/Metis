@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.13.0
+
+Release type: Minor
+
+This release turns the injected Metis launcher into a draggable edge clip with a lightweight attached preview while keeping the real Chrome side panel as the only full workspace.
+
+What changed
+
+- Replaced the old fixed bottom-right hover launcher with a right-edge clip that can be dragged vertically and keeps its last saved position.
+- Added a compact attached preview for hover and focus so users can open Metis or jump into settings without turning the page shell into a second full report.
+- Kept the native side panel launch path and popup fallback intact so the new launcher does not change scan math or workspace ownership.
+- Added launcher-position persistence to local extension settings and updated launcher flow docs to match the new shell model.
+
 ## 0.12.0
 
 Release type: Minor
