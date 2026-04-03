@@ -20,6 +20,17 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.13.1
+
+Release type: Patch
+
+This release enlarges the edge-clip hover preview and tightens the helper copy so the launcher description is less repetitive.
+
+What changed
+
+- Increased the hover preview size and spacing so the edge injector reads more clearly on-page.
+- Removed the redundant `Open Metis` wording from the launcher helper description while keeping the main action button unchanged.
+
 ## 0.13.0
 
 Release type: Minor
