@@ -1058,7 +1058,7 @@ export function PageBridgeApp() {
             <AnimatePresence>
               {hovered && (
                 <motion.div
-                  className="absolute right-[26px] top-1/2 w-[276px] -translate-y-1/2 rounded-[20px] px-4 py-4"
+                  className="absolute right-[28px] top-1/2 w-[328px] -translate-y-1/2 rounded-[22px] px-5 py-5"
                   style={{
                     background: "#0d1825",
                     border: "1px solid rgba(255,255,255,0.08)",
@@ -1069,7 +1069,7 @@ export function PageBridgeApp() {
                   exit={{ opacity: 0, x: 12 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div
                         style={{
@@ -1087,7 +1087,7 @@ export function PageBridgeApp() {
                         style={{
                           color: "rgba(255,255,255,0.7)",
                           fontFamily: "Inter, sans-serif",
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: 700
                         }}
                       >
@@ -1098,9 +1098,9 @@ export function PageBridgeApp() {
                       style={{
                         color: "white",
                         fontFamily: "Inter, sans-serif",
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: 700,
-                        lineHeight: "20px"
+                        lineHeight: "22px"
                       }}
                     >
                       {launcherRecoveryMode
@@ -1113,13 +1113,13 @@ export function PageBridgeApp() {
                       style={{
                         color: "rgba(255,255,255,0.6)",
                         fontFamily: "Inter, sans-serif",
-                        fontSize: 12,
-                        lineHeight: "18px"
+                        fontSize: 13,
+                        lineHeight: "19px"
                       }}
                     >
                       {launcherRecoveryMode
                         ? "Use the Metis popup if Chrome blocks the side panel on this page."
-                        : "Drag this clip up or down, then click to open the real Metis side panel."}
+                        : "Drag this clip up or down, then click for the real side panel."}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
