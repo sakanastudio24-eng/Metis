@@ -8,6 +8,10 @@ Use `docs/production-roadmap.md` for the ordered launch checklist.
 
 Use `docs/design-system-logic.md` for shared UI logic and final surface polish.
 
+Use `docs/communication-contracts/README.md` for upload, access-state, and multi-lane communication work.
+
+Use `docs/communication-contracts/auth-contract.md` for website-to-extension auth bridge work.
+
 ## What the extension owns
 
 The Metis extension owns:
@@ -69,6 +73,10 @@ The repo is aligned to the current website managed model and the core product is
 - the remaining work is calibration, export, polish, store readiness, and the later website-to-extension account bridge
 
 Until a real website to extension entitlement bridge ships, any temporary Plus entry in the extension should still behave like a website handoff.
+
+Bridge work must follow `docs/communication-contracts/auth-contract.md` instead of inventing ad hoc payloads or redirect behavior.
+
+Upload and access-state work must follow the communication contracts folder instead of scattered one-off notes.
 
 ## Before changing account or auth adjacent UI
 

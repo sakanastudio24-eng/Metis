@@ -194,6 +194,11 @@ Status at `0.12.0`:
 - [x] Step 4: API communication primitives
 - [x] Step 5: validated free vs Plus access-state gating
 
+Current stage:
+
+- `Step 5 / Milestone E`
+- result: the communication stack is built and in hardening/verification, not blocked on initial implementation
+
 Current caveats:
 
 - upload retry is activity-driven instead of scheduled

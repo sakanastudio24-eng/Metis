@@ -71,6 +71,8 @@ Key boundaries:
 - `docs/design-system-logic.md`
 - `docs/front-facing-foundation.md`
 - `docs/production-roadmap.md`
+- `docs/communication-contracts/README.md`
+- `docs/communication-contracts/auth-contract.md`
 - `docs/pricing-reference-flow.md`
 
 ## Working rules
@@ -101,6 +103,8 @@ Key boundaries:
 - ask before removing or merging a doc that might still help
 - update the matching flow doc when a flow changes
 - update `docs/repo-alignment.md` when website and extension ownership shifts
+- use `docs/communication-contracts/README.md` before changing communication behavior across lanes
+- use `docs/communication-contracts/auth-contract.md` before changing bridge behavior between website and extension
 - never inspect `.env` files directly
 - ask questions about env shape or provide example env files instead
 - include git segmentation when reporting work back

@@ -6,11 +6,13 @@ import type {
 } from "../types/audit";
 import { METIS_WEB_SESSION_KEY } from "./metisStorageKeys";
 
+// Exact-match allowlist only. No wildcard hosts, no sibling subdomains.
 const ALLOWED_METIS_AUTH_ORIGINS = new Set([
   "https://metis.zward.studio",
   "http://localhost:3000"
 ]);
 
+// The auth bridge is only valid on the dedicated completion route.
 const AUTH_SUCCESS_PATHNAME = "/auth/success";
 
 function getChromeLocalStorage() {

@@ -60,6 +60,7 @@ What is left now is shorter than it first appears:
 - verify the extension does not break pages when scans fail, timing buffers fill, or resource APIs are incomplete
 - harden runtime message paths between page bridge, side panel, popup, and background
 - validate account type before opening Plus-only extension surfaces
+- keep auth, upload, and access-state work aligned to `docs/communication-contracts`
 - treat `Metis-Web` account state as the source of truth for free vs Plus Beta behavior
 - keep `Manage account` linked to `https://metis.zward.studio/account`
 - replace any remaining local purchase, fake entitlement, or fake account-plan flows with website-managed handoff behavior
@@ -110,6 +111,7 @@ What is left now is shorter than it first appears:
 - Plus Beta eligibility
 - temporary report-to-email delivery
 - legal promises around account ownership and storage
+- communication contract truth for bridge, uploads, and access-state
 
 ## Still unresolved
 

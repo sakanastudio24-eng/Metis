@@ -56,10 +56,18 @@ Flow:
 
 ## Allowed origins and route
 
-Only accept messages from:
+Only accept messages from this exact allowlist:
 
 - `https://metis.zward.studio`
 - `http://localhost:3000`
+
+Rules:
+
+- exact string match only
+- no wildcard origins
+- no preview domains
+- no sibling subdomains
+- localhost is development-only
 
 Only accept auth bridge messages when the page location is:
 
@@ -240,7 +248,7 @@ Backend responsibilities:
 Status at `0.12.0`:
 
 - [x] extension opens website sign-in through the shared Metis site URL
-- [x] content bridge validates allowed origin, `/auth/success`, and payload shape before forwarding
+- [x] content bridge validates the exact allowed origin allowlist, `/auth/success`, and payload shape before forwarding
 - [x] background validates bridged auth against `POST /v1/extension/validate`
 - [x] validated auth is stored locally and rebroadcast to extension surfaces
 - [x] extension sends the required `METIS_AUTH_SUCCESS_ACK`

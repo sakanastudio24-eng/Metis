@@ -37,5 +37,22 @@ Current extension status at `0.12.0`:
 - [x] auth bridge contract is wired into the extension
 - [x] validated access state is stored and broadcast locally
 - [x] upload queue primitives exist for events, summaries, and premium requests
+- [x] website-to-extension auth messaging is locked to `https://metis.zward.studio` and `http://localhost:3000`
 - [ ] backend responses are not yet end-to-end verified from this repo alone
 - [ ] website-side `/auth/success` bridge page still needs to match the final extension contract in production
+
+## Current stage
+
+Metis is currently in `Step 5 / Milestone E`.
+
+What is already done:
+
+- local extension messaging works
+- the website auth bridge works
+- backend validation and upload primitives exist
+- access-state gating exists in the extension runtime
+
+What is left before this lane feels finished:
+
+- live production verification of the packaged extension against the website bridge
+- final hardening of gating, retries, and edge-case behavior

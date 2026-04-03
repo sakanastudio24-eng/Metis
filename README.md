@@ -77,7 +77,9 @@ If you are getting oriented, read these in order.
 9. [docs/front-facing-foundation.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/front-facing-foundation.md)
 10. [docs/design-system-logic.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/design-system-logic.md)
 11. [docs/production-roadmap.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/production-roadmap.md)
-12. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
+12. [docs/communication-contracts/README.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/communication-contracts/README.md)
+13. [docs/communication-contracts/auth-contract.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/communication-contracts/auth-contract.md)
+14. [docs/master-copy.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/master-copy.md)
 
 ## Setup
 
@@ -146,6 +148,7 @@ src/
   styles/               Tailwind entry
 
 docs/                   Flow notes and product references
+  communication-contracts/ Shared bridge and cross-surface contracts
 ```
 
 ## Product boundary
@@ -155,3 +158,7 @@ Metis owns scanning, reporting, and local settings inside the extension.
 Metis Web owns account access, beta access, and public website flows.
 
 If you touch account wording, website links, Plus copy, or legal wording, update [docs/repo-alignment.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/repo-alignment.md) on purpose.
+
+If you touch website-to-extension bridge behavior, use [docs/communication-contracts/auth-contract.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/communication-contracts/auth-contract.md) as the contract source of truth.
+
+If you touch uploads, access-state sync, or multi-lane communication, start with [docs/communication-contracts/README.md](/Users/zech/Downloads/The-Big-One/Metis-Full/Metis/docs/communication-contracts/README.md).
