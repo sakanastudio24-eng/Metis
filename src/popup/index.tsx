@@ -360,10 +360,14 @@ function ConnectOverlay({
   onContinue: () => void;
 }) {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(7,12,19,0.78)] px-4 py-4 backdrop-blur-sm">
+    <div
+      className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(7,12,19,0.78)] px-4 py-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-[340px] rounded-[24px] border px-5 py-5"
         style={{ background: "#101c2b", borderColor: "rgba(255,255,255,0.08)" }}
+        onClick={(event) => event.stopPropagation()}
       >
         <div style={{ color: "white", fontFamily: "Jua, sans-serif", fontSize: 24 }}>
           Connect Metis
@@ -403,7 +407,7 @@ function ConnectOverlay({
             <Mail size={12} />
             Continue on website
           </ActionButton>
-          <ActionButton onClick={onClose}>Cancel</ActionButton>
+          <ActionButton onClick={onClose}>Close overlay</ActionButton>
         </div>
       </div>
     </div>

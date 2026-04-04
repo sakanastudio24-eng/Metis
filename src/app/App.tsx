@@ -286,10 +286,14 @@ function ConnectOverlay({
   onContinue: () => void;
 }) {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(7,12,19,0.72)] px-6 py-6 backdrop-blur-sm">
+    <div
+      className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(7,12,19,0.72)] px-6 py-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-[420px] rounded-[28px] border px-6 py-6"
         style={{ background: "#101c2b", borderColor: "rgba(255,255,255,0.08)" }}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="text-white" style={{ fontFamily: "Jua, sans-serif", fontSize: 30 }}>
           Connect Metis
@@ -356,7 +360,7 @@ function ConnectOverlay({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Cancel
+            Close overlay
           </motion.button>
         </div>
       </div>
