@@ -121,6 +121,36 @@ function normalizeValidatedAccountResponse(value: unknown): StoredMetisWebSessio
   };
 }
 
+function normalizeBridgeAccountResponse(value: unknown): StoredMetisWebSession["bridgeAccount"] | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const bridgeRecord =
+    record.bridgeAccount && typeof record.bridgeAccount === "object"
+      ? (record.bridgeAccount as Record<string, unknown>)
+      : record;
+  const tier =
+    bridgeRecord.tier === "plus_beta" || bridgeRecord.tier === "paid"
+      ? bridgeRecord.tier
+      : bridgeRecord.tier === "free"
+        ? "free"
+        : null;
+
+  if (!tier) {
+    return null;
+  }
+
+  return {
+    email: typeof bridgeRecord.email === "string" ? bridgeRecord.email : null,
+    username: typeof bridgeRecord.username === "string" ? bridgeRecord.username : null,
+    scansUsed: typeof bridgeRecord.scansUsed === "number" ? bridgeRecord.scansUsed : 0,
+    tier,
+    isBeta: Boolean(bridgeRecord.isBeta)
+  };
+}
+
 async function validateAuthSession(
   message: MetisAuthSuccessBridgeMessage
 ): Promise<StoredMetisWebSession | null> {
@@ -141,12 +171,13 @@ async function validateAuthSession(
 
   const body = (await response.json().catch(() => null)) as unknown;
   const account = normalizeValidatedAccountResponse(body);
+  const bridgeAccount = normalizeBridgeAccountResponse(body);
 
-  if (!account) {
+  if (!account || !bridgeAccount) {
     return null;
   }
 
-  return buildStoredMetisWebSession(message, account);
+  return buildStoredMetisWebSession(message, account, bridgeAccount);
 }
 
 function withContractState(

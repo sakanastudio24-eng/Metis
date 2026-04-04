@@ -1,6 +1,7 @@
 import type {
   MetisAccessState,
   MetisAuthSuccessBridgeMessage,
+  MetisBridgeAccountState,
   MetisConnectedAccount,
   StoredMetisWebSession
 } from "../types/audit";
@@ -12,8 +13,8 @@ const ALLOWED_METIS_AUTH_ORIGINS = new Set([
   "http://localhost:3000"
 ]);
 
-// The auth bridge is only valid on the dedicated completion route.
-const AUTH_SUCCESS_PATHNAME = "/auth/success";
+// The auth bridge is only valid on the dedicated account settings completion route.
+const AUTH_SUCCESS_PATHNAME = "/account/settings";
 
 function getChromeLocalStorage() {
   const chromeLike = globalThis as typeof globalThis & {
@@ -52,6 +53,7 @@ function normalizeConnectedAccount(session: StoredMetisWebSession | null): Metis
     id: session.user.id,
     email: session.user.email,
     displayName:
+      session.bridgeAccount.username?.replace(/[._-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) ??
       session.user.email?.split("@")[0]?.replace(/[._-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) ??
       "Connected account"
   };
@@ -103,6 +105,11 @@ function normalizeStoredSession(value: unknown): StoredMetisWebSession | null {
     value.account.plan === "plus_beta" || value.account.plan === "paid"
       ? value.account.plan
       : "free";
+  const bridgeAccountRecord = isRecord(value.bridgeAccount) ? value.bridgeAccount : null;
+  const bridgeTier =
+    bridgeAccountRecord?.tier === "plus_beta" || bridgeAccountRecord?.tier === "paid"
+      ? bridgeAccountRecord.tier
+      : "free";
 
   return {
     accessToken,
@@ -117,6 +124,13 @@ function normalizeStoredSession(value: unknown): StoredMetisWebSession | null {
       apiBetaEnabled: toBoolean(value.account.apiBetaEnabled),
       allowPlusUi: toBoolean(value.account.allowPlusUi),
       allowReportEmail: toBoolean(value.account.allowReportEmail)
+    },
+    bridgeAccount: {
+      email: bridgeAccountRecord && typeof bridgeAccountRecord.email === "string" ? bridgeAccountRecord.email : typeof value.user.email === "string" ? value.user.email : null,
+      username: bridgeAccountRecord && typeof bridgeAccountRecord.username === "string" ? bridgeAccountRecord.username : typeof value.user.email === "string" ? value.user.email.split("@")[0] : null,
+      scansUsed: bridgeAccountRecord && typeof bridgeAccountRecord.scansUsed === "number" ? bridgeAccountRecord.scansUsed : 0,
+      tier: bridgeTier,
+      isBeta: bridgeAccountRecord ? toBoolean(bridgeAccountRecord.isBeta) : plan !== "free"
     },
     connectedAt:
       typeof value.connectedAt === "number" ? value.connectedAt : Date.now()
@@ -191,7 +205,8 @@ export async function clearStoredMetisWebSession() {
 
 export function buildStoredMetisWebSession(
   message: MetisAuthSuccessBridgeMessage,
-  account: StoredMetisWebSession["account"]
+  account: StoredMetisWebSession["account"],
+  bridgeAccount?: MetisBridgeAccountState | null
 ): StoredMetisWebSession {
   return {
     accessToken: message.session.accessToken,
@@ -201,6 +216,13 @@ export function buildStoredMetisWebSession(
       email: message.session.user.email ?? null
     },
     account,
+    bridgeAccount: bridgeAccount ?? {
+      email: message.session.user.email ?? null,
+      username: message.session.user.email?.split("@")[0] ?? null,
+      scansUsed: 0,
+      tier: account.plan,
+      isBeta: account.plan !== "free"
+    },
     connectedAt: Date.now()
   };
 }

@@ -354,6 +354,14 @@ export interface MetisConnectedAccount {
   displayName: string;
 }
 
+export interface MetisBridgeAccountState {
+  email: string | null;
+  username: string | null;
+  scansUsed: number;
+  tier: MetisAccessTier;
+  isBeta: boolean;
+}
+
 export interface MetisAuthSuccessBridgeMessage {
   type: "METIS_AUTH_SUCCESS";
   source: "metis-web";
@@ -389,6 +397,7 @@ export interface StoredMetisWebSession {
     allowPlusUi: boolean;
     allowReportEmail: boolean;
   };
+  bridgeAccount: MetisBridgeAccountState;
   connectedAt: number;
 }
 

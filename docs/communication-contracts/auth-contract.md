@@ -35,8 +35,9 @@ If sign-up is used instead, the same query rule applies:
 
 - website auth completes through `/auth/callback`
 - extension-aware auth resolves into `/auth/success`
-- `/auth/success` is a bridge-only completion page
-- `/auth/success` must not become a general redirect surface
+- extension-aware auth resolves into `/account/settings?source=extension`
+- `/account/settings` is the bridge-capable dashboard route for extension-started auth
+- `/auth/success` is compatibility-only and should redirect into `/account/settings?source=extension`
 
 ## Bridge method
 
@@ -71,7 +72,7 @@ Rules:
 
 Only accept auth bridge messages when the page location is:
 
-- `/auth/success`
+- `/account/settings`
 
 Ignore all other origins and paths.
 
@@ -248,7 +249,7 @@ Backend responsibilities:
 Status at `0.12.0`:
 
 - [x] extension opens website sign-in through the shared Metis site URL
-- [x] content bridge validates the exact allowed origin allowlist, `/auth/success`, and payload shape before forwarding
+- [x] content bridge validates the exact allowed origin allowlist, `/account/settings`, and payload shape before forwarding
 - [x] background validates bridged auth against `POST /v1/extension/validate`
 - [x] validated auth is stored locally and rebroadcast to extension surfaces
 - [x] extension sends the required `METIS_AUTH_SUCCESS_ACK`
