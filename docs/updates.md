@@ -20,6 +20,18 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.14.3
+
+Release type: Minor
+
+This release locks the website-to-extension handshake around the current account settings bridge route and keeps local testing aligned with the same secure pass.
+
+What changed
+
+- Moved the auth bridge contract fully onto `/account/settings?source=extension` as the single accepted handshake page.
+- Kept the `METIS_AUTH_SUCCESS` to `METIS_AUTH_SUCCESS_ACK` pass explicit so the website only closes after the extension confirms receipt.
+- Kept local testing on `http://localhost:3000` and `http://localhost:8000` aligned with the same bridge rules and backend validation lane.
+
 ## 0.13.3
 
 Release type: Patch

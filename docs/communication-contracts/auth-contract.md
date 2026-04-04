@@ -34,7 +34,6 @@ If sign-up is used instead, the same query rule applies:
 ## Callback flow
 
 - website auth completes through `/auth/callback`
-- extension-aware auth resolves into `/auth/success`
 - extension-aware auth resolves into `/account/settings?source=extension`
 - `/account/settings` is the bridge-capable dashboard route for extension-started auth
 - `/auth/success` is compatibility-only and should redirect into `/account/settings?source=extension`
@@ -45,7 +44,7 @@ The bridge uses `window.postMessage`.
 
 Flow:
 
-1. website loads `/auth/success`
+1. website loads `/account/settings?source=extension`
 2. website reads the authenticated session client-side
 3. website posts `METIS_AUTH_SUCCESS`
 4. content script validates origin, path, and payload
@@ -81,7 +80,7 @@ Ignore all other origins and paths.
 `source=extension` means:
 
 - auth should preserve extension intent through the auth flow
-- callback completion should land on `/auth/success`
+- callback completion should land on `/account/settings?source=extension`
 - normal website auth behavior should stay unchanged when the parameter is absent
 
 ## Website message payload
@@ -203,7 +202,7 @@ The success page should not silently close without a verified handoff.
 Ignore and do not persist:
 
 - unknown origins
-- non-`/auth/success` pages
+- non-`/account/settings` pages
 - malformed payloads
 - missing tokens
 - failed backend validation responses
