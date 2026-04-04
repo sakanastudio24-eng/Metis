@@ -123,6 +123,7 @@ V1 stores minimal data only:
 - user id
 - user email when available
 - validated account flags
+- validated account snapshot for UI
 - connection timestamp
 
 V1 does not require refresh-token rotation.
@@ -144,6 +145,11 @@ Expected validated state:
 - `api_beta_enabled`
 - `allow_plus_ui`
 - `allow_report_email`
+- `bridgeAccount.email`
+- `bridgeAccount.username`
+- `bridgeAccount.scansUsed`
+- `bridgeAccount.tier`
+- `bridgeAccount.isBeta`
 
 Backend validation is the source of truth for extension-side entitlement behavior.
 
@@ -158,11 +164,18 @@ type StoredMetisWebSession = {
     email: string | null;
   };
   account: {
-    plan: "free" | "plus_beta";
+    plan: "free" | "plus_beta" | "paid";
     plusBetaEnabled: boolean;
     apiBetaEnabled: boolean;
     allowPlusUi: boolean;
     allowReportEmail: boolean;
+  };
+  bridgeAccount: {
+    email: string | null;
+    username: string | null;
+    scansUsed: number;
+    tier: "free" | "plus_beta" | "paid";
+    isBeta: boolean;
   };
   connectedAt: number;
 };

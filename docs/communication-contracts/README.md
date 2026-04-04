@@ -39,7 +39,7 @@ Current extension status at `0.12.0`:
 - [x] upload queue primitives exist for events, summaries, and premium requests
 - [x] website-to-extension auth messaging is locked to `https://metis.zward.studio` and `http://localhost:3000`
 - [ ] backend responses are not yet end-to-end verified from this repo alone
-- [ ] website-side `/auth/success` bridge page still needs to match the final extension contract in production
+- [ ] website-side `/account/settings?source=extension` bridge flow still needs final live packaged-extension verification in production
 
 ## Current stage
 

@@ -88,7 +88,7 @@ This release implements the first real communication-contract layer for auth, ac
 
 What changed
 
-- Added the contract-backed auth bridge for `/auth/success`, including origin and payload validation, extension ACK, and background validation through `POST /v1/extension/validate`.
+- Added the contract-backed auth bridge for `/account/settings?source=extension`, including origin and payload validation, extension ACK, and background validation through `POST /v1/extension/validate`.
 - Added a canonical connected access model so signed-in, free, and Plus Beta behavior can be derived from validated session state instead of local UI guesses.
 - Added contract storage keys and migration paths for `metis_session`, `metis_user_settings`, `metis_last_scan`, and `metis_upload_queue`.
 - Added a local upload queue for analytics events, summarized scan uploads, and premium report requests, with retry and simple route-level dedupe.
