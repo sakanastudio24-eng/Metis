@@ -16,7 +16,7 @@ What is left now is shorter than it first appears:
 - export becoming a real report output instead of a shell
 - polish on reconnect, saved history, and multipage reading
 - store readiness work like permissions story, listing copy, legal polish, and QA loops
-- the eventual website-to-extension account bridge when Plus and account state should feel fully real
+- final live verification of the shipped website-to-extension account bridge and entitlement behavior
 
 ## Phase 1: Product confidence
 
@@ -115,6 +115,6 @@ What is left now is shorter than it first appears:
 
 ## Still unresolved
 
-- exact account type contract for extension validation is still unresolved and should be defined in `Metis-Web`
+- packaged-extension verification of the shipped account validation contract still needs a final production-style pass with `Metis-Web`
 - temporary report-to-email delivery shape is still unresolved and should be treated as a bridge, not the final report system
 - the final Plus Beta handoff behavior after website validation is still unresolved in UI detail, even if the ownership boundary is clear

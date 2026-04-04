@@ -106,7 +106,7 @@ The biggest missing pieces are:
 - wider calibration across more live sites
 - export becoming a real report output
 - steadier reconnect and multipage polish
-- the later website-to-extension account bridge
+- final live verification of the shipped website-to-extension account handoff
 
 Those should be described as product growth areas, not as already-finished foundations.
 
@@ -146,7 +146,7 @@ The report button exists to:
 - turn export into a shareable report story, not just a feature mention
 - explain reconnect, saved history, and multipage reading as steady product behavior
 - make store readiness materials match the real extension experience
-- only present Plus as a real account state once the website-to-extension bridge is ready
+- only present Plus as a validated website-backed account state, not a local UI guess
 
 ## Simple message ladder
 

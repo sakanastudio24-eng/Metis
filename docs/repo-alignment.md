@@ -69,10 +69,11 @@ The repo is aligned to the current website managed model and the core product is
 - account actions link out to `https://metis.zward.studio/account`
 - local Plus purchase and fake entitlement flows are removed
 - extension legal copy now points account and security language to Metis Web
+- the shipped auth bridge is the narrow website handoff through `/account/settings?source=extension` plus backend validation
 - the extension remains local first for scanning, reporting, and settings
-- the remaining work is calibration, export, polish, store readiness, and the later website-to-extension account bridge
+- the remaining work is calibration, export, polish, store readiness, and final live bridge verification
 
-Until a real website to extension entitlement bridge ships, any temporary Plus entry in the extension should still behave like a website handoff.
+The shipped bridge is a narrow account handoff, not full website-to-extension product sync. Any Plus entry in the extension should still behave like a website handoff instead of a local entitlement flow.
 
 Bridge work must follow `docs/communication-contracts/auth-contract.md` instead of inventing ad hoc payloads or redirect behavior.
 
