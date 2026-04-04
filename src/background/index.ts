@@ -17,6 +17,7 @@ import { buildStoredMetisLastScan, saveStoredMetisLastScan } from "../shared/lib
 import { getMetisLocalSettings } from "../shared/lib/metisLocalSettings";
 import {
   METIS_EXTENSION_VALIDATE_URL,
+  METIS_SITE_URL,
   METIS_SIGN_IN_URL
 } from "../shared/lib/metisLinks";
 import {
@@ -412,6 +413,24 @@ async function openMetisToolbarSettings(windowId?: number) {
 }
 
 async function openMetisSignInPage() {
+  const existingTabs = await chrome.tabs.query({});
+  const existingMetisTab = existingTabs.find(
+    (tab) => typeof tab.url === "string" && tab.url.startsWith(METIS_SITE_URL)
+  );
+
+  if (existingMetisTab?.id) {
+    await chrome.tabs.update(existingMetisTab.id, {
+      url: METIS_SIGN_IN_URL,
+      active: true
+    });
+
+    if (existingMetisTab.windowId !== undefined) {
+      await chrome.windows.update(existingMetisTab.windowId, { focused: true });
+    }
+
+    return;
+  }
+
   await chrome.tabs.create({
     url: METIS_SIGN_IN_URL,
     active: true
