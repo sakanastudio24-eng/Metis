@@ -1,6 +1,6 @@
-import { StrictMode, useEffect, useMemo, useState, type ReactNode } from "react";
+import { StrictMode, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { Database, ExternalLink, Gauge, LayoutDashboard, Mail, Shield, Sparkles, Trash2, UserRound } from "lucide-react";
+import { Database, ExternalLink, Gauge, LayoutDashboard, Mail, Settings2, Shield, Sparkles, Trash2, UserRound } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "../styles/tailwind.css";
 import { clearPageScanStore, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
@@ -24,8 +24,6 @@ import {
   type SiteHistorySummary
 } from "../shared/lib/siteBaseline";
 import {
-  METIS_ACCOUNT_EMAIL,
-  METIS_ACCOUNT_NAME,
   METIS_ACCOUNT_URL,
   METIS_SITE_URL
 } from "../shared/lib/metisLinks";
@@ -364,8 +362,10 @@ function PopupApp() {
     visitedOriginCount: 0
   });
   const [accessState, setAccessState] = useState<MetisAccessState>(deriveMetisAccessState(null));
-  const [connectedAccountName, setConnectedAccountName] = useState(METIS_ACCOUNT_NAME);
+  const [connectedAccountName, setConnectedAccountName] = useState("Website account");
   const [connectedAccountEmail, setConnectedAccountEmail] = useState<string | null>(null);
+  const [connectedAccountScansUsed, setConnectedAccountScansUsed] = useState(0);
+  const scanBehaviorRef = useRef<HTMLDivElement | null>(null);
 
   const extensionVersion = useMemo(() => chrome.runtime.getManifest().version, []);
   const privacyUrl = useMemo(() => chrome.runtime.getURL("privacy.html"), []);
@@ -382,8 +382,9 @@ function PopupApp() {
     setSiteHistory(siteSummary);
     setAccessState(deriveMetisAccessState(storedSession));
     const connectedAccount = getConnectedAccountSnapshot(storedSession);
-    setConnectedAccountName(connectedAccount?.displayName ?? METIS_ACCOUNT_NAME);
+    setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
     setConnectedAccountEmail(connectedAccount?.email ?? null);
+    setConnectedAccountScansUsed(storedSession?.bridgeAccount.scansUsed ?? 0);
   };
 
   useEffect(() => {
@@ -405,8 +406,9 @@ function PopupApp() {
         setSiteHistory(siteSummary);
         setAccessState(deriveMetisAccessState(storedSession));
         const connectedAccount = getConnectedAccountSnapshot(storedSession);
-        setConnectedAccountName(connectedAccount?.displayName ?? METIS_ACCOUNT_NAME);
+        setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
         setConnectedAccountEmail(connectedAccount?.email ?? null);
+        setConnectedAccountScansUsed(storedSession?.bridgeAccount.scansUsed ?? 0);
         setReady(true);
       }
     );
@@ -515,6 +517,13 @@ function PopupApp() {
     });
   };
 
+  const handleOpenAppSettings = () => {
+    scanBehaviorRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  };
+
   return (
     <div
       className="flex h-[640px] w-[380px] flex-col px-4 py-4"
@@ -610,10 +619,10 @@ function PopupApp() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
               <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Name
+                Username
               </div>
               <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-                {connectedAccountName}
+                {accessState.isAuthenticated ? connectedAccountName : "Not connected"}
               </div>
             </div>
             <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
@@ -621,8 +630,44 @@ function PopupApp() {
                 Email
               </div>
               <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-                {connectedAccountEmail ?? METIS_ACCOUNT_EMAIL}
+                {accessState.isAuthenticated ? connectedAccountEmail ?? "No email returned" : "Sign in required"}
               </div>
+            </div>
+          </div>
+          <div
+            className="rounded-[16px] border px-3 py-3"
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Scan usage
+                </div>
+                <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 20, fontWeight: 700 }}>
+                  {accessState.isAuthenticated ? connectedAccountScansUsed : 0}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Sites tracked
+                </div>
+                <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 16, fontWeight: 700 }}>
+                  {siteHistory.visitedOriginCount}
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.52)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                lineHeight: "16px",
+                marginTop: 8
+              }}
+            >
+              {accessState.isAuthenticated
+                ? "Website-backed account usage returned by the validation bridge."
+                : "Sign in to load account-backed usage from the website."}
             </div>
           </div>
           {!accessState.isAuthenticated ? (
@@ -631,67 +676,75 @@ function PopupApp() {
               Sign in
             </ActionButton>
           ) : null}
-          <a
-            href={METIS_ACCOUNT_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-full px-3 py-2 no-underline"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.82)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 11,
-              fontWeight: 700
-            }}
-          >
-            <LayoutDashboard size={12} />
-            View my dashboard
-          </a>
-        </Section>
-
-        <Section
-          icon={Gauge}
-          title="Scan behavior"
-          detail="Keep scan behavior explicit and lightweight."
-        >
-          <ToggleRow
-            title="Auto-rescan while panel open"
-            detail="Route changes still rescan even when steady refresh is off."
-            active={settings.autoRescanWhilePanelOpen}
-            onClick={() =>
-              setSettings({
-                ...settings,
-                autoRescanWhilePanelOpen: !settings.autoRescanWhilePanelOpen
-              })
-            }
-          />
-          <div className="space-y-2">
-            <div className="text-white/55" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
-              Scan delay
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <PillButton
-                active={settings.scanDelayProfile === "fast"}
-                onClick={() => setSettings({ ...settings, scanDelayProfile: "fast" })}
-              >
-                Fast
-              </PillButton>
-              <PillButton
-                active={settings.scanDelayProfile === "balanced"}
-                onClick={() => setSettings({ ...settings, scanDelayProfile: "balanced" })}
-              >
-                Balanced
-              </PillButton>
-              <PillButton
-                active={settings.scanDelayProfile === "thorough"}
-                onClick={() => setSettings({ ...settings, scanDelayProfile: "thorough" })}
-              >
-                Thorough
-              </PillButton>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={METIS_ACCOUNT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 no-underline"
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.82)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                fontWeight: 700
+              }}
+            >
+              <LayoutDashboard size={12} />
+              Manage account
+            </a>
+            <ActionButton onClick={handleOpenAppSettings}>
+              <Settings2 size={12} />
+              App settings
+            </ActionButton>
           </div>
         </Section>
+
+        <div ref={scanBehaviorRef}>
+          <Section
+            icon={Gauge}
+            title="Scan behavior"
+            detail="Keep scan behavior explicit and lightweight."
+          >
+            <ToggleRow
+              title="Auto-rescan while panel open"
+              detail="Route changes still rescan even when steady refresh is off."
+              active={settings.autoRescanWhilePanelOpen}
+              onClick={() =>
+                setSettings({
+                  ...settings,
+                  autoRescanWhilePanelOpen: !settings.autoRescanWhilePanelOpen
+                })
+              }
+            />
+            <div className="space-y-2">
+              <div className="text-white/55" style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700 }}>
+                Scan delay
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <PillButton
+                  active={settings.scanDelayProfile === "fast"}
+                  onClick={() => setSettings({ ...settings, scanDelayProfile: "fast" })}
+                >
+                  Fast
+                </PillButton>
+                <PillButton
+                  active={settings.scanDelayProfile === "balanced"}
+                  onClick={() => setSettings({ ...settings, scanDelayProfile: "balanced" })}
+                >
+                  Balanced
+                </PillButton>
+                <PillButton
+                  active={settings.scanDelayProfile === "thorough"}
+                  onClick={() => setSettings({ ...settings, scanDelayProfile: "thorough" })}
+                >
+                  Thorough
+                </PillButton>
+              </div>
+            </div>
+          </Section>
+        </div>
 
         <Section
           icon={Database}
