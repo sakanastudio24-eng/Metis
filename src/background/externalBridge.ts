@@ -9,7 +9,10 @@ import {
   isAllowedExternalBridgeOrigin,
   isMetisBridgeSyncMessage,
 } from "../shared/lib/bridgeAccountState";
-import { saveBridgeAccountState } from "../shared/lib/bridgeStorage";
+import {
+  getBridgeStorageDebugSnapshot,
+  saveBridgeAccountState,
+} from "../shared/lib/bridgeStorage";
 
 type ExternalBridgeDependencies = {
   onBridgeStored: () => Promise<void>;
@@ -39,8 +42,13 @@ export function registerExternalBridgeListener({
   chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
     void (async () => {
       const origin = getSenderOrigin(sender);
+      console.info("[Metis bridge] external message received", {
+        origin,
+        type: typeof message === "object" && message && "type" in message ? (message as { type?: unknown }).type : null,
+      });
 
       if (!origin || !isAllowedExternalBridgeOrigin(origin)) {
+        console.warn("[Metis bridge] rejected origin", { origin });
         sendResponse(
           buildBridgeFailure("invalid_origin", `Rejected bridge request from ${origin ?? "unknown origin"}.`)
         );
@@ -48,11 +56,15 @@ export function registerExternalBridgeListener({
       }
 
       if (!message || typeof message !== "object" || !("type" in message)) {
+        console.warn("[Metis bridge] missing message type");
         sendResponse(buildBridgeFailure("invalid_message_type", "No bridge message type was provided."));
         return;
       }
 
       if ((message as { type?: unknown }).type !== "METIS_BRIDGE_SYNC") {
+        console.warn("[Metis bridge] unexpected message type", {
+          type: (message as { type?: unknown }).type,
+        });
         sendResponse(
           buildBridgeFailure(
             "invalid_message_type",
@@ -66,6 +78,10 @@ export function registerExternalBridgeListener({
         !("bridgeVersion" in (message as Record<string, unknown>)) ||
         (message as { bridgeVersion?: unknown }).bridgeVersion !== METIS_EXTERNAL_BRIDGE_VERSION
       ) {
+        console.warn("[Metis bridge] unsupported bridge version", {
+          received: (message as { bridgeVersion?: unknown }).bridgeVersion,
+          expected: METIS_EXTERNAL_BRIDGE_VERSION,
+        });
         sendResponse(
           buildBridgeFailure(
             "unsupported_bridge_version",
@@ -76,12 +92,14 @@ export function registerExternalBridgeListener({
       }
 
       if (!isMetisBridgeSyncMessage(message)) {
+        console.warn("[Metis bridge] invalid account payload");
         sendResponse(buildBridgeFailure("invalid_payload", "The bridge payload did not match BridgeAccountState."));
         return;
       }
 
       try {
         await saveBridgeAccountState((message as MetisBridgeSyncMessage).account);
+        console.info("[Metis bridge] stored account snapshot", await getBridgeStorageDebugSnapshot());
         await onBridgeStored();
 
         const ack: MetisBridgeSyncAck = {
@@ -94,6 +112,7 @@ export function registerExternalBridgeListener({
         sendResponse(ack);
       } catch (error) {
         const detail = error instanceof Error ? error.message : "The extension could not save the bridge state.";
+        console.error("[Metis bridge] storage failed", { detail });
         const failure: MetisBridgeSyncFailure = buildBridgeFailure("storage_failed", detail);
         sendResponse(failure);
       }

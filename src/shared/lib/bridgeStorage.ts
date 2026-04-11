@@ -13,6 +13,12 @@ type StoredExternalBridgeState = {
   bridgeVersion: number;
 };
 
+export type BridgeStorageDebugSnapshot = {
+  accountState: MetisBridgeAccountState | null;
+  connectedAt: number | null;
+  bridgeVersion: number | null;
+};
+
 function getChromeLocalStorage() {
   const chromeLike = globalThis as typeof globalThis & {
     chrome?: {
@@ -77,6 +83,20 @@ async function getRawBridgeState() {
       (result) => resolve(result)
     );
   });
+}
+
+export async function getBridgeStorageDebugSnapshot(): Promise<BridgeStorageDebugSnapshot | null> {
+  const raw = await getRawBridgeState();
+
+  if (!raw) {
+    return null;
+  }
+
+  return {
+    accountState: normalizeBridgeAccountState(raw[METIS_ACCOUNT_STATE_KEY]),
+    connectedAt: typeof raw[METIS_CONNECTED_AT_KEY] === "number" ? raw[METIS_CONNECTED_AT_KEY] : null,
+    bridgeVersion: typeof raw[METIS_BRIDGE_VERSION_KEY] === "number" ? raw[METIS_BRIDGE_VERSION_KEY] : null,
+  };
 }
 
 export async function saveBridgeAccountState(

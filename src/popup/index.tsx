@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { Database, ExternalLink, Gauge, LayoutDashboard, Mail, Settings2, Shield, Sparkles, Trash2, UserRound } from "lucide-react";
+import { Database, ExternalLink, Gauge, LayoutDashboard, Mail, Shield, Sparkles, Trash2, UserRound } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "../styles/tailwind.css";
 import { clearPageScanStore, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
@@ -459,6 +459,19 @@ function PopupApp() {
   }, []);
 
   useEffect(() => {
+    const handleRuntimeMessage = (message: MetisRuntimeMessage) => {
+      if (message.type === "METIS_AUTH_STATE_CHANGED") {
+        void refreshStorageState();
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!ready) {
       previousAuthStateRef.current = accessState.isAuthenticated;
       return;
@@ -536,13 +549,6 @@ function PopupApp() {
     });
     toast.message("Open Metis to finish sign in", {
       description: "Finish the website flow, then return here for the connected signal."
-    });
-  };
-
-  const handleOpenAppSettings = () => {
-    scanBehaviorRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
     });
   };
 
@@ -716,10 +722,6 @@ function PopupApp() {
               <LayoutDashboard size={12} />
               Manage account
             </a>
-            <ActionButton onClick={handleOpenAppSettings}>
-              <Settings2 size={12} />
-              App settings
-            </ActionButton>
           </div>
         </Section>
 
