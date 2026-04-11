@@ -5,10 +5,12 @@ import { Toaster, toast } from "sonner";
 import "../styles/tailwind.css";
 import { clearPageScanStore, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
 import {
-  deriveMetisAccessState,
-  getConnectedAccountSnapshot,
-  getStoredMetisWebSession
-} from "../shared/lib/metisAuthSession";
+  buildConnectedAccountFromBridge,
+  deriveAccessStateFromBridgeAccount,
+} from "../shared/lib/bridgeAccountState";
+import {
+  getStoredBridgeState,
+} from "../shared/lib/bridgeStorage";
 import {
   DEFAULT_METIS_SETTINGS,
   getMetisLocalSettings,
@@ -28,9 +30,11 @@ import {
   METIS_SITE_URL
 } from "../shared/lib/metisLinks";
 import {
+  METIS_ACCOUNT_STATE_KEY,
+  METIS_BRIDGE_VERSION_KEY,
+  METIS_CONNECTED_AT_KEY,
   LEGACY_METIS_USER_SETTINGS_KEY,
   METIS_USER_SETTINGS_KEY,
-  METIS_WEB_SESSION_KEY
 } from "../shared/lib/metisStorageKeys";
 import type { MetisAccessState, MetisLocalSettings } from "../shared/types/audit";
 import type { MetisRuntimeMessage } from "../shared/types/runtime";
@@ -361,7 +365,7 @@ function PopupApp() {
     baselineOriginCount: 0,
     visitedOriginCount: 0
   });
-  const [accessState, setAccessState] = useState<MetisAccessState>(deriveMetisAccessState(null));
+  const [accessState, setAccessState] = useState<MetisAccessState>(deriveAccessStateFromBridgeAccount(null));
   const [connectedAccountName, setConnectedAccountName] = useState("Website account");
   const [connectedAccountEmail, setConnectedAccountEmail] = useState<string | null>(null);
   const [connectedAccountScansUsed, setConnectedAccountScansUsed] = useState(0);
@@ -373,19 +377,19 @@ function PopupApp() {
   const termsUrl = useMemo(() => chrome.runtime.getURL("terms.html"), []);
 
   const refreshStorageState = async () => {
-    const [pageSummary, siteSummary, storedSession] = await Promise.all([
+    const [pageSummary, siteSummary, bridgeState] = await Promise.all([
       getPageScanStoreSummary(),
       getSiteHistorySummary(),
-      getStoredMetisWebSession()
+      getStoredBridgeState()
     ]);
 
     setSavedPageCount(pageSummary.savedPageCount);
     setSiteHistory(siteSummary);
-    setAccessState(deriveMetisAccessState(storedSession));
-    const connectedAccount = getConnectedAccountSnapshot(storedSession);
+    setAccessState(deriveAccessStateFromBridgeAccount(bridgeState?.account ?? null));
+    const connectedAccount = buildConnectedAccountFromBridge(bridgeState?.account ?? null);
     setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
     setConnectedAccountEmail(connectedAccount?.email ?? null);
-    setConnectedAccountScansUsed(storedSession?.bridgeAccount.scansUsed ?? 0);
+    setConnectedAccountScansUsed(bridgeState?.account.scansUsed ?? 0);
   };
 
   useEffect(() => {
@@ -395,9 +399,9 @@ function PopupApp() {
       getMetisLocalSettings(),
       getPageScanStoreSummary(),
       getSiteHistorySummary(),
-      getStoredMetisWebSession()
+      getStoredBridgeState()
     ]).then(
-      ([storedSettings, pageSummary, siteSummary, storedSession]) => {
+      ([storedSettings, pageSummary, siteSummary, bridgeState]) => {
         if (cancelled) {
           return;
         }
@@ -405,11 +409,11 @@ function PopupApp() {
         setSettings(storedSettings);
         setSavedPageCount(pageSummary.savedPageCount);
         setSiteHistory(siteSummary);
-        setAccessState(deriveMetisAccessState(storedSession));
-        const connectedAccount = getConnectedAccountSnapshot(storedSession);
+        setAccessState(deriveAccessStateFromBridgeAccount(bridgeState?.account ?? null));
+        const connectedAccount = buildConnectedAccountFromBridge(bridgeState?.account ?? null);
         setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
         setConnectedAccountEmail(connectedAccount?.email ?? null);
-        setConnectedAccountScansUsed(storedSession?.bridgeAccount.scansUsed ?? 0);
+        setConnectedAccountScansUsed(bridgeState?.account.scansUsed ?? 0);
         setReady(true);
       }
     );
@@ -439,7 +443,9 @@ function PopupApp() {
       if (
         changes[METIS_USER_SETTINGS_KEY] ||
         changes[LEGACY_METIS_USER_SETTINGS_KEY] ||
-        changes[METIS_WEB_SESSION_KEY]
+        changes[METIS_ACCOUNT_STATE_KEY] ||
+        changes[METIS_CONNECTED_AT_KEY] ||
+        changes[METIS_BRIDGE_VERSION_KEY]
       ) {
         void refreshStorageState();
         void getMetisLocalSettings().then(setSettings);

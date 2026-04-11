@@ -48,11 +48,6 @@ import {
   saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
 import {
-  isAllowedMetisAuthOrigin,
-  isAllowedMetisAuthPathname,
-  isMetisAuthSuccessBridgeMessage
-} from "../shared/lib/metisAuthSession";
-import {
   buildStoredVisitedSnapshot,
   getOrCreateSiteBaseline,
   upsertVisitedSiteSnapshot
@@ -62,8 +57,6 @@ import {
   METIS_USER_SETTINGS_KEY
 } from "../shared/lib/metisStorageKeys";
 import type {
-  MetisAuthFailureAck,
-  MetisAuthSuccessAck,
   MetisLocalSettings,
   PageScanComparison,
   PageScanSnapshot,
@@ -592,74 +585,6 @@ export function PageBridgeApp() {
       window.removeEventListener("pointercancel", handlePointerUp);
     };
   }, [isLauncherDragging]);
-
-  useEffect(() => {
-    const handleAuthBridge = (event: MessageEvent<unknown>) => {
-      if (
-        !isAllowedMetisAuthOrigin(event.origin) ||
-        !isAllowedMetisAuthPathname(window.location.pathname) ||
-        !isMetisAuthSuccessBridgeMessage(event.data)
-      ) {
-        return;
-      }
-
-      void sendRuntimeMessage<{
-        ok?: boolean;
-        reason?: string;
-        detail?: string;
-        endpoint?: string;
-      }>({
-        type: "METIS_AUTH_STATE_CHANGED",
-        payload: event.data
-      }).then((response) => {
-        if (response?.ok) {
-          const ack: MetisAuthSuccessAck = {
-            type: "METIS_AUTH_SUCCESS_ACK",
-            source: "metis-extension",
-            version: 1,
-            ok: true
-          };
-
-          window.postMessage(ack, window.location.origin);
-          toast.success("Connected to Metis ✓", {
-            description: "This website session is now available in the extension."
-          });
-          return;
-        }
-
-        const failure: MetisAuthFailureAck = {
-          type: "METIS_AUTH_FAILURE",
-          source: "metis-extension",
-          version: 1,
-          ok: false,
-          reason:
-            response?.reason === "extension_unavailable" ||
-            response?.reason === "validation_endpoint_unreachable" ||
-            response?.reason === "validation_rejected" ||
-            response?.reason === "invalid_account_payload" ||
-            response?.reason === "storage_failed"
-              ? response.reason
-              : "unknown",
-          detail:
-            typeof response?.detail === "string"
-              ? response.detail
-              : "The extension could not store the connected account state.",
-          endpoint: typeof response?.endpoint === "string" ? response.endpoint : undefined
-        };
-
-        window.postMessage(failure, window.location.origin);
-        toast.error("Metis connection failed", {
-          description: failure.detail
-        });
-      });
-    };
-
-    window.addEventListener("message", handleAuthBridge);
-
-    return () => {
-      window.removeEventListener("message", handleAuthBridge);
-    };
-  }, []);
 
   useEffect(() => {
     let lastHref = window.location.href;

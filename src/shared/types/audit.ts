@@ -362,6 +362,38 @@ export interface MetisBridgeAccountState {
   isBeta: boolean;
 }
 
+export interface MetisBridgeSyncMessage {
+  type: "METIS_BRIDGE_SYNC";
+  source: "metis-web";
+  bridgeVersion: 1;
+  account: MetisBridgeAccountState;
+}
+
+export interface MetisBridgeSyncAck {
+  type: "METIS_BRIDGE_SYNC_ACK";
+  source: "metis-extension";
+  bridgeVersion: 1;
+  ok: true;
+}
+
+export type MetisBridgeSyncFailureReason =
+  | "invalid_origin"
+  | "invalid_extension_id"
+  | "invalid_message_type"
+  | "invalid_payload"
+  | "unsupported_bridge_version"
+  | "storage_failed"
+  | "unknown";
+
+export interface MetisBridgeSyncFailure {
+  type: "METIS_BRIDGE_SYNC_FAILURE";
+  source: "metis-extension";
+  bridgeVersion: 1;
+  ok: false;
+  reason: MetisBridgeSyncFailureReason;
+  detail?: string;
+}
+
 export interface MetisAuthSuccessBridgeMessage {
   type: "METIS_AUTH_SUCCESS";
   source: "metis-web";

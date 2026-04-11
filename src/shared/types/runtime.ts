@@ -1,6 +1,5 @@
 import type {
   MetisAccessState,
-  MetisAuthSuccessBridgeMessage,
   MetisConnectedAccount,
   MetisUploadQueueItem,
   PageScopedFairnessAnswers,
@@ -52,7 +51,7 @@ export type MetisRuntimeMessage =
   | { type: "METIS_ACTIVATE_FROM_TOOLBAR" }
   | { type: "METIS_RECONNECT_ACTIVE_TAB" }
   | { type: "METIS_SCAN_UPDATE"; payload: MetisScanUpdatePayload }
-  | { type: "METIS_AUTH_STATE_CHANGED"; payload: MetisAuthSuccessBridgeMessage }
+  | { type: "METIS_AUTH_STATE_CHANGED" }
   | { type: "METIS_GET_ACTIVE_TAB_SESSION" }
   | { type: "METIS_SET_PANEL_VISIBILITY"; tabId: number; isOpen: boolean }
   | { type: "METIS_PATCH_TAB_SESSION"; patch: Partial<MetisSessionUiState> }

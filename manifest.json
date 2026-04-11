@@ -45,5 +45,11 @@
   "background": {
     "service_worker": "assets/background.js",
     "type": "module"
+  },
+  "externally_connectable": {
+    "matches": [
+      "https://metis.zward.studio/*",
+      "http://localhost:3000/*"
+    ]
   }
 }

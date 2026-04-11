@@ -14,6 +14,7 @@ Use it when work crosses:
 - `communication-build-track.md`
 - `extension-internal-contract.md`
 - `auth-contract.md`
+- `external-auth-bridge-contract.md`
 - `api-upload-contract.md`
 - `website-backend-contract.md`
 - `access-state-contract.md`
@@ -23,6 +24,7 @@ Use it when work crosses:
 - start with `communication-build-track.md` for the build order
 - use `extension-internal-contract.md` for extension-only messaging
 - use `auth-contract.md` for the website auth bridge
+- use `external-auth-bridge-contract.md` for the direct website -> extension Chrome bridge
 - use `api-upload-contract.md` for uploads, queueing, and rate limits
 - use `website-backend-contract.md` for normal website/backend traffic
 - use `access-state-contract.md` for account-tier and gating rules

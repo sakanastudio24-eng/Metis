@@ -1,24 +1,26 @@
-// background/index.ts now coordinates the disposable page bridge and the stable
-// Chrome side panel workspace. The service worker never scans the page itself;
-// it only brokers sessions, auth state, upload queues, and privileged Chrome APIs.
+// background/index.ts coordinates the stable Chrome side panel workspace and
+// the direct website -> extension bridge. The service worker never scans the
+// page itself; it only brokers sessions, stored account state, upload queues,
+// and privileged Chrome APIs.
 import { assessConfidence } from "../features/confidence";
 import { detectIssues } from "../features/detection";
 import { scoreSnapshot } from "../features/scoring";
 import { detectMoneyStack } from "../features/stack";
 import {
-  buildStoredMetisWebSession,
-  clearStoredMetisWebSession,
-  deriveMetisAccessState,
-  getConnectedAccountSnapshot,
   getStoredMetisWebSession,
-  saveStoredMetisWebSession
 } from "../shared/lib/metisAuthSession";
+import {
+  buildConnectedAccountFromBridge,
+  deriveAccessStateFromBridgeAccount,
+} from "../shared/lib/bridgeAccountState";
+import {
+  getStoredBridgeAccountState,
+} from "../shared/lib/bridgeStorage";
 import { buildStoredMetisLastScan, saveStoredMetisLastScan } from "../shared/lib/metisLastScan";
 import { getMetisLocalSettings } from "../shared/lib/metisLocalSettings";
 import {
-  METIS_EXTENSION_VALIDATE_URL,
   METIS_SITE_URL,
-  METIS_SIGN_IN_URL
+  buildMetisSignInUrl,
 } from "../shared/lib/metisLinks";
 import {
   enqueueMetisAnalyticsEvent,
@@ -36,15 +38,13 @@ import {
 } from "../shared/lib/tabSessionStore";
 import type {
   MetisAccessState,
-  MetisAuthFailureReason,
-  MetisAuthSuccessBridgeMessage,
-  StoredMetisWebSession
 } from "../shared/types/audit";
 import {
   DEFAULT_METIS_SESSION_UI_STATE,
   type MetisRuntimeMessage,
   type MetisTabSessionState
 } from "../shared/types/runtime";
+import { registerExternalBridgeListener } from "./externalBridge";
 
 function isRestrictedUrl(url?: string) {
   if (!url) {
@@ -83,136 +83,19 @@ function resolveSessionUiState(
 }
 
 async function getAuthContext() {
-  const authSession = await getStoredMetisWebSession();
-  const accessState = deriveMetisAccessState(authSession);
+  const bridgeAccount = await getStoredBridgeAccountState();
+  const accessState = deriveAccessStateFromBridgeAccount(bridgeAccount);
 
   return {
-    authSession,
     accessState,
-    connectedAccount: getConnectedAccountSnapshot(authSession)
-  };
-}
-
-function normalizeValidatedAccountResponse(value: unknown): StoredMetisWebSession["account"] | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const accountRecord =
-    record.account && typeof record.account === "object"
-      ? (record.account as Record<string, unknown>)
-      : record;
-  const plan =
-    accountRecord.plan === "plus_beta" || accountRecord.plan === "paid"
-      ? accountRecord.plan
-      : accountRecord.plan === "free"
-        ? "free"
-        : null;
-
-  if (!plan) {
-    return null;
-  }
-
-  return {
-    plan,
-    plusBetaEnabled: Boolean(accountRecord.plus_beta_enabled ?? accountRecord.plusBetaEnabled),
-    apiBetaEnabled: Boolean(accountRecord.api_beta_enabled ?? accountRecord.apiBetaEnabled),
-    allowPlusUi: Boolean(accountRecord.allow_plus_ui ?? accountRecord.allowPlusUi),
-    allowReportEmail: Boolean(accountRecord.allow_report_email ?? accountRecord.allowReportEmail)
-  };
-}
-
-function normalizeBridgeAccountResponse(value: unknown): StoredMetisWebSession["bridgeAccount"] | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const bridgeRecord =
-    record.bridgeAccount && typeof record.bridgeAccount === "object"
-      ? (record.bridgeAccount as Record<string, unknown>)
-      : record;
-  const tier =
-    bridgeRecord.tier === "plus_beta" || bridgeRecord.tier === "paid"
-      ? bridgeRecord.tier
-      : bridgeRecord.tier === "free"
-        ? "free"
-        : null;
-
-  if (!tier) {
-    return null;
-  }
-
-  return {
-    email: typeof bridgeRecord.email === "string" ? bridgeRecord.email : null,
-    username: typeof bridgeRecord.username === "string" ? bridgeRecord.username : null,
-    scansUsed: typeof bridgeRecord.scansUsed === "number" ? bridgeRecord.scansUsed : 0,
-    tier,
-    isBeta: Boolean(bridgeRecord.isBeta)
-  };
-}
-
-async function validateAuthSession(
-  message: MetisAuthSuccessBridgeMessage
-): Promise<
-  | { ok: true; session: StoredMetisWebSession }
-  | { ok: false; reason: MetisAuthFailureReason; detail: string; endpoint?: string }
-> {
-  let response: Response;
-
-  try {
-    response = await fetch(METIS_EXTENSION_VALIDATE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${message.session.accessToken}`
-      },
-      body: JSON.stringify({
-        accessToken: message.session.accessToken
-      })
-    });
-  } catch (error) {
-    return {
-      ok: false,
-      reason: "validation_endpoint_unreachable",
-      detail: error instanceof Error ? error.message : "The account validation endpoint could not be reached.",
-      endpoint: METIS_EXTENSION_VALIDATE_URL
-    };
-  }
-
-  if (!response.ok) {
-    return {
-      ok: false,
-      reason: "validation_rejected",
-      detail: `Validation returned HTTP ${response.status}.`,
-      endpoint: METIS_EXTENSION_VALIDATE_URL
-    };
-  }
-
-  const body = (await response.json().catch(() => null)) as unknown;
-  const account = normalizeValidatedAccountResponse(body);
-  const bridgeAccount = normalizeBridgeAccountResponse(body);
-
-  if (!account || !bridgeAccount) {
-    return {
-      ok: false,
-      reason: "invalid_account_payload",
-      detail: "The validation response did not include a usable account snapshot.",
-      endpoint: METIS_EXTENSION_VALIDATE_URL
-    };
-  }
-
-  return {
-    ok: true,
-    session: buildStoredMetisWebSession(message, account, bridgeAccount)
+    connectedAccount: buildConnectedAccountFromBridge(bridgeAccount)
   };
 }
 
 function withContractState(
   session: MetisTabSessionState | null,
   accessState: MetisAccessState,
-  connectedAccount: ReturnType<typeof getConnectedAccountSnapshot>
+  connectedAccount: ReturnType<typeof buildConnectedAccountFromBridge>
 ) {
   if (!session) {
     return null;
@@ -275,24 +158,9 @@ async function broadcastSessionChange(tabId: number) {
 }
 
 async function broadcastAuthStateChange() {
-  const authContext = await getAuthContext();
-
   try {
     await chrome.runtime.sendMessage({
-      type: "METIS_AUTH_STATE_CHANGED",
-      payload: {
-        type: "METIS_AUTH_SUCCESS",
-        source: "metis-web",
-        version: 1,
-        session: {
-          accessToken: authContext.authSession?.accessToken ?? "",
-          expiresAt: authContext.authSession?.expiresAt ?? null,
-          user: {
-            id: authContext.authSession?.user.id ?? "",
-            email: authContext.authSession?.user.email ?? null
-          }
-        }
-      }
+      type: "METIS_AUTH_STATE_CHANGED"
     } satisfies MetisRuntimeMessage);
   } catch {
     // No listeners is fine.
@@ -441,6 +309,7 @@ async function openMetisToolbarSettings(windowId?: number) {
 }
 
 async function openMetisSignInPage() {
+  const signInUrl = buildMetisSignInUrl(chrome.runtime.id);
   const existingTabs = await chrome.tabs.query({});
   const existingMetisTab = existingTabs.find(
     (tab) => typeof tab.url === "string" && tab.url.startsWith(METIS_SITE_URL)
@@ -448,7 +317,7 @@ async function openMetisSignInPage() {
 
   if (existingMetisTab?.id) {
     await chrome.tabs.update(existingMetisTab.id, {
-      url: METIS_SIGN_IN_URL,
+      url: signInUrl,
       active: true
     });
 
@@ -460,9 +329,15 @@ async function openMetisSignInPage() {
   }
 
   await chrome.tabs.create({
-    url: METIS_SIGN_IN_URL,
+    url: signInUrl,
     active: true
   });
+}
+
+async function handleBridgeAccountStored() {
+  const tabIds = await syncAllSessionsWithAccessState();
+  await Promise.all(tabIds.map((tabId) => broadcastSessionChange(tabId)));
+  await broadcastAuthStateChange();
 }
 
 function getSenderTab(
@@ -502,6 +377,10 @@ async function getActiveTabSession() {
     )
   };
 }
+
+registerExternalBridgeListener({
+  onBridgeStored: handleBridgeAccountStored
+});
 
 // Content scripts declared in the manifest do not always appear on tabs that
 // were already open when the extension was reloaded during development. This
@@ -797,37 +676,6 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 
         await broadcastSessionChange(senderTab.tabId);
         sendResponse({ ok: true, session });
-        return;
-      }
-
-      case "METIS_AUTH_STATE_CHANGED": {
-        const validation = await validateAuthSession(runtimeMessage.payload);
-
-        if (!validation.ok) {
-          await clearStoredMetisWebSession();
-          const tabIds = await syncAllSessionsWithAccessState();
-          await Promise.all(tabIds.map((tabId) => broadcastSessionChange(tabId)));
-          await broadcastAuthStateChange();
-          sendResponse({
-            ok: false,
-            reason: validation.reason,
-            detail: validation.detail,
-            endpoint: validation.endpoint
-          });
-          return;
-        }
-
-        await clearStoredMetisWebSession();
-        await saveStoredMetisWebSession(validation.session);
-        const tabIds = await syncAllSessionsWithAccessState();
-
-        await Promise.all(tabIds.map((tabId) => broadcastSessionChange(tabId)));
-        await processMetisUploadQueue(validation.session);
-        await broadcastAuthStateChange();
-        sendResponse({
-          ok: true,
-          accessState: deriveMetisAccessState(validation.session)
-        });
         return;
       }
 
