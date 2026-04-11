@@ -24,10 +24,12 @@ The website sender can target:
 
 - one configured production extension ID
 - a small configured dev allowlist
-- the current `extensionId` query parameter when the flow starts from the extension
-- the last successful connected extension ID cached in website local storage
+- the current `extensionId` query parameter when the flow starts from the extension, but only after it matches the configured allowlist
+- the last successful connected extension ID cached in website local storage, but only after it matches the configured allowlist
 
 This keeps production predictable while still supporting local unpacked development.
+
+The passed `extensionId` is a routing hint, not proof. The website must still check it against the configured allowlist before sending any bridge packet.
 
 ## Entry flows
 
@@ -128,6 +130,19 @@ The service worker must reject anything that does not pass all of these checks:
 - message type is exactly `METIS_BRIDGE_SYNC`
 - `bridgeVersion === 1`
 - account payload matches `BridgeAccountState`
+
+The website sender must also reject any target extension ID that is not already allowlisted in its public config.
+
+## Redirect alignment
+
+Supabase and OAuth provider dashboards must use exact callback URLs.
+
+For the extension-aware flow, keep the real callback aligned with:
+
+- `https://metis.zward.studio/auth/callback`
+- `http://localhost:3000/auth/callback`
+
+Do not rely on loose redirect matching. Exact callback alignment is required to avoid auth returning to the wrong origin or an old localhost path.
 
 ## UI expectations
 

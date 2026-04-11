@@ -10,8 +10,9 @@ What to do first:
 2. user clicks `Sign in`
 3. background opens the website sign-in URL with `source=extension` and `extensionId=<chrome.runtime.id>`
 4. website finishes auth
-5. settings overlay sends `METIS_BRIDGE_SYNC`
-6. service worker stores `metis_account_state`
+5. website checks that `extensionId` is in its configured allowlist
+6. settings overlay sends `METIS_BRIDGE_SYNC`
+7. service worker stores `metis_account_state`
 
 Expected result:
 
@@ -22,9 +23,10 @@ Expected result:
 What to do next:
 
 1. user is already signed in on the website
-2. user clicks `Connect to extension`
-3. settings overlay sends the same `METIS_BRIDGE_SYNC`
-4. extension stores the new snapshot
+2. website uses the configured production or dev extension ID allowlist
+3. user clicks `Connect to extension`
+4. settings overlay sends the same `METIS_BRIDGE_SYNC`
+5. extension stores the new snapshot
 
 Expected result:
 
@@ -47,11 +49,12 @@ Expected result:
 1. confirm the extension is reloaded after manifest or service-worker changes
 2. confirm the website origin is exactly `https://metis.zward.studio` or `http://localhost:3000`
 3. confirm the sign-in URL contains `source=extension`
-4. confirm the sign-in URL or stored website state includes a usable extension ID
+4. confirm the sign-in URL or stored website state includes a usable extension ID that is also in the website allowlist
 5. inspect `chrome.storage.local` for:
    - `metis_account_state`
    - `metis_connected_at`
    - `metis_bridge_version`
+6. confirm Supabase and provider dashboards use the exact callback URL for the current origin
 
 Expected result:
 
