@@ -20,6 +20,19 @@ Release workflow from `0.1.0` onward:
 - the version bump stays in its own commit
 - the updates entry lands in the same release prep pass
 
+## 0.14.4
+
+Release type: Patch
+
+This release hardens the website account handoff and adds page-bridge throttling so noisy routes stop flooding Chrome with full snapshot injections.
+
+What changed
+
+- Removed the extra in-extension connect overlay in the popup and side panel, and now hand off straight to the secure website sign-in flow.
+- Added explicit auth failure acknowledgements and richer validation errors so the website bridge can tell the difference between unreachable validation, rejected auth, and bad payloads.
+- Pointed account, sign-in, and API handoff links back at `https://metis.zward.studio` instead of local test origins.
+- Added cooldown-based rate limiting to page-bridge snapshot injection and throttled the heavy debug snapshot logs on noisy pages.
+
 ## 0.14.3
 
 Release type: Minor
