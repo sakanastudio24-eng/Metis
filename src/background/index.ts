@@ -36,6 +36,7 @@ import {
 } from "../shared/lib/tabSessionStore";
 import type {
   MetisAccessState,
+  MetisAuthFailureReason,
   MetisAuthSuccessBridgeMessage,
   StoredMetisWebSession
 } from "../shared/types/audit";
@@ -154,20 +155,39 @@ function normalizeBridgeAccountResponse(value: unknown): StoredMetisWebSession["
 
 async function validateAuthSession(
   message: MetisAuthSuccessBridgeMessage
-): Promise<StoredMetisWebSession | null> {
-  const response = await fetch(METIS_EXTENSION_VALIDATE_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${message.session.accessToken}`
-    },
-    body: JSON.stringify({
-      accessToken: message.session.accessToken
-    })
-  });
+): Promise<
+  | { ok: true; session: StoredMetisWebSession }
+  | { ok: false; reason: MetisAuthFailureReason; detail: string; endpoint?: string }
+> {
+  let response: Response;
+
+  try {
+    response = await fetch(METIS_EXTENSION_VALIDATE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${message.session.accessToken}`
+      },
+      body: JSON.stringify({
+        accessToken: message.session.accessToken
+      })
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "validation_endpoint_unreachable",
+      detail: error instanceof Error ? error.message : "The account validation endpoint could not be reached.",
+      endpoint: METIS_EXTENSION_VALIDATE_URL
+    };
+  }
 
   if (!response.ok) {
-    return null;
+    return {
+      ok: false,
+      reason: "validation_rejected",
+      detail: `Validation returned HTTP ${response.status}.`,
+      endpoint: METIS_EXTENSION_VALIDATE_URL
+    };
   }
 
   const body = (await response.json().catch(() => null)) as unknown;
@@ -175,10 +195,18 @@ async function validateAuthSession(
   const bridgeAccount = normalizeBridgeAccountResponse(body);
 
   if (!account || !bridgeAccount) {
-    return null;
+    return {
+      ok: false,
+      reason: "invalid_account_payload",
+      detail: "The validation response did not include a usable account snapshot.",
+      endpoint: METIS_EXTENSION_VALIDATE_URL
+    };
   }
 
-  return buildStoredMetisWebSession(message, account, bridgeAccount);
+  return {
+    ok: true,
+    session: buildStoredMetisWebSession(message, account, bridgeAccount)
+  };
 }
 
 function withContractState(
@@ -773,27 +801,32 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
       }
 
       case "METIS_AUTH_STATE_CHANGED": {
-        const validatedSession = await validateAuthSession(runtimeMessage.payload);
+        const validation = await validateAuthSession(runtimeMessage.payload);
 
-        if (!validatedSession) {
+        if (!validation.ok) {
           await clearStoredMetisWebSession();
           const tabIds = await syncAllSessionsWithAccessState();
           await Promise.all(tabIds.map((tabId) => broadcastSessionChange(tabId)));
           await broadcastAuthStateChange();
-          sendResponse({ ok: false });
+          sendResponse({
+            ok: false,
+            reason: validation.reason,
+            detail: validation.detail,
+            endpoint: validation.endpoint
+          });
           return;
         }
 
         await clearStoredMetisWebSession();
-        await saveStoredMetisWebSession(validatedSession);
+        await saveStoredMetisWebSession(validation.session);
         const tabIds = await syncAllSessionsWithAccessState();
 
         await Promise.all(tabIds.map((tabId) => broadcastSessionChange(tabId)));
-        await processMetisUploadQueue(validatedSession);
+        await processMetisUploadQueue(validation.session);
         await broadcastAuthStateChange();
         sendResponse({
           ok: true,
-          accessState: deriveMetisAccessState(validatedSession)
+          accessState: deriveMetisAccessState(validation.session)
         });
         return;
       }

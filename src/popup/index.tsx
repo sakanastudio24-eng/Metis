@@ -352,68 +352,6 @@ function LinkCard({
   );
 }
 
-function ConnectOverlay({
-  onClose,
-  onContinue
-}: {
-  onClose: () => void;
-  onContinue: () => void;
-}) {
-  return (
-    <div
-      className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(7,12,19,0.78)] px-4 py-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-[340px] rounded-[24px] border px-5 py-5"
-        style={{ background: "#101c2b", borderColor: "rgba(255,255,255,0.08)" }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div style={{ color: "white", fontFamily: "Jua, sans-serif", fontSize: 24 }}>
-          Connect Metis
-        </div>
-        <div
-          style={{
-            color: "rgba(255,255,255,0.58)",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 12,
-            lineHeight: "18px",
-            marginTop: 10
-          }}
-        >
-          Sign in stays on the Metis website. After you connect there, this extension will show a connected success state here.
-        </div>
-        <div
-          className="mt-4 rounded-[16px] border px-3 py-3"
-          style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
-        >
-          <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
-            What happens next
-          </div>
-          <div
-            style={{
-              color: "rgba(255,255,255,0.54)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 11,
-              lineHeight: "16px",
-              marginTop: 6
-            }}
-          >
-            Open the secure website sign-in flow, finish auth, then return here. Metis will show a connected signal when the bridge completes.
-          </div>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          <ActionButton onClick={onContinue}>
-            <Mail size={12} />
-            Continue on website
-          </ActionButton>
-          <ActionButton onClick={onClose}>Close overlay</ActionButton>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PopupApp() {
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const [selectedPermissionId, setSelectedPermissionId] = useState<PermissionControlId>("webPages");
@@ -427,7 +365,6 @@ function PopupApp() {
   const [connectedAccountName, setConnectedAccountName] = useState("Website account");
   const [connectedAccountEmail, setConnectedAccountEmail] = useState<string | null>(null);
   const [connectedAccountScansUsed, setConnectedAccountScansUsed] = useState(0);
-  const [isConnectOverlayOpen, setIsConnectOverlayOpen] = useState(false);
   const scanBehaviorRef = useRef<HTMLDivElement | null>(null);
   const previousAuthStateRef = useRef(false);
 
@@ -522,7 +459,6 @@ function PopupApp() {
     }
 
     if (!previousAuthStateRef.current && accessState.isAuthenticated) {
-      setIsConnectOverlayOpen(false);
       toast.success("Connected to Metis ✓", {
         description: "Your website account is now linked in the extension."
       });
@@ -588,10 +524,6 @@ function PopupApp() {
   };
 
   const handleOpenSignIn = async () => {
-    setIsConnectOverlayOpen(true);
-  };
-
-  const handleContinueConnect = async () => {
     await sendRuntimeMessage({
       type: "METIS_OPEN_SIGN_IN",
       source: "popup"
@@ -908,12 +840,6 @@ function PopupApp() {
         </Section>
         <div className="h-8" />
       </div>
-      {isConnectOverlayOpen ? (
-        <ConnectOverlay
-          onClose={() => setIsConnectOverlayOpen(false)}
-          onContinue={() => void handleContinueConnect()}
-        />
-      ) : null}
     </div>
   );
 }

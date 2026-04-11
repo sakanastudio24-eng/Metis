@@ -383,6 +383,24 @@ export interface MetisAuthSuccessAck {
   ok: true;
 }
 
+export type MetisAuthFailureReason =
+  | "extension_unavailable"
+  | "validation_endpoint_unreachable"
+  | "validation_rejected"
+  | "invalid_account_payload"
+  | "storage_failed"
+  | "unknown";
+
+export interface MetisAuthFailureAck {
+  type: "METIS_AUTH_FAILURE";
+  source: "metis-extension";
+  version: 1;
+  ok: false;
+  reason: MetisAuthFailureReason;
+  detail?: string;
+  endpoint?: string;
+}
+
 export interface StoredMetisWebSession {
   accessToken: string;
   expiresAt: number | null;

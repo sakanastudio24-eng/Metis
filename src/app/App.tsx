@@ -278,96 +278,6 @@ function ReconnectState({
   );
 }
 
-function ConnectOverlay({
-  onClose,
-  onContinue
-}: {
-  onClose: () => void;
-  onContinue: () => void;
-}) {
-  return (
-    <div
-      className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(7,12,19,0.72)] px-6 py-6 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-[420px] rounded-[28px] border px-6 py-6"
-        style={{ background: "#101c2b", borderColor: "rgba(255,255,255,0.08)" }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="text-white" style={{ fontFamily: "Jua, sans-serif", fontSize: 30 }}>
-          Connect Metis
-        </div>
-        <div
-          className="mt-3"
-          style={{
-            color: "rgba(255,255,255,0.58)",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 13,
-            lineHeight: "20px"
-          }}
-        >
-          Account sign-in stays on the Metis website. Finish the secure website flow and this panel will show a connected success state when the bridge completes.
-        </div>
-        <div
-          className="mt-5 rounded-[18px] border px-4 py-4"
-          style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
-        >
-          <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 }}>
-            Website owned auth
-          </div>
-          <div
-            className="mt-2"
-            style={{
-              color: "rgba(255,255,255,0.54)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 12,
-              lineHeight: "18px"
-            }}
-          >
-            Metis uses the website for sign-in, then passes back a narrow validated account state to the extension.
-          </div>
-        </div>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <motion.button
-            type="button"
-            onClick={onContinue}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-3"
-            style={{
-              background: "#dc5e5e",
-              color: "white",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 13,
-              fontWeight: 700
-            }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Open secure sign in
-          </motion.button>
-          <motion.button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-3"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.8)",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 13,
-              fontWeight: 700
-            }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Close overlay
-          </motion.button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   const sidePanelPresencePortRef = useRef<chrome.runtime.Port | null>(null);
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
@@ -378,7 +288,6 @@ export default function App() {
   const [isPlusRefinementOpen, setIsPlusRefinementOpen] = useState(false);
   const [isPlusUser, setIsPlusUser] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [isConnectOverlayOpen, setIsConnectOverlayOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const [settingsReady, setSettingsReady] = useState(false);
   const previousAuthStateRef = useRef(false);
@@ -657,7 +566,6 @@ export default function App() {
 
   useEffect(() => {
     if (!previousAuthStateRef.current && accessState.isAuthenticated) {
-      setIsConnectOverlayOpen(false);
       toast.success("Connected to Metis ✓", {
         description: "Your website account is now linked in the side panel."
       });
@@ -810,7 +718,7 @@ export default function App() {
 
   const handleOpenAccountPortal = () => {
     if (!accessState.isAuthenticated) {
-      setIsConnectOverlayOpen(true);
+      void handleContinueConnect();
       return;
     }
 
@@ -819,7 +727,7 @@ export default function App() {
 
   const handleUpgradeToPlus = async () => {
     if (!accessState.isAuthenticated) {
-      setIsConnectOverlayOpen(true);
+      await handleContinueConnect();
       return;
     }
 
@@ -986,12 +894,6 @@ export default function App() {
           }}
         />
       )}
-      {isConnectOverlayOpen ? (
-        <ConnectOverlay
-          onClose={() => setIsConnectOverlayOpen(false)}
-          onContinue={() => void handleContinueConnect()}
-        />
-      ) : null}
     </div>
   );
 }

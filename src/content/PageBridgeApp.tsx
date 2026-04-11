@@ -62,6 +62,7 @@ import {
   METIS_USER_SETTINGS_KEY
 } from "../shared/lib/metisStorageKeys";
 import type {
+  MetisAuthFailureAck,
   MetisAuthSuccessAck,
   MetisLocalSettings,
   PageScanComparison,
@@ -80,6 +81,7 @@ const PANEL_OPEN_SCAN_DELAY_MS = 1000;
 const POST_LOAD_SCAN_DELAY_MS = 500;
 const SCAN_REFRESH_INTERVAL_MS = 3000;
 const NAVIGATION_CHECK_INTERVAL_MS = 500;
+const SCAN_DEBUG_LOG_INTERVAL_MS = 8000;
 const LAUNCHER_CLIP_HEIGHT_PX = 88;
 const LAUNCHER_EDGE_GUTTER_PX = 12;
 const LAUNCHER_DRAG_THRESHOLD_PX = 5;
@@ -106,6 +108,18 @@ function clampLauncherTop(nextTop: number) {
   );
 
   return Math.min(Math.max(nextTop, minTop), maxTop);
+}
+
+function getInjectionCooldownMs(scanDelayProfile: MetisLocalSettings["scanDelayProfile"]) {
+  if (scanDelayProfile === "fast") {
+    return 1200;
+  }
+
+  if (scanDelayProfile === "thorough") {
+    return 2600;
+  }
+
+  return 1800;
 }
 
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
@@ -219,6 +233,9 @@ export function PageBridgeApp() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
   const scanTimeoutRef = useRef<number | null>(null);
+  const scanSyncInFlightRef = useRef(false);
+  const lastInjectionAtRef = useRef(0);
+  const lastDebugLogAtRef = useRef(0);
   const launcherShellRef = useRef<HTMLDivElement | null>(null);
   const launcherTopRef = useRef<number | null>(null);
   const launcherDragOffsetRef = useRef(0);
@@ -586,24 +603,53 @@ export function PageBridgeApp() {
         return;
       }
 
-      void sendRuntimeMessage<{ ok?: boolean }>({
+      void sendRuntimeMessage<{
+        ok?: boolean;
+        reason?: string;
+        detail?: string;
+        endpoint?: string;
+      }>({
         type: "METIS_AUTH_STATE_CHANGED",
         payload: event.data
       }).then((response) => {
-        if (!response?.ok) {
+        if (response?.ok) {
+          const ack: MetisAuthSuccessAck = {
+            type: "METIS_AUTH_SUCCESS_ACK",
+            source: "metis-extension",
+            version: 1,
+            ok: true
+          };
+
+          window.postMessage(ack, window.location.origin);
+          toast.success("Connected to Metis ✓", {
+            description: "This website session is now available in the extension."
+          });
           return;
         }
 
-        const ack: MetisAuthSuccessAck = {
-          type: "METIS_AUTH_SUCCESS_ACK",
+        const failure: MetisAuthFailureAck = {
+          type: "METIS_AUTH_FAILURE",
           source: "metis-extension",
           version: 1,
-          ok: true
+          ok: false,
+          reason:
+            response?.reason === "extension_unavailable" ||
+            response?.reason === "validation_endpoint_unreachable" ||
+            response?.reason === "validation_rejected" ||
+            response?.reason === "invalid_account_payload" ||
+            response?.reason === "storage_failed"
+              ? response.reason
+              : "unknown",
+          detail:
+            typeof response?.detail === "string"
+              ? response.detail
+              : "The extension could not store the connected account state.",
+          endpoint: typeof response?.endpoint === "string" ? response.endpoint : undefined
         };
 
-        window.postMessage(ack, window.location.origin);
-        toast.success("Connected to Metis ✓", {
-          description: "This website session is now available in the extension."
+        window.postMessage(failure, window.location.origin);
+        toast.error("Metis connection failed", {
+          description: failure.detail
         });
       });
     };
@@ -676,6 +722,7 @@ export function PageBridgeApp() {
       }
 
       isStopped = true;
+      scanSyncInFlightRef.current = false;
 
       if (intervalId !== null) {
         window.clearInterval(intervalId);
@@ -695,6 +742,27 @@ export function PageBridgeApp() {
       if (isStopped || !isSessionActive || !settings.webPageScanningEnabled) {
         return;
       }
+
+      // Keep the page bridge from flooding Chrome with back-to-back full snapshot
+      // writes on noisy pages. We still reschedule, but we only inject one update
+      // per cooldown window and never overlap an in-flight sync.
+      const injectionCooldownMs = getInjectionCooldownMs(settings.scanDelayProfile);
+      const now = Date.now();
+      const remainingCooldown =
+        lastInjectionAtRef.current + injectionCooldownMs - now;
+
+      if (scanSyncInFlightRef.current) {
+        scheduleScan(injectionCooldownMs);
+        return;
+      }
+
+      if (remainingCooldown > 0) {
+        scheduleScan(Math.max(remainingCooldown, 250));
+        return;
+      }
+
+      scanSyncInFlightRef.current = true;
+      lastInjectionAtRef.current = now;
       setIsUpdating(true);
 
       try {
@@ -725,28 +793,31 @@ export function PageBridgeApp() {
         setScore(Math.round(scoreBreakdown.score));
         setRiskLabel(scoreBreakdown.label);
 
-        console.info("[Metis] scan summary", buildScanDebugSummary(snapshot));
-        console.info("[Metis] raw scan snapshot", snapshot);
-        console.info("[Metis] site baseline snapshot", baseline);
-        console.info("[Metis] visited site snapshots", visited);
-        console.info("[Metis] page scan snapshot", compactSnapshot);
+        if (Date.now() - lastDebugLogAtRef.current >= SCAN_DEBUG_LOG_INTERVAL_MS) {
+          lastDebugLogAtRef.current = Date.now();
+          console.info("[Metis] scan summary", buildScanDebugSummary(snapshot));
+          console.info("[Metis] raw scan snapshot", snapshot);
+          console.info("[Metis] site baseline snapshot", baseline);
+          console.info("[Metis] visited site snapshots", visited);
+          console.info("[Metis] page scan snapshot", compactSnapshot);
 
-        if (pageScanHistory.comparison) {
-          console.info("[Metis] page scan comparison", pageScanHistory.comparison);
-        }
+          if (pageScanHistory.comparison) {
+            console.info("[Metis] page scan comparison", pageScanHistory.comparison);
+          }
 
-        if (pageScanHistory.latestCapturedSnapshot) {
-          console.info(
-            "[Metis] latest captured page snapshot",
-            pageScanHistory.latestCapturedSnapshot
-          );
-        }
+          if (pageScanHistory.latestCapturedSnapshot) {
+            console.info(
+              "[Metis] latest captured page snapshot",
+              pageScanHistory.latestCapturedSnapshot
+            );
+          }
 
-        if (pageScanHistory.latestCapturedComparison) {
-          console.info(
-            "[Metis] latest captured page comparison",
-            pageScanHistory.latestCapturedComparison
-          );
+          if (pageScanHistory.latestCapturedComparison) {
+            console.info(
+              "[Metis] latest captured page comparison",
+              pageScanHistory.latestCapturedComparison
+            );
+          }
         }
 
         const response = await sendRuntimeMessage<{
@@ -776,6 +847,7 @@ export function PageBridgeApp() {
 
         console.error("[Metis] failed to sync page bridge snapshot", error);
       } finally {
+        scanSyncInFlightRef.current = false;
         setIsUpdating(false);
       }
     };
