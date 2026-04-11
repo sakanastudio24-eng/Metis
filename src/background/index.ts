@@ -14,6 +14,8 @@ import {
   deriveAccessStateFromBridgeAccount,
 } from "../shared/lib/bridgeAccountState";
 import {
+  getBridgeStorageDebugSnapshot,
+  clearBridgeAccountState,
   getStoredBridgeAccountState,
 } from "../shared/lib/bridgeStorage";
 import { buildStoredMetisLastScan, saveStoredMetisLastScan } from "../shared/lib/metisLastScan";
@@ -310,6 +312,10 @@ async function openMetisToolbarSettings(windowId?: number) {
 
 async function openMetisSignInPage() {
   const signInUrl = buildMetisSignInUrl(chrome.runtime.id);
+  console.info("[Metis bridge] opening website sign-in", {
+    runtimeId: chrome.runtime.id,
+    signInUrl,
+  });
   const existingTabs = await chrome.tabs.query({});
   const existingMetisTab = existingTabs.find(
     (tab) => typeof tab.url === "string" && tab.url.startsWith(METIS_SITE_URL)
@@ -534,6 +540,14 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         return;
       }
 
+      case "METIS_DISCONNECT_ACCOUNT": {
+        await clearBridgeAccountState();
+        await handleBridgeAccountStored();
+        console.info("[Metis bridge] cleared cached account snapshot");
+        sendResponse({ ok: true });
+        return;
+      }
+
       case "METIS_OPEN_PANEL_FROM_POPUP": {
         const [activeTab] = await chrome.tabs.query({
           active: true,
@@ -683,6 +697,14 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
         sendResponse({
           ok: true,
           ...(await getActiveTabSession())
+        });
+        return;
+      }
+
+      case "METIS_GET_BRIDGE_DEBUG": {
+        sendResponse({
+          ok: true,
+          snapshot: await getBridgeStorageDebugSnapshot(),
         });
         return;
       }

@@ -64,6 +64,37 @@ What not to do again:
 - do not treat a detached tab or popup as the product unless the user explicitly wants it
 - do not add extra async worker work ahead of `chrome.sidePanel.open(...)` without retesting the gesture path
 
+## Bridge Deployment Control
+
+Problem:
+
+- the extension bridge can look broken even when the runtime code is correct
+- the website branch, commit, and env settings can all look right in preproduction while `https://metis.zward.studio` still serves an older production deployment
+
+Cause:
+
+- preview and production are separate deployment states
+- the extension only cares about the public hostname the user lands on
+- if the public hostname is not aliased to the intended production deployment, the extension will connect to stale website code and stale bridge behavior
+
+What fixed it operationally:
+
+- verify the production hostname, not just the preview deployment
+- confirm the production deployment is built from the intended branch and commit
+- confirm production env values match the bridge contract
+
+Control rule:
+
+- treat passed branch and preview success as insufficient proof
+- treat the production alias on `https://metis.zward.studio` as the only bridge source of truth
+- before changing extension bridge code again, verify that production and preview are not diverging on bridge-critical values
+
+Known production reference at the time this lesson was recorded:
+
+- production source branch: `codex/perf-client-islands`
+- production commit: `d24037a`
+- public hostname: `https://metis.zward.studio`
+
 ## Scan and Session Hurdles
 
 ### Scan hydration gap

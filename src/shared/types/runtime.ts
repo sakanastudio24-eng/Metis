@@ -46,12 +46,14 @@ export type MetisRuntimeMessage =
   | { type: "METIS_OPEN_PANEL_FROM_POPUP" }
   | { type: "METIS_OPEN_TOOLBAR_SETTINGS" }
   | { type: "METIS_OPEN_SIGN_IN"; source: "popup" | "panel" | "report" | "content" }
+  | { type: "METIS_DISCONNECT_ACCOUNT" }
   | { type: "METIS_OPEN_PAGE_REPORT"; tabId: number; openPlusPreview?: boolean }
   | { type: "METIS_START_TAB_SESSION" }
   | { type: "METIS_ACTIVATE_FROM_TOOLBAR" }
   | { type: "METIS_RECONNECT_ACTIVE_TAB" }
   | { type: "METIS_SCAN_UPDATE"; payload: MetisScanUpdatePayload }
   | { type: "METIS_AUTH_STATE_CHANGED" }
+  | { type: "METIS_GET_BRIDGE_DEBUG" }
   | { type: "METIS_GET_ACTIVE_TAB_SESSION" }
   | { type: "METIS_SET_PANEL_VISIBILITY"; tabId: number; isOpen: boolean }
   | { type: "METIS_PATCH_TAB_SESSION"; patch: Partial<MetisSessionUiState> }

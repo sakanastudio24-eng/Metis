@@ -9,6 +9,8 @@ import {
   deriveAccessStateFromBridgeAccount,
 } from "../shared/lib/bridgeAccountState";
 import {
+  clearBridgeAccountState,
+  getBridgeStorageDebugSnapshot,
   getStoredBridgeState,
 } from "../shared/lib/bridgeStorage";
 import {
@@ -31,6 +33,7 @@ import {
 } from "../shared/lib/metisLinks";
 import {
   METIS_ACCOUNT_STATE_KEY,
+  METIS_BRIDGE_DEBUG_KEY,
   METIS_BRIDGE_VERSION_KEY,
   METIS_CONNECTED_AT_KEY,
   LEGACY_METIS_USER_SETTINGS_KEY,
@@ -369,18 +372,21 @@ function PopupApp() {
   const [connectedAccountName, setConnectedAccountName] = useState("Website account");
   const [connectedAccountEmail, setConnectedAccountEmail] = useState<string | null>(null);
   const [connectedAccountScansUsed, setConnectedAccountScansUsed] = useState(0);
+  const [bridgeDebug, setBridgeDebug] = useState<Awaited<ReturnType<typeof getBridgeStorageDebugSnapshot>>>(null);
   const scanBehaviorRef = useRef<HTMLDivElement | null>(null);
   const previousAuthStateRef = useRef(false);
+  const previousAccountEmailRef = useRef<string | null>(null);
 
   const extensionVersion = useMemo(() => chrome.runtime.getManifest().version, []);
   const privacyUrl = useMemo(() => chrome.runtime.getURL("privacy.html"), []);
   const termsUrl = useMemo(() => chrome.runtime.getURL("terms.html"), []);
 
   const refreshStorageState = async () => {
-    const [pageSummary, siteSummary, bridgeState] = await Promise.all([
+    const [pageSummary, siteSummary, bridgeState, bridgeSnapshot] = await Promise.all([
       getPageScanStoreSummary(),
       getSiteHistorySummary(),
-      getStoredBridgeState()
+      getStoredBridgeState(),
+      getBridgeStorageDebugSnapshot(),
     ]);
 
     setSavedPageCount(pageSummary.savedPageCount);
@@ -390,6 +396,7 @@ function PopupApp() {
     setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
     setConnectedAccountEmail(connectedAccount?.email ?? null);
     setConnectedAccountScansUsed(bridgeState?.account.scansUsed ?? 0);
+    setBridgeDebug(bridgeSnapshot);
   };
 
   useEffect(() => {
@@ -399,9 +406,10 @@ function PopupApp() {
       getMetisLocalSettings(),
       getPageScanStoreSummary(),
       getSiteHistorySummary(),
-      getStoredBridgeState()
+      getStoredBridgeState(),
+      getBridgeStorageDebugSnapshot(),
     ]).then(
-      ([storedSettings, pageSummary, siteSummary, bridgeState]) => {
+      ([storedSettings, pageSummary, siteSummary, bridgeState, bridgeSnapshot]) => {
         if (cancelled) {
           return;
         }
@@ -414,6 +422,7 @@ function PopupApp() {
         setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
         setConnectedAccountEmail(connectedAccount?.email ?? null);
         setConnectedAccountScansUsed(bridgeState?.account.scansUsed ?? 0);
+        setBridgeDebug(bridgeSnapshot);
         setReady(true);
       }
     );
@@ -444,6 +453,7 @@ function PopupApp() {
         changes[METIS_USER_SETTINGS_KEY] ||
         changes[LEGACY_METIS_USER_SETTINGS_KEY] ||
         changes[METIS_ACCOUNT_STATE_KEY] ||
+        changes[METIS_BRIDGE_DEBUG_KEY] ||
         changes[METIS_CONNECTED_AT_KEY] ||
         changes[METIS_BRIDGE_VERSION_KEY]
       ) {
@@ -474,6 +484,7 @@ function PopupApp() {
   useEffect(() => {
     if (!ready) {
       previousAuthStateRef.current = accessState.isAuthenticated;
+      previousAccountEmailRef.current = connectedAccountEmail;
       return;
     }
 
@@ -483,8 +494,21 @@ function PopupApp() {
       });
     }
 
+    if (
+      previousAuthStateRef.current &&
+      accessState.isAuthenticated &&
+      previousAccountEmailRef.current &&
+      connectedAccountEmail &&
+      previousAccountEmailRef.current !== connectedAccountEmail
+    ) {
+      toast.message(`Switched to ${connectedAccountEmail}`, {
+        description: "The website sent a newer account snapshot and replaced the cached extension account."
+      });
+    }
+
     previousAuthStateRef.current = accessState.isAuthenticated;
-  }, [accessState.isAuthenticated, ready]);
+    previousAccountEmailRef.current = connectedAccountEmail;
+  }, [accessState.isAuthenticated, connectedAccountEmail, ready]);
 
   const handleClearSnapshots = async () => {
     await clearPageScanStore();
@@ -543,12 +567,35 @@ function PopupApp() {
   };
 
   const handleOpenSignIn = async () => {
+    console.info("[Metis bridge] popup requested sign-in", {
+      runtimeId: chrome.runtime.id,
+    });
     await sendRuntimeMessage({
       type: "METIS_OPEN_SIGN_IN",
       source: "popup"
     });
     toast.message("Open Metis to finish sign in", {
       description: "Finish the website flow, then return here for the connected signal."
+    });
+  };
+
+  const handleDisconnectAccount = async () => {
+    const response = await sendRuntimeMessage<{ ok?: boolean }>({
+      type: "METIS_DISCONNECT_ACCOUNT"
+    });
+
+    if (response?.ok) {
+      await refreshStorageState();
+      toast.success("Disconnected account", {
+        description: "The extension cache is cleared. Your website session stays signed in."
+      });
+      return;
+    }
+
+    await clearBridgeAccountState();
+    await refreshStorageState();
+    toast.success("Disconnected account", {
+      description: "The extension cache is cleared. Your website session stays signed in."
     });
   };
 
@@ -722,6 +769,72 @@ function PopupApp() {
               <LayoutDashboard size={12} />
               Manage account
             </a>
+            {accessState.isAuthenticated ? (
+              <ActionButton destructive onClick={() => void handleDisconnectAccount()}>
+                <Trash2 size={12} />
+                Disconnect account
+              </ActionButton>
+            ) : null}
+          </div>
+          <div
+            className="rounded-[16px] border px-3 py-3"
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+          >
+            <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+              Bridge debug
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.52)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                lineHeight: "16px",
+                marginTop: 6
+              }}
+            >
+              {bridgeDebug?.bridgeDebug?.lastStatus
+                ? `Last status: ${bridgeDebug.bridgeDebug.lastStatus}`
+                : "No bridge attempt stored yet."}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Stored account
+                </div>
+                <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                  {bridgeDebug?.accountState ? "Present" : "Missing"}
+                </div>
+              </div>
+              <div>
+                <div className="text-white/45" style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Last event
+                </div>
+                <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                  {bridgeDebug?.bridgeDebug?.updatedAt
+                    ? new Date(bridgeDebug.bridgeDebug.updatedAt).toLocaleTimeString()
+                    : "Never"}
+                </div>
+              </div>
+            </div>
+            {bridgeDebug?.bridgeDebug?.lastFailureReason ? (
+              <div
+                className="mt-3 rounded-[12px] border px-3 py-3"
+                style={{
+                  background: "rgba(220,94,94,0.08)",
+                  borderColor: "rgba(220,94,94,0.18)",
+                }}
+              >
+                <div style={{ color: "#ffd4d4", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Failure
+                </div>
+                <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, marginTop: 6 }}>
+                  {bridgeDebug.bridgeDebug.lastFailureReason}
+                </div>
+                <div style={{ color: "rgba(255,255,255,0.7)", fontFamily: "Inter, sans-serif", fontSize: 11, lineHeight: "16px", marginTop: 6 }}>
+                  {bridgeDebug.bridgeDebug.lastFailureDetail ?? "No detail returned."}
+                </div>
+              </div>
+            ) : null}
           </div>
         </Section>
 
