@@ -277,6 +277,26 @@ export async function clearVisitedSiteSnapshots(origin: string): Promise<void> {
   });
 }
 
+export async function clearSiteHistoryForOrigin(origin: string): Promise<void> {
+  const storage = getStorageArea();
+
+  if (!storage) {
+    return;
+  }
+
+  const keys = [getBaselineStorageKey(origin), getPagesStorageKey(origin)];
+
+  await new Promise<void>((resolve) => {
+    try {
+      storage.remove(keys, () => {
+        resolveStorageValue(undefined, resolve, undefined);
+      });
+    } catch {
+      resolve();
+    }
+  });
+}
+
 export async function getSiteHistorySummary(): Promise<SiteHistorySummary> {
   const storage = getStorageArea();
 

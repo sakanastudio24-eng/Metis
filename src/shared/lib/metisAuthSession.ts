@@ -129,6 +129,7 @@ function normalizeStoredSession(value: unknown): StoredMetisWebSession | null {
       email: bridgeAccountRecord && typeof bridgeAccountRecord.email === "string" ? bridgeAccountRecord.email : typeof value.user.email === "string" ? value.user.email : null,
       username: bridgeAccountRecord && typeof bridgeAccountRecord.username === "string" ? bridgeAccountRecord.username : typeof value.user.email === "string" ? value.user.email.split("@")[0] : null,
       scansUsed: bridgeAccountRecord && typeof bridgeAccountRecord.scansUsed === "number" ? bridgeAccountRecord.scansUsed : 0,
+      sitesTracked: bridgeAccountRecord && typeof bridgeAccountRecord.sitesTracked === "number" ? bridgeAccountRecord.sitesTracked : 0,
       tier: bridgeTier,
       isBeta: bridgeAccountRecord ? toBoolean(bridgeAccountRecord.isBeta) : plan !== "free"
     },
@@ -220,6 +221,7 @@ export function buildStoredMetisWebSession(
       email: message.session.user.email ?? null,
       username: message.session.user.email?.split("@")[0] ?? null,
       scansUsed: 0,
+      sitesTracked: 0,
       tier: account.plan,
       isBeta: account.plan !== "free"
     },

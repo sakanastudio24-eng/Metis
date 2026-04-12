@@ -358,6 +358,7 @@ export interface MetisBridgeAccountState {
   email: string | null;
   username: string | null;
   scansUsed: number;
+  sitesTracked: number;
   tier: MetisAccessTier;
   isBeta: boolean;
 }
@@ -367,6 +368,14 @@ export interface MetisBridgeSyncMessage {
   source: "metis-web";
   bridgeVersion: 1;
   account: MetisBridgeAccountState;
+  session?: {
+    accessToken: string;
+    expiresAt: number | null;
+    user: {
+      id: string;
+      email: string | null;
+    };
+  };
 }
 
 export interface MetisBridgeSyncAck {

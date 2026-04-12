@@ -334,3 +334,25 @@ export async function clearPageScanStore(): Promise<void> {
     latestCapturedSnapshot: null
   });
 }
+
+export async function clearPageScansForOrigin(origin: string): Promise<void> {
+  const stored = await getStoredPageScans();
+  const nextScans = Object.fromEntries(
+    Object.entries(stored.scans).filter(([pageKey]) => !pageKey.startsWith(origin))
+  );
+
+  const latestCapturedSnapshot =
+    stored.latestCapturedSnapshot && stored.latestCapturedSnapshot.url.startsWith(origin)
+      ? null
+      : stored.latestCapturedSnapshot ?? null;
+  const latestScanUrl =
+    typeof stored.latestScanUrl === "string" && stored.latestScanUrl.startsWith(origin)
+      ? undefined
+      : stored.latestScanUrl;
+
+  await setStoredPageScans({
+    scans: nextScans,
+    latestCapturedSnapshot,
+    latestScanUrl,
+  });
+}

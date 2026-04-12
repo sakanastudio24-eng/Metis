@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Database, ExternalLink, Gauge, LayoutDashboard, Mail, Shield, Sparkles, Trash2, UserRound } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "../styles/tailwind.css";
-import { clearPageScanStore, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
+import { clearPageScanStore, clearPageScansForOrigin, getPageScanStoreSummary } from "../shared/lib/pageScanHistory";
 import {
   buildConnectedAccountFromBridge,
   deriveAccessStateFromBridgeAccount,
@@ -24,12 +24,15 @@ import {
 } from "../shared/lib/metisPermissionControls";
 import {
   clearAllSiteHistory,
+  clearSiteHistoryForOrigin,
   getSiteHistorySummary,
   type SiteHistorySummary
 } from "../shared/lib/siteBaseline";
 import {
   METIS_ACCOUNT_URL,
-  METIS_SITE_URL
+  METIS_PRIVACY_URL,
+  METIS_SITE_URL,
+  METIS_TERMS_URL
 } from "../shared/lib/metisLinks";
 import {
   METIS_ACCOUNT_STATE_KEY,
@@ -202,7 +205,7 @@ function PermissionAbilityRow({
     <div className="space-y-3">
       <div
         className="rounded-[16px] border px-3 py-3"
-        style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+        style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)", minHeight: 94 }}
       >
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -372,14 +375,20 @@ function PopupApp() {
   const [connectedAccountName, setConnectedAccountName] = useState("Website account");
   const [connectedAccountEmail, setConnectedAccountEmail] = useState<string | null>(null);
   const [connectedAccountScansUsed, setConnectedAccountScansUsed] = useState(0);
+  const [connectedAccountSitesTracked, setConnectedAccountSitesTracked] = useState(0);
+  const [activeOriginForLocalData, setActiveOriginForLocalData] = useState<string | null>(null);
   const [bridgeDebug, setBridgeDebug] = useState<Awaited<ReturnType<typeof getBridgeStorageDebugSnapshot>>>(null);
   const scanBehaviorRef = useRef<HTMLDivElement | null>(null);
   const previousAuthStateRef = useRef(false);
   const previousAccountEmailRef = useRef<string | null>(null);
 
   const extensionVersion = useMemo(() => chrome.runtime.getManifest().version, []);
-  const privacyUrl = useMemo(() => chrome.runtime.getURL("privacy.html"), []);
-  const termsUrl = useMemo(() => chrome.runtime.getURL("terms.html"), []);
+  const showBridgeDebug = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("debug") === "bridge",
+    []
+  );
 
   const refreshStorageState = async () => {
     const [pageSummary, siteSummary, bridgeState, bridgeSnapshot] = await Promise.all([
@@ -396,6 +405,12 @@ function PopupApp() {
     setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
     setConnectedAccountEmail(connectedAccount?.email ?? null);
     setConnectedAccountScansUsed(bridgeState?.account.scansUsed ?? 0);
+    setConnectedAccountSitesTracked(bridgeState?.account.sitesTracked ?? 0);
+    setActiveOriginForLocalData(
+      pageSummary.latestCapturedSnapshot?.url
+        ? new URL(pageSummary.latestCapturedSnapshot.url).origin
+        : null
+    );
     setBridgeDebug(bridgeSnapshot);
   };
 
@@ -422,6 +437,12 @@ function PopupApp() {
         setConnectedAccountName(connectedAccount?.displayName ?? "Website account");
         setConnectedAccountEmail(connectedAccount?.email ?? null);
         setConnectedAccountScansUsed(bridgeState?.account.scansUsed ?? 0);
+        setConnectedAccountSitesTracked(bridgeState?.account.sitesTracked ?? 0);
+        setActiveOriginForLocalData(
+          pageSummary.latestCapturedSnapshot?.url
+            ? new URL(pageSummary.latestCapturedSnapshot.url).origin
+            : null
+        );
         setBridgeDebug(bridgeSnapshot);
         setReady(true);
       }
@@ -516,10 +537,28 @@ function PopupApp() {
     toast.success("Saved snapshots cleared");
   };
 
+  const handleClearCurrentWebsiteData = async () => {
+    if (!activeOriginForLocalData) {
+      toast.message("No current website data", {
+        description: "Capture a page first so Metis knows which website origin to clear."
+      });
+      return;
+    }
+
+    await Promise.all([
+      clearPageScansForOrigin(activeOriginForLocalData),
+      clearSiteHistoryForOrigin(activeOriginForLocalData),
+    ]);
+    await refreshStorageState();
+    toast.success("Current website data cleared", {
+      description: `${activeOriginForLocalData} was removed from local Metis storage.`
+    });
+  };
+
   const handleClearHistory = async () => {
     await clearAllSiteHistory();
     await refreshStorageState();
-    toast.success("Site history cleared");
+    toast.success("All local history cleared");
   };
 
   const handleTogglePermission = (permissionId: PermissionControlId) => {
@@ -623,7 +662,7 @@ function PopupApp() {
         }}
       />
 
-      <div className="mb-5 flex items-end justify-between gap-3">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <div style={{ color: "#dc8d72", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             Metis
@@ -727,22 +766,9 @@ function PopupApp() {
                   Sites tracked
                 </div>
                 <div className="mt-2 text-white" style={{ fontFamily: "Inter, sans-serif", fontSize: 16, fontWeight: 700 }}>
-                  {siteHistory.visitedOriginCount}
+                  {accessState.isAuthenticated ? connectedAccountSitesTracked : 0}
                 </div>
               </div>
-            </div>
-            <div
-              style={{
-                color: "rgba(255,255,255,0.52)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: 11,
-                lineHeight: "16px",
-                marginTop: 8
-              }}
-            >
-              {accessState.isAuthenticated
-                ? "Website-backed account usage returned by the validation bridge."
-                : "Sign in to load account-backed usage from the website."}
             </div>
           </div>
           {!accessState.isAuthenticated ? (
@@ -776,6 +802,7 @@ function PopupApp() {
               </ActionButton>
             ) : null}
           </div>
+          {showBridgeDebug ? (
           <div
             className="rounded-[16px] border px-3 py-3"
             style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
@@ -836,6 +863,7 @@ function PopupApp() {
               </div>
             ) : null}
           </div>
+          ) : null}
         </Section>
 
         <div ref={scanBehaviorRef}>
@@ -886,7 +914,7 @@ function PopupApp() {
         <Section
           icon={Database}
           title="Data"
-          detail="Metis stores scans locally on this device."
+          detail="Metis stores scan history locally on this device and clears it by website origin."
         >
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-[16px] border px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
@@ -907,14 +935,30 @@ function PopupApp() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <ActionButton destructive onClick={() => void handleClearCurrentWebsiteData()}>
+              <Trash2 size={11} />
+              Clear current website data
+            </ActionButton>
             <ActionButton destructive onClick={() => void handleClearSnapshots()}>
               <Trash2 size={11} />
-              Clear snapshots
+              Clear all snapshots
             </ActionButton>
             <ActionButton destructive onClick={() => void handleClearHistory()}>
               <Trash2 size={11} />
-              Clear history
+              Clear all local history
             </ActionButton>
+          </div>
+          <div
+            style={{
+              color: "rgba(255,255,255,0.52)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 11,
+              lineHeight: "16px",
+            }}
+          >
+            {activeOriginForLocalData
+              ? `Current website scope: ${activeOriginForLocalData}`
+              : "Current website scope appears after Metis captures a page on this device."}
           </div>
         </Section>
 
@@ -943,12 +987,12 @@ function PopupApp() {
               detail="Product overview, current direction, and website entry."
             />
             <LinkCard
-              href={privacyUrl}
+              href={METIS_PRIVACY_URL}
               title="Privacy"
               detail="Current privacy policy."
             />
             <LinkCard
-              href={termsUrl}
+              href={METIS_TERMS_URL}
               title="Terms"
               detail="Current terms of use."
             />

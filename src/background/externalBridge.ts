@@ -9,7 +9,9 @@ import {
   isAllowedExternalBridgeOrigin,
   isMetisBridgeSyncMessage,
 } from "../shared/lib/bridgeAccountState";
+import { buildStoredMetisWebSession, saveStoredMetisWebSession } from "../shared/lib/metisAuthSession";
 import {
+  clearBridgeAccountState,
   getBridgeStorageDebugSnapshot,
   getStoredBridgeAccountState,
   saveBridgeAccountState,
@@ -87,6 +89,24 @@ export function registerExternalBridgeListener({
         return;
       }
 
+      if ((message as { type?: unknown }).type === "METIS_BRIDGE_DISCONNECT") {
+        await clearBridgeAccountState();
+        await updateBridgeDebugState({
+          lastStatus: "stored",
+          lastFailureReason: null,
+          lastFailureDetail: "The website requested an external disconnect.",
+        });
+        await onBridgeStored();
+        const ack: MetisBridgeSyncAck = {
+          type: "METIS_BRIDGE_SYNC_ACK",
+          source: "metis-extension",
+          bridgeVersion: METIS_EXTERNAL_BRIDGE_VERSION,
+          ok: true,
+        };
+        sendResponse(ack);
+        return;
+      }
+
       if ((message as { type?: unknown }).type !== "METIS_BRIDGE_SYNC") {
         console.warn("[Metis bridge] unexpected message type", {
           type: (message as { type?: unknown }).type,
@@ -140,6 +160,7 @@ export function registerExternalBridgeListener({
 
       try {
         const incomingAccount = (message as MetisBridgeSyncMessage).account;
+        const incomingSession = (message as MetisBridgeSyncMessage).session;
         const previousAccount = await getStoredBridgeAccountState();
         const didSwitchAccount = Boolean(
           previousAccount?.email &&
@@ -155,6 +176,36 @@ export function registerExternalBridgeListener({
         }
 
         await saveBridgeAccountState(incomingAccount);
+        if (
+          incomingSession &&
+          typeof incomingSession.accessToken === "string" &&
+          typeof incomingSession.user?.id === "string"
+        ) {
+          const plusBetaEnabled =
+            incomingAccount.tier === "plus_beta" ||
+            incomingAccount.tier === "paid" ||
+            incomingAccount.isBeta;
+          const apiBetaEnabled = incomingAccount.tier === "plus_beta" || incomingAccount.tier === "paid";
+
+          await saveStoredMetisWebSession(
+            buildStoredMetisWebSession(
+              {
+                type: "METIS_AUTH_SUCCESS",
+                source: "metis-web",
+                version: 1,
+                session: incomingSession,
+              },
+              {
+                plan: incomingAccount.tier,
+                plusBetaEnabled,
+                apiBetaEnabled,
+                allowPlusUi: plusBetaEnabled,
+                allowReportEmail: plusBetaEnabled,
+              },
+              incomingAccount
+            )
+          );
+        }
         await updateBridgeDebugState({
           lastStatus: "stored",
           lastFailureReason: null,

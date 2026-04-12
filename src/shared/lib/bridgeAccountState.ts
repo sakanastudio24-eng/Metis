@@ -41,6 +41,7 @@ export function normalizeBridgeAccountState(value: unknown): MetisBridgeAccountS
     email: typeof value.email === "string" ? value.email : null,
     username: typeof value.username === "string" ? value.username : null,
     scansUsed: typeof value.scansUsed === "number" ? value.scansUsed : 0,
+    sitesTracked: typeof value.sitesTracked === "number" ? value.sitesTracked : 0,
     tier,
     isBeta: value.isBeta === true,
   };
