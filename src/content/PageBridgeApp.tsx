@@ -428,13 +428,13 @@ export function PageBridgeApp() {
 
       if (runtimeMessage.type === "METIS_PING") {
         sendResponse({ ok: true });
-        return true;
+        return false;
       }
 
       if (runtimeMessage.type === "METIS_ACTIVATE_FROM_TOOLBAR") {
         setIsSessionActive(true);
         sendResponse({ ok: true });
-        return true;
+        return false;
       }
 
       // The side panel stays compact. Opening the deep read happens back in
@@ -447,19 +447,19 @@ export function PageBridgeApp() {
         }
         setIsReportOpen(true);
         sendResponse({ ok: true });
-        return true;
+        return false;
       }
 
       if (runtimeMessage.type === "METIS_SESSION_CHANGED") {
         applySessionState(runtimeMessage.session ?? null);
 
         sendResponse({ ok: true });
-        return true;
+        return false;
       }
 
       if (runtimeMessage.type === "METIS_AUTH_STATE_CHANGED") {
         sendResponse({ ok: true });
-        return true;
+        return false;
       }
 
       if (runtimeMessage.type === "METIS_UPLOAD_REQUEST_QUEUED") {
@@ -467,7 +467,7 @@ export function PageBridgeApp() {
           description: "Metis saved your request and will retry delivery if the network is busy."
         });
         sendResponse({ ok: true });
-        return true;
+        return false;
       }
 
       return false;
