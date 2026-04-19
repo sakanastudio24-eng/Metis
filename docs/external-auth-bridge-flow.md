@@ -30,7 +30,8 @@ What to do next:
 
 Expected result:
 
-- reconnect updates `tier`, `isBeta`, and `scansUsed` without another auth flow
+- reconnect updates `tier`, `isBeta`, `scansUsed`, and `sitesTracked` without
+  another auth flow
 
 ## Failure flow
 
@@ -54,7 +55,9 @@ Expected result:
    - `metis_account_state`
    - `metis_connected_at`
    - `metis_bridge_version`
-6. confirm Supabase and provider dashboards use the exact callback URL for the current origin
+6. if the website requests disconnect, confirm the extension clears the same
+   bridge storage keys instead of keeping stale account state
+7. confirm Supabase and provider dashboards use the exact callback URL for the current origin
 
 Expected result:
 

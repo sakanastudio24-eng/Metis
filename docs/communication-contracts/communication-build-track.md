@@ -186,7 +186,7 @@ Expected result:
 
 ## Build Status
 
-Status at `0.12.0`:
+Status at `0.14.6`:
 
 - [x] Step 1: extension internal messaging first
 - [x] Step 2: communication contract lock

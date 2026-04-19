@@ -57,7 +57,7 @@ Those should be added through this contract, not ad hoc route-by-route drift.
 
 ## Implementation Status
 
-Status at `0.12.0`:
+Status at `0.14.6`:
 
 - [x] extension now treats website auth and account pages as website-owned
 - [x] extension uses backend validation only for protected access-state checks

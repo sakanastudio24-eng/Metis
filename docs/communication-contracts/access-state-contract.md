@@ -48,7 +48,7 @@ It does not turn the extension into a website-dependent product.
 
 ## Implementation Status
 
-Status at `0.12.0`:
+Status at `0.14.6`:
 
 - [x] access state is now derived from validated session state, not only from local UI toggles
 - [x] signed-out behavior still keeps the extension useful

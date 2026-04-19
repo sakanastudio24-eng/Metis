@@ -23,8 +23,9 @@ Use it when work crosses:
 
 - start with `communication-build-track.md` for the build order
 - use `extension-internal-contract.md` for extension-only messaging
-- use `auth-contract.md` for the website auth bridge
-- use `external-auth-bridge-contract.md` for the direct website -> extension Chrome bridge
+- use `auth-contract.md` for website auth entry and callback routing
+- use `external-auth-bridge-contract.md` for the direct website -> extension
+  Chrome bridge
 - use `api-upload-contract.md` for uploads, queueing, and rate limits
 - use `website-backend-contract.md` for normal website/backend traffic
 - use `access-state-contract.md` for account-tier and gating rules
@@ -33,10 +34,11 @@ If a communication change affects more than one lane, update all touched contrac
 
 ## Implementation Status
 
-Current extension status at `0.12.0`:
+Current extension status at `0.14.6`:
 
 - [x] extension-internal runtime messaging is active
-- [x] auth bridge contract is wired into the extension
+- [x] auth entry and callback contract is wired into the extension flow
+- [x] external website -> extension bridge is wired into the service worker
 - [x] validated access state is stored and broadcast locally
 - [x] upload queue primitives exist for events, summaries, and premium requests
 - [x] website-to-extension auth messaging is locked to `https://metis.zward.studio` and `http://localhost:3000`
@@ -50,7 +52,7 @@ Metis is currently in `Step 5 / Milestone E`.
 What is already done:
 
 - local extension messaging works
-- the website auth bridge works
+- the direct external auth bridge works
 - backend validation and upload primitives exist
 - access-state gating exists in the extension runtime
 

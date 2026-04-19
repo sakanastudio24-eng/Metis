@@ -67,6 +67,7 @@ type MetisBridgeSyncMessage = {
     email: string | null;
     username: string | null;
     scansUsed: number;
+    sitesTracked: number;
     tier: "free" | "plus_beta" | "paid";
     isBeta: boolean;
   };
@@ -78,10 +79,13 @@ The payload is intentionally small.
 Do not send:
 
 - service-role secrets
-- whole provider sessions as the account source of truth
 - onboarding answers
 - billing details
 - raw scan history
+
+The website may also attach a minimal session handoff for local extension
+entitlement continuity, but the account snapshot remains the product source of
+truth.
 
 ## Extension replies
 
@@ -107,6 +111,12 @@ type MetisBridgeSyncFailure = {
     | "storage_failed"
     | "unknown";
   detail?: string;
+};
+
+type MetisBridgeDisconnectMessage = {
+  type: "METIS_BRIDGE_DISCONNECT";
+  source: "metis-web";
+  bridgeVersion: 1;
 };
 ```
 
@@ -153,7 +163,8 @@ Signed out:
 Connected:
 
 - extension shows `Connected to Metis ✓`
-- popup can show `email`, `username`, `scansUsed`, `tier`, and beta state from cached storage
+- popup can show `email`, `username`, `scansUsed`, `sitesTracked`, `tier`, and
+  beta state from cached storage
 
 ## Out of scope for this bridge
 
@@ -161,4 +172,4 @@ Connected:
 - token refresh
 - content-script based auth relay
 - making the injector be open during the handoff
-- sending raw Supabase session objects around as the main product-state source
+- making the extension the account source of truth
