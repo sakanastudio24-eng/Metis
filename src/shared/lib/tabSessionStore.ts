@@ -4,6 +4,7 @@ import {
   type MetisSessionUiState
 } from "../types/runtime";
 import { getDefaultMetisAccessState } from "./metisAuthSession";
+import { getDefaultMetisSiteAccessState } from "./siteAccess";
 import {
   LEGACY_METIS_TAB_SESSIONS_KEY,
   METIS_RUNTIME_SESSION_KEY
@@ -28,6 +29,7 @@ function normalizeSession(session: MetisTabSessionState): MetisTabSessionState {
   return {
     ...session,
     accessState: session.accessState ?? getDefaultMetisAccessState(),
+    siteAccess: session.siteAccess ?? getDefaultMetisSiteAccessState(),
     connectedAccount: session.connectedAccount ?? null,
     uiState: {
       ...DEFAULT_METIS_SESSION_UI_STATE,

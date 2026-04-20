@@ -21,26 +21,15 @@
   "permissions": [
     "storage",
     "scripting",
-    "sidePanel"
+    "sidePanel",
+    "activeTab"
   ],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
-  "host_permissions": [
+  "optional_host_permissions": [
     "http://*/*",
     "https://*/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "http://*/*",
-        "https://*/*"
-      ],
-      "js": [
-        "assets/content.js"
-      ],
-      "run_at": "document_idle"
-    }
   ],
   "background": {
     "service_worker": "assets/background.js",

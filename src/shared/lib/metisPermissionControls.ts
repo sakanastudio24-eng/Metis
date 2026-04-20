@@ -1,6 +1,11 @@
 import type { MetisLocalSettings } from "../types/audit";
 
-export type PermissionControlId = "webPages" | "storage" | "scripting" | "sidePanel";
+export type PermissionControlId =
+  | "basicScan"
+  | "expandedSiteAccess"
+  | "localHistory"
+  | "bridgeRepair"
+  | "sidePanelWorkspace";
 
 export interface PermissionControl {
   id: PermissionControlId;
@@ -10,39 +15,50 @@ export interface PermissionControl {
   active: boolean;
 }
 
-export function buildPermissionControls(settings: MetisLocalSettings): PermissionControl[] {
+export function buildPermissionControls(
+  settings: MetisLocalSettings,
+  options?: { expandedSiteAccessActive?: boolean }
+): PermissionControl[] {
   return [
     {
-      id: "webPages",
-      title: "Web pages",
-      ability: "Scans current and same-site routes",
+      id: "basicScan",
+      title: "Basic scan",
+      ability: "Scans the current page",
       description:
-        "When this is off, Metis stops collecting new route scans on normal http and https pages until you turn it back on.",
-      active: settings.webPageScanningEnabled
+        "When this is off, Metis stops running quick scans on the page you open it on.",
+      active: settings.basicScanEnabled
     },
     {
-      id: "storage",
-      title: "Storage",
+      id: "expandedSiteAccess",
+      title: "Expanded site access",
+      ability: "Analyzes more of this site",
+      description:
+        "When enabled for this site, Metis can scan same-origin routes, improve accuracy, and keep the page workspace available here.",
+      active: options?.expandedSiteAccessActive ?? false
+    },
+    {
+      id: "localHistory",
+      title: "Local history",
       ability: "Keeps local history on this device",
       description:
         "When this is off, Metis stops saving snapshots and same-site progress locally. Your core settings still remain available so the extension can keep working.",
       active: settings.localHistoryEnabled
     },
     {
-      id: "scripting",
-      title: "Scripting",
-      ability: "Repairs the page bridge",
+      id: "bridgeRepair",
+      title: "Bridge repair",
+      ability: "Refreshes Metis on the current page",
       description:
         "When this is off, Metis stops reinjecting or repairing the page bridge on older tabs that need a fresh script pass.",
       active: settings.bridgeRepairEnabled
     },
     {
-      id: "sidePanel",
-      title: "Side panel",
+      id: "sidePanelWorkspace",
+      title: "Attached workspace",
       ability: "Keeps the attached workspace available",
       description:
         "When this is off, Metis stops relying on the attached workspace as an automatic compact-review preference. A direct user-open can still bring Metis forward.",
-      active: settings.sidePanelWorkspaceEnabled
+      active: settings.attachedWorkspaceEnabled
     }
   ];
 }

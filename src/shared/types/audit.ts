@@ -327,14 +327,21 @@ export interface MetisLocalSettings {
   refreshMode: MetisRefreshMode;
   motionPreference: MetisMotionPreference;
   autoRescanWhilePanelOpen: boolean;
-  webPageScanningEnabled: boolean;
+  basicScanEnabled: boolean;
   localHistoryEnabled: boolean;
   bridgeRepairEnabled: boolean;
-  sidePanelWorkspaceEnabled: boolean;
+  attachedWorkspaceEnabled: boolean;
   scanDelayProfile: MetisScanDelayProfile;
   attachedReport: boolean;
   showSampleProgress: boolean;
   launcherTop: number | null;
+}
+
+export interface MetisSiteAccessState {
+  origin: string | null;
+  isGranted: boolean;
+  canRequest: boolean;
+  isRestricted: boolean;
 }
 
 export type MetisAccessTier = "free" | "plus_beta" | "paid";
@@ -415,31 +422,6 @@ export interface MetisAuthSuccessBridgeMessage {
       email: string | null;
     };
   };
-}
-
-export interface MetisAuthSuccessAck {
-  type: "METIS_AUTH_SUCCESS_ACK";
-  source: "metis-extension";
-  version: 1;
-  ok: true;
-}
-
-export type MetisAuthFailureReason =
-  | "extension_unavailable"
-  | "validation_endpoint_unreachable"
-  | "validation_rejected"
-  | "invalid_account_payload"
-  | "storage_failed"
-  | "unknown";
-
-export interface MetisAuthFailureAck {
-  type: "METIS_AUTH_FAILURE";
-  source: "metis-extension";
-  version: 1;
-  ok: false;
-  reason: MetisAuthFailureReason;
-  detail?: string;
-  endpoint?: string;
 }
 
 export interface StoredMetisWebSession {

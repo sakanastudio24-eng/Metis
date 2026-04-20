@@ -262,32 +262,34 @@ export function LocalSettingsModal({
   onResetCurrentSiteProgress: () => void;
 }) {
   const [selectedPermissionId, setSelectedPermissionId] =
-    useState<PermissionControlId>("webPages");
+    useState<PermissionControlId>("basicScan");
 
   const handleTogglePermission = (permissionId: PermissionControlId) => {
     switch (permissionId) {
-      case "webPages":
+      case "basicScan":
         onChange({
           ...settings,
-          webPageScanningEnabled: !settings.webPageScanningEnabled
+          basicScanEnabled: !settings.basicScanEnabled
         });
         return;
-      case "storage":
+      case "expandedSiteAccess":
+        return;
+      case "localHistory":
         onChange({
           ...settings,
           localHistoryEnabled: !settings.localHistoryEnabled
         });
         return;
-      case "scripting":
+      case "bridgeRepair":
         onChange({
           ...settings,
           bridgeRepairEnabled: !settings.bridgeRepairEnabled
         });
         return;
-      case "sidePanel":
+      case "sidePanelWorkspace":
         onChange({
           ...settings,
-          sidePanelWorkspaceEnabled: !settings.sidePanelWorkspaceEnabled
+          attachedWorkspaceEnabled: !settings.attachedWorkspaceEnabled
         });
         return;
     }

@@ -37,6 +37,7 @@ import {
   saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
 import { getDefaultMetisAccessState } from "../shared/lib/metisAuthSession";
+import { getDefaultMetisSiteAccessState } from "../shared/lib/siteAccess";
 import { METIS_ACCOUNT_URL } from "../shared/lib/metisLinks";
 import {
   LEGACY_METIS_USER_SETTINGS_KEY,
@@ -254,8 +255,8 @@ function ReconnectState({
         }}
       >
         {ready
-          ? "Click the page hover or use this button to start the tab session and stream live scan data into the side panel."
-          : "The page bridge is not ready yet. Close the panel, reopen Metis, and refresh the current tab if needed."}
+          ? "Use this button to reopen Metis on the current page and stream a fresh basic scan into the side panel."
+          : "Metis is not attached to this page right now. Reopen it here or refresh the current tab if needed."}
       </div>
       <motion.button
         type="button"
@@ -320,6 +321,8 @@ export default function App() {
 
   const rawSnapshot = session?.rawSnapshot ?? null;
   const accessState = session?.accessState ?? getDefaultMetisAccessState();
+  const siteAccess = session?.siteAccess ?? getDefaultMetisSiteAccessState();
+  const hasExpandedSiteAccess = siteAccess.isGranted;
   const visitedSnapshots = session?.visitedSnapshots ?? [];
   const activeSnapshot = buildCurrentSnapshot(rawSnapshot);
   const multipageEvidence = useMemo(
@@ -401,7 +404,7 @@ export default function App() {
         })
       : null;
   const exportDocument = viewModel
-    ? buildExportReportDocument(viewModel, { isPlusUser })
+    ? buildExportReportDocument(viewModel, { isPlusUser, hasExpandedSiteAccess })
     : null;
   const questionDefinitions = useMemo(() => {
     const baseDefinitions = PLUS_QUESTION_DEFINITIONS.filter((definition) => {
@@ -688,7 +691,10 @@ export default function App() {
       return;
     }
 
-    const document = buildExportReportDocument(viewModel, { isPlusUser });
+    const document = buildExportReportDocument(viewModel, {
+      isPlusUser,
+      hasExpandedSiteAccess
+    });
     await navigator.clipboard.writeText(buildExportOutlineText(document));
 
     toast.success("Report copied", {
@@ -713,6 +719,55 @@ export default function App() {
       type: "METIS_OPEN_PAGE_REPORT",
       tabId: activeTabId,
       openPlusPreview: options?.openPlusPreview
+    });
+  };
+
+  const handleRequestExpandedSiteAccess = async (openPreviewAfter = false) => {
+    const response = await sendRuntimeMessage<{
+      ok?: boolean;
+      siteAccess?: MetisTabSessionState["siteAccess"];
+    }>({
+      type: "METIS_REQUEST_SITE_ACCESS",
+      tabId: activeTabId
+    });
+
+    if (!response?.ok) {
+      toast.message("Expanded access not granted", {
+        description: "Metis still works in basic scan mode until this site is allowed."
+      });
+      return;
+    }
+
+    await refreshActiveSession();
+    toast.success("Deeper scan enabled for this site", {
+      description: "Metis can now analyze more of this site and keep the page workspace available here."
+    });
+
+    if (openPreviewAfter) {
+      await handleOpenPageReport();
+    }
+  };
+
+  const handleRemoveSiteAccess = async () => {
+    const response = await sendRuntimeMessage<{
+      ok?: boolean;
+      siteAccess?: MetisTabSessionState["siteAccess"];
+    }>({
+      type: "METIS_REMOVE_SITE_ACCESS",
+      tabId: activeTabId
+    });
+
+    await refreshActiveSession();
+
+    if (response?.ok) {
+      toast.success("Expanded access removed", {
+        description: "Metis will fall back to basic scan mode for this site."
+      });
+      return;
+    }
+
+    toast.message("Site access was not removed", {
+      description: "Metis kept the current site access state."
     });
   };
 
@@ -766,7 +821,10 @@ export default function App() {
       return;
     }
 
-    const document = buildExportReportDocument(viewModel, { isPlusUser });
+    const document = buildExportReportDocument(viewModel, {
+      isPlusUser,
+      hasExpandedSiteAccess
+    });
     await navigator.clipboard.writeText(buildExportOutlineText(document));
     toast.success("Export outline copied", {
       description: "The current export document shape is now on your clipboard."
@@ -853,6 +911,95 @@ export default function App() {
             className="shrink-0 space-y-2 px-4 pb-4 pt-3"
             style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
           >
+            {!hasExpandedSiteAccess && siteAccess.canRequest ? (
+              <div
+                className="rounded-[18px] border px-4 py-4"
+                style={{
+                  background: "rgba(34,197,94,0.08)",
+                  borderColor: "rgba(34,197,94,0.18)"
+                }}
+              >
+                <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                  Basic scan complete
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.64)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    lineHeight: "16px",
+                    marginTop: 6
+                  }}
+                >
+                  Deeper insights are available with expanded access on this site.
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <motion.button
+                    type="button"
+                    onClick={() => {
+                      void handleRequestExpandedSiteAccess();
+                    }}
+                    className="rounded-full px-4 py-2"
+                    style={{
+                      background: "#22c55e",
+                      color: "#04110a",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 11,
+                      fontWeight: 700
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Enable deeper scan
+                  </motion.button>
+                </div>
+              </div>
+            ) : null}
+            {hasExpandedSiteAccess && siteAccess.origin ? (
+              <div
+                className="rounded-[18px] border px-4 py-4"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  borderColor: "rgba(255,255,255,0.08)"
+                }}
+              >
+                <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+                  Expanded site access enabled
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.64)",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11,
+                    lineHeight: "16px",
+                    marginTop: 6
+                  }}
+                >
+                  {siteAccess.origin}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <motion.button
+                    type="button"
+                    onClick={() => {
+                      void handleRemoveSiteAccess();
+                    }}
+                    className="rounded-full px-4 py-2"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.76)",
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 11,
+                      fontWeight: 700
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Remove access for this site
+                  </motion.button>
+                </div>
+              </div>
+            ) : null}
             <WhatJustHappened
               hostname={viewModel?.hostname ?? session.currentUrl}
             />
@@ -873,7 +1020,7 @@ export default function App() {
                 whileTap={{ scale: 0.97 }}
               >
                 <FileText size={12} />
-                Full Report
+                {hasExpandedSiteAccess ? "Full Report" : "Preview Report"}
               </motion.button>
               <CopyReportButton
                 onCopy={() => {

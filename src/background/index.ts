@@ -25,6 +25,12 @@ import {
   buildMetisSignInUrl,
 } from "../shared/lib/metisLinks";
 import {
+  getMetisSiteAccessState,
+  isRestrictedMetisUrl,
+  removeMetisSiteAccess,
+  requestMetisSiteAccess,
+} from "../shared/lib/siteAccess";
+import {
   enqueueMetisAnalyticsEvent,
   enqueueMetisPremiumReportRequest,
   enqueueMetisScanSummary,
@@ -47,20 +53,6 @@ import {
   type MetisTabSessionState
 } from "../shared/types/runtime";
 import { registerExternalBridgeListener } from "./externalBridge";
-
-function isRestrictedUrl(url?: string) {
-  if (!url) {
-    return true;
-  }
-
-  return (
-    url.startsWith("chrome://") ||
-    url.startsWith("chrome-extension://") ||
-    url.startsWith("devtools://") ||
-    url.startsWith("edge://") ||
-    url.startsWith("about:")
-  );
-}
 
 function resolveSessionUiState(
   currentUiState: MetisTabSessionState["uiState"] | null | undefined,
@@ -97,8 +89,9 @@ async function getAuthContext() {
 function withContractState(
   session: MetisTabSessionState | null,
   accessState: MetisAccessState,
-  connectedAccount: ReturnType<typeof buildConnectedAccountFromBridge>
-) {
+  connectedAccount: ReturnType<typeof buildConnectedAccountFromBridge>,
+  siteAccess: MetisTabSessionState["siteAccess"]
+): MetisTabSessionState | null {
   if (!session) {
     return null;
   }
@@ -106,9 +99,48 @@ function withContractState(
   return {
     ...session,
     accessState,
+    siteAccess,
     connectedAccount,
     uiState: resolveSessionUiState(session.uiState, accessState)
   };
+}
+
+async function resolveTabSession(
+  session: MetisTabSessionState | null,
+  accessState: MetisAccessState,
+  connectedAccount: ReturnType<typeof buildConnectedAccountFromBridge>
+) {
+  if (!session) {
+    return null;
+  }
+
+  return withContractState(
+    session,
+    accessState,
+    connectedAccount,
+    await getMetisSiteAccessState(session.currentUrl)
+  );
+}
+
+async function upsertResolvedTabSession(
+  tabId: number,
+  updater: (current: MetisTabSessionState | null) => Omit<MetisTabSessionState, "accessState" | "connectedAccount" | "siteAccess" | "uiState"> & {
+    uiState?: MetisTabSessionState["uiState"];
+  }
+) {
+  const current = await getMetisTabSession(tabId);
+  const authContext = await getAuthContext();
+  const nextBase = updater(current);
+  const nextSession: MetisTabSessionState = {
+    ...nextBase,
+    accessState: authContext.accessState,
+    siteAccess: await getMetisSiteAccessState(nextBase.currentUrl),
+    connectedAccount: authContext.connectedAccount,
+    uiState: resolveSessionUiState(nextBase.uiState ?? current?.uiState, authContext.accessState)
+  };
+
+  await upsertMetisTabSession(tabId, () => nextSession);
+  return nextSession;
 }
 
 async function syncAllSessionsWithAccessState() {
@@ -118,10 +150,12 @@ async function syncAllSessionsWithAccessState() {
 
   for (const tabId of tabIds) {
     const current = sessions[String(tabId)];
+    const siteAccess = await getMetisSiteAccessState(current.currentUrl);
 
     await upsertMetisTabSession(tabId, () => ({
       ...current,
       accessState: authContext.accessState,
+      siteAccess,
       connectedAccount: authContext.connectedAccount,
       uiState: resolveSessionUiState(current.uiState, authContext.accessState)
     }));
@@ -132,7 +166,7 @@ async function syncAllSessionsWithAccessState() {
 
 async function broadcastSessionChange(tabId: number) {
   const authContext = await getAuthContext();
-  const session = withContractState(
+  const session = await resolveTabSession(
     await getMetisTabSession(tabId),
     authContext.accessState,
     authContext.connectedAccount
@@ -376,7 +410,7 @@ async function getActiveTabSession() {
 
   return {
     tabId: activeTab.id,
-    session: withContractState(
+    session: await resolveTabSession(
       await getMetisTabSession(activeTab.id),
       authContext.accessState,
       authContext.connectedAccount
@@ -388,20 +422,24 @@ registerExternalBridgeListener({
   onBridgeStored: handleBridgeAccountStored
 });
 
-// Content scripts declared in the manifest do not always appear on tabs that
-// were already open when the extension was reloaded during development. This
-// keeps the hover bridge visible on existing tabs after reloads and browser
-// restarts instead of forcing a manual page refresh first.
+// Expanded site access is origin-scoped. Only granted origins are re-injected
+// automatically after reloads or later visits.
 async function primeOpenTabsWithBridge() {
   const tabs = await chrome.tabs.query({});
 
   await Promise.all(
     tabs.map(async (tab) => {
-      if (!tab.id || isRestrictedUrl(tab.url)) {
+      if (!tab.id || isRestrictedMetisUrl(tab.url)) {
         return;
       }
 
       try {
+        const siteAccess = await getMetisSiteAccessState(tab.url);
+
+        if (!siteAccess.isGranted) {
+          return;
+        }
+
         await ensureContentBridge(tab.id);
       } catch (error) {
         console.warn("[Metis] failed to prime content bridge", {
@@ -504,21 +542,18 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        const authContext = await getAuthContext();
-        const session = await upsertMetisTabSession(senderTab.tabId, (current) => ({
+        const session = await upsertResolvedTabSession(senderTab.tabId, (current) => ({
           tabId: senderTab.tabId,
           windowId: senderTab.windowId,
           currentUrl: runtimeMessage.href,
           isActive: current?.isActive ?? false,
           isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: "ready",
-          accessState: authContext.accessState,
-          connectedAccount: authContext.connectedAccount,
           lastUpdatedAt: current?.lastUpdatedAt ?? null,
           rawSnapshot: current?.rawSnapshot ?? null,
           baselineSnapshot: current?.baselineSnapshot ?? null,
           visitedSnapshots: current?.visitedSnapshots ?? [],
-          uiState: resolveSessionUiState(current?.uiState, authContext.accessState)
+          uiState: current?.uiState
         }));
 
         await broadcastSessionChange(senderTab.tabId);
@@ -554,7 +589,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           lastFocusedWindow: true
         });
 
-        if (!activeTab?.id || !activeTab.windowId || isRestrictedUrl(activeTab.url)) {
+        if (!activeTab?.id || !activeTab.windowId || isRestrictedMetisUrl(activeTab.url)) {
           sendResponse({ ok: false });
           return;
         }
@@ -566,21 +601,18 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        const authContext = await getAuthContext();
-        const session = await upsertMetisTabSession(activeTab.id, (current) => ({
+        const session = await upsertResolvedTabSession(activeTab.id, (current) => ({
           tabId: activeTab.id!,
           windowId: activeTab.windowId!,
           currentUrl: current?.currentUrl ?? activeTab.url ?? "",
           isActive: true,
           isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: current?.bridgeStatus ?? "ready",
-          accessState: authContext.accessState,
-          connectedAccount: authContext.connectedAccount,
           lastUpdatedAt: current?.lastUpdatedAt ?? null,
           rawSnapshot: current?.rawSnapshot ?? null,
           baselineSnapshot: current?.baselineSnapshot ?? null,
           visitedSnapshots: current?.visitedSnapshots ?? [],
-          uiState: resolveSessionUiState(current?.uiState, authContext.accessState)
+          uiState: current?.uiState
         }));
 
         await chrome.tabs.sendMessage(activeTab.id, {
@@ -634,21 +666,18 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        const authContext = await getAuthContext();
-        const session = await upsertMetisTabSession(senderTab.tabId, (current) => ({
+        const session = await upsertResolvedTabSession(senderTab.tabId, (current) => ({
           tabId: senderTab.tabId,
           windowId: senderTab.windowId,
           currentUrl: current?.currentUrl ?? sender.tab?.url ?? "",
           isActive: true,
           isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: current?.bridgeStatus ?? "ready",
-          accessState: authContext.accessState,
-          connectedAccount: authContext.connectedAccount,
           lastUpdatedAt: current?.lastUpdatedAt ?? null,
           rawSnapshot: current?.rawSnapshot ?? null,
           baselineSnapshot: current?.baselineSnapshot ?? null,
           visitedSnapshots: current?.visitedSnapshots ?? [],
-          uiState: resolveSessionUiState(current?.uiState, authContext.accessState)
+          uiState: current?.uiState
         }));
 
         await broadcastSessionChange(senderTab.tabId);
@@ -664,21 +693,18 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           return;
         }
 
-        const authContext = await getAuthContext();
-        const session = await upsertMetisTabSession(senderTab.tabId, (current) => ({
+        const session = await upsertResolvedTabSession(senderTab.tabId, (current) => ({
           tabId: senderTab.tabId,
           windowId: senderTab.windowId,
           currentUrl: runtimeMessage.payload.currentUrl,
           isActive: true,
           isSidePanelOpen: current?.isSidePanelOpen ?? false,
           bridgeStatus: "ready",
-          accessState: authContext.accessState,
-          connectedAccount: authContext.connectedAccount,
           lastUpdatedAt: Date.now(),
           rawSnapshot: runtimeMessage.payload.rawSnapshot,
           baselineSnapshot: runtimeMessage.payload.baselineSnapshot,
           visitedSnapshots: runtimeMessage.payload.visitedSnapshots,
-          uiState: resolveSessionUiState(current?.uiState, authContext.accessState)
+          uiState: current?.uiState
         }));
 
         await saveStoredMetisLastScan(
@@ -690,6 +716,87 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 
         await broadcastSessionChange(senderTab.tabId);
         sendResponse({ ok: true, session });
+        return;
+      }
+
+      case "METIS_GET_SITE_ACCESS_STATE": {
+        const tabId = runtimeMessage.tabId ?? (await getActiveTabSession()).tabId;
+
+        if (!tabId) {
+          sendResponse({ ok: false, siteAccess: await getMetisSiteAccessState(null) });
+          return;
+        }
+
+        const tab = await chrome.tabs.get(tabId).catch(() => null);
+        sendResponse({
+          ok: true,
+          siteAccess: await getMetisSiteAccessState(tab?.url ?? null)
+        });
+        return;
+      }
+
+      case "METIS_REQUEST_SITE_ACCESS": {
+        const tabId = runtimeMessage.tabId ?? (await getActiveTabSession()).tabId;
+
+        if (!tabId) {
+          sendResponse({ ok: false });
+          return;
+        }
+
+        const tab = await chrome.tabs.get(tabId).catch(() => null);
+
+        if (!tab?.id || tab.windowId === undefined || isRestrictedMetisUrl(tab.url)) {
+          sendResponse({ ok: false, siteAccess: await getMetisSiteAccessState(tab?.url ?? null) });
+          return;
+        }
+
+        const granted = await requestMetisSiteAccess(tab.url ?? null);
+        const siteAccess = await getMetisSiteAccessState(tab.url ?? null);
+
+        if (!granted || !siteAccess.isGranted) {
+          sendResponse({ ok: false, siteAccess });
+          return;
+        }
+
+        await ensureContentBridge(tab.id);
+        const current = await getMetisTabSession(tab.id);
+
+        if (current) {
+          await patchMetisTabSession(tab.id, {
+            siteAccess
+          });
+          await broadcastSessionChange(tab.id);
+        }
+
+        sendResponse({ ok: true, siteAccess });
+        return;
+      }
+
+      case "METIS_REMOVE_SITE_ACCESS": {
+        const tabId = runtimeMessage.tabId ?? (await getActiveTabSession()).tabId;
+
+        if (!tabId) {
+          sendResponse({ ok: false });
+          return;
+        }
+
+        const tab = await chrome.tabs.get(tabId).catch(() => null);
+        const removed = await removeMetisSiteAccess(tab?.url ?? null);
+        const siteAccess = await getMetisSiteAccessState(tab?.url ?? null);
+        const current = await getMetisTabSession(tabId);
+
+        if (current) {
+          await patchMetisTabSession(tabId, {
+            siteAccess,
+            uiState: {
+              ...current.uiState,
+              scanScope: "single"
+            }
+          });
+          await broadcastSessionChange(tabId);
+        }
+
+        sendResponse({ ok: removed, siteAccess });
         return;
       }
 
@@ -742,7 +849,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           lastFocusedWindow: true
         });
 
-        if (!activeTab?.id || !activeTab.windowId || isRestrictedUrl(activeTab.url)) {
+        if (!activeTab?.id || !activeTab.windowId || isRestrictedMetisUrl(activeTab.url)) {
           sendResponse({ ok: false });
           return;
         }
@@ -779,29 +886,47 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
   return true;
 });
 
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-  if (changeInfo.status !== "loading") {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status === "loading") {
+    const session = await patchMetisTabSession(tabId, {
+      bridgeStatus: "reconnecting"
+    });
+
+    if (session) {
+      try {
+        await chrome.runtime.sendMessage({
+          type: "METIS_RECONNECT_REQUIRED",
+          tabId
+        } satisfies MetisRuntimeMessage);
+      } catch {
+        // No side panel listener is fine.
+      }
+
+      await broadcastSessionChange(tabId);
+    }
+
     return;
   }
 
-  const session = await patchMetisTabSession(tabId, {
-    bridgeStatus: "reconnecting"
-  });
+  if (changeInfo.status !== "complete" || !tab.id || isRestrictedMetisUrl(tab.url)) {
+    return;
+  }
 
-  if (!session) {
+  const siteAccess = await getMetisSiteAccessState(tab.url);
+
+  if (!siteAccess.isGranted) {
     return;
   }
 
   try {
-    await chrome.runtime.sendMessage({
-      type: "METIS_RECONNECT_REQUIRED",
-      tabId
-    } satisfies MetisRuntimeMessage);
-  } catch {
-    // No side panel listener is fine.
+    await ensureContentBridge(tab.id);
+  } catch (error) {
+    console.warn("[Metis] failed to auto-inject granted site", {
+      tabId: tab.id,
+      url: tab.url,
+      error
+    });
   }
-
-  await broadcastSessionChange(tabId);
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {

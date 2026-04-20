@@ -3,6 +3,7 @@ import type { MetisDesignViewModel } from "./liveAdapter";
 
 type ExportDocumentOptions = {
   isPlusUser?: boolean;
+  hasExpandedSiteAccess?: boolean;
 };
 
 export function buildExportReportDocument(
@@ -10,6 +11,8 @@ export function buildExportReportDocument(
   options: ExportDocumentOptions = {}
 ): ExportReportDocument {
   const isPlusUser = options.isPlusUser ?? false;
+  const hasExpandedSiteAccess = options.hasExpandedSiteAccess ?? false;
+  const showExpandedSections = hasExpandedSiteAccess;
   const sections: ExportReportDocument["sections"] = [
       {
         id: "overview",
@@ -51,7 +54,7 @@ export function buildExportReportDocument(
     }
   ];
 
-  if (isPlusUser) {
+  if (showExpandedSections) {
     sections.push(
       {
         id: "breakdown",

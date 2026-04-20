@@ -47,6 +47,7 @@ import {
   getMetisLocalSettings,
   saveMetisLocalSettings
 } from "../shared/lib/metisLocalSettings";
+import { getDefaultMetisSiteAccessState } from "../shared/lib/siteAccess";
 import {
   buildStoredVisitedSnapshot,
   getOrCreateSiteBaseline,
@@ -344,8 +345,10 @@ export function PageBridgeApp() {
           }
         })
       : null;
+  const siteAccess = session?.siteAccess ?? getDefaultMetisSiteAccessState();
+  const hasExpandedSiteAccess = siteAccess.isGranted;
   const exportDocument = viewModel
-    ? buildExportReportDocument(viewModel, { isPlusUser })
+    ? buildExportReportDocument(viewModel, { isPlusUser, hasExpandedSiteAccess })
     : null;
   const questionDefinitions = useMemo(() => {
     const baseDefinitions = PLUS_QUESTION_DEFINITIONS.filter((definition) => {
@@ -608,7 +611,7 @@ export function PageBridgeApp() {
     };
 
     const scheduleScan = (delay = initialScanDelay) => {
-      if (isStopped || !isSessionActive || !settings.webPageScanningEnabled) {
+      if (isStopped || !isSessionActive || !settings.basicScanEnabled) {
         return;
       }
 
@@ -634,7 +637,7 @@ export function PageBridgeApp() {
     };
 
     const handlePostLoadSync = () => {
-      if (isStopped || !isSessionActive || !settings.webPageScanningEnabled) {
+      if (isStopped || !isSessionActive || !settings.basicScanEnabled) {
         return;
       }
 
@@ -664,7 +667,7 @@ export function PageBridgeApp() {
     };
 
     const syncSnapshots = async () => {
-      if (isStopped || !isSessionActive || !settings.webPageScanningEnabled) {
+      if (isStopped || !isSessionActive || !settings.basicScanEnabled) {
         return;
       }
 
@@ -777,19 +780,19 @@ export function PageBridgeApp() {
       }
     };
 
-    if (isSessionActive && settings.webPageScanningEnabled) {
+    if (isSessionActive && settings.basicScanEnabled) {
       scheduleScan(initialScanDelay);
     }
 
     if (
       isSessionActive &&
-      settings.webPageScanningEnabled &&
+      settings.basicScanEnabled &&
       document.readyState !== "complete"
     ) {
       window.addEventListener("load", handlePostLoadSync, { once: true });
     }
 
-    if (isSessionActive && settings.webPageScanningEnabled) {
+    if (isSessionActive && settings.basicScanEnabled && hasExpandedSiteAccess) {
       navigationCheckId = window.setInterval(() => {
         handlePageChange();
       }, NAVIGATION_CHECK_INTERVAL_MS);
@@ -801,8 +804,10 @@ export function PageBridgeApp() {
       }
     }
 
-    window.addEventListener("popstate", handlePageChange);
-    window.addEventListener("hashchange", handlePageChange);
+    if (hasExpandedSiteAccess) {
+      window.addEventListener("popstate", handlePageChange);
+      window.addEventListener("hashchange", handlePageChange);
+    }
 
     return () => {
       stopSync();
@@ -810,13 +815,20 @@ export function PageBridgeApp() {
   }, [
     isSessionActive,
     settings.autoRescanWhilePanelOpen,
+    hasExpandedSiteAccess,
     settings.localHistoryEnabled,
     settings.scanDelayProfile,
-    settings.webPageScanningEnabled
+    settings.basicScanEnabled
   ]);
 
   useEffect(() => {
-    if (isPanelOpen || isReportOpen || isExportOpen || !isSessionActive) {
+    if (
+      isPanelOpen ||
+      isReportOpen ||
+      isExportOpen ||
+      !isSessionActive ||
+      !hasExpandedSiteAccess
+    ) {
       return;
     }
 
@@ -828,7 +840,7 @@ export function PageBridgeApp() {
     return () => {
       window.clearTimeout(hoverResetId);
     };
-  }, [isExportOpen, isPanelOpen, isReportOpen, isSessionActive]);
+  }, [hasExpandedSiteAccess, isExportOpen, isPanelOpen, isReportOpen, isSessionActive]);
 
   useEffect(() => {
     if (!(isReportOpen || isExportOpen)) {
@@ -988,12 +1000,35 @@ export function PageBridgeApp() {
     });
   };
 
+  const handleRequestExpandedSiteAccess = async () => {
+    const response = await sendRuntimeMessage<{
+      ok?: boolean;
+      siteAccess?: MetisTabSessionState["siteAccess"];
+    }>({
+      type: "METIS_REQUEST_SITE_ACCESS"
+    });
+
+    if (!response?.ok) {
+      toast.message("Expanded access not granted", {
+        description: "Metis stays in basic scan mode until this site is allowed."
+      });
+      return;
+    }
+
+    toast.success("Deeper scan enabled for this site", {
+      description: "Metis can now analyze more of this site and keep the page workspace available here."
+    });
+  };
+
   const handleCopyReport = async () => {
     if (!viewModel) {
       return;
     }
 
-    const document = buildExportReportDocument(viewModel, { isPlusUser });
+    const document = buildExportReportDocument(viewModel, {
+      isPlusUser,
+      hasExpandedSiteAccess
+    });
     await navigator.clipboard.writeText(buildExportOutlineText(document));
 
     toast.success("Report copied", {
@@ -1007,7 +1042,12 @@ export function PageBridgeApp() {
     }
 
     await navigator.clipboard.writeText(
-      buildExportOutlineText(buildExportReportDocument(viewModel, { isPlusUser }))
+      buildExportOutlineText(
+        buildExportReportDocument(viewModel, {
+          isPlusUser,
+          hasExpandedSiteAccess
+        })
+      )
     );
 
     toast.success("Export outline copied", {
@@ -1018,7 +1058,11 @@ export function PageBridgeApp() {
   return (
     <>
       <AnimatePresence>
-        {!isPanelOpen && !isReportOpen && !isExportOpen && launcherTop !== null && (
+        {!isPanelOpen &&
+        !isReportOpen &&
+        !isExportOpen &&
+        launcherTop !== null &&
+        hasExpandedSiteAccess ? (
           <motion.div
             ref={launcherShellRef}
             className="fixed right-0 z-[2147483647]"
@@ -1189,7 +1233,7 @@ export function PageBridgeApp() {
               </div>
             </motion.button>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -1232,6 +1276,10 @@ export function PageBridgeApp() {
                   void handleCopyReport();
                 }}
                   isPlusUser={isPlusUser}
+                  hasExpandedSiteAccess={hasExpandedSiteAccess}
+                  onRequestExpandedSiteAccess={() => {
+                    void handleRequestExpandedSiteAccess();
+                  }}
                   refreshTick={0}
                   onClose={() => setIsReportOpen(false)}
                   onDegradeToFree={() => {

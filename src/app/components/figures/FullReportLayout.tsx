@@ -491,6 +491,8 @@ interface FullReportLayoutProps {
   canGoBack: boolean;
   onCopyReport: () => void;
   isPlusUser?: boolean;
+  hasExpandedSiteAccess?: boolean;
+  onRequestExpandedSiteAccess?: () => void;
   headerAccessory?: ReactNode;
   refreshTick?: number;
   onClose?: () => void;
@@ -513,6 +515,8 @@ export function FullReportLayout({
   canGoBack,
   onCopyReport,
   isPlusUser = false,
+  hasExpandedSiteAccess = false,
+  onRequestExpandedSiteAccess,
   headerAccessory,
   refreshTick = 0,
   onClose,
@@ -528,6 +532,9 @@ export function FullReportLayout({
       </div>
     );
   }
+
+  const showExpandedSections = hasExpandedSiteAccess;
+  const isPreviewOnly = !showExpandedSections;
 
   return (
     <motion.div
@@ -576,7 +583,11 @@ export function FullReportLayout({
           </div>
           <div>
             <div className="metis-display" style={{ color: "white", fontSize: 22 }}>
-              {isPlusUser ? "Metis+ Full Report" : "Metis Full Report"}
+              {isPlusUser
+                ? "Metis+ Full Report"
+                : isPreviewOnly
+                  ? "Metis Report Preview"
+                  : "Metis Full Report"}
             </div>
             <div
               style={{
@@ -638,6 +649,22 @@ export function FullReportLayout({
             >
               <Zap size={12} />
               Metis+
+            </div>
+          ) : hasExpandedSiteAccess ? (
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2"
+              style={{
+                background: "rgba(34,197,94,0.14)",
+                border: "1px solid rgba(34,197,94,0.32)",
+                color: "#4ade80",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase"
+              }}
+            >
+              Expanded site access
             </div>
           ) : null}
           <div
@@ -745,6 +772,20 @@ export function FullReportLayout({
                     >
                       <Zap size={12} />
                       Plus read
+                    </div>
+                  ) : isPreviewOnly ? (
+                    <div
+                      className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5"
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.78)",
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: 11,
+                        fontWeight: 700
+                      }}
+                    >
+                      Basic scan preview
                     </div>
                   ) : null}
                 </div>
@@ -909,7 +950,7 @@ export function FullReportLayout({
                 issues={viewModel.issues}
                 title="Problems · Sorted by Severity"
                 showSummaryPills={false}
-                showDetails={isPlusUser}
+                showDetails={showExpandedSections}
               />
             </div>
 
@@ -918,7 +959,7 @@ export function FullReportLayout({
             </div>
           </motion.div>
 
-          {isPlusUser && (
+          {showExpandedSections && (
             <motion.div
               className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
               initial={{ opacity: 0.9, y: 16 }}
@@ -929,6 +970,54 @@ export function FullReportLayout({
               <EndpointDetailSection rows={viewModel.plusEndpointRows} />
             </motion.div>
           )}
+
+          {isPreviewOnly && onRequestExpandedSiteAccess ? (
+            <motion.div
+              className="rounded-[24px] p-5"
+              style={{
+                background: "rgba(34,197,94,0.08)",
+                border: "1px solid rgba(34,197,94,0.18)"
+              }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: 0.1, ease: "easeOut" }}
+            >
+              <div
+                style={{
+                  color: "white",
+                  fontFamily: "Jua, sans-serif",
+                  fontSize: 20
+                }}
+              >
+                Deeper insights are available on this site
+              </div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.64)",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 13,
+                  lineHeight: "20px",
+                  marginTop: 10
+                }}
+              >
+                Allow Metis on this site to analyze more routes, improve accuracy, and keep the page workspace available here.
+              </div>
+              <button
+                type="button"
+                onClick={onRequestExpandedSiteAccess}
+                className="mt-4 rounded-full px-4 py-2"
+                style={{
+                  background: "#22c55e",
+                  color: "#04110a",
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 12,
+                  fontWeight: 700
+                }}
+              >
+                Enable deeper scan
+              </button>
+            </motion.div>
+          ) : null}
 
           <motion.div
             className="rounded-[28px] p-6"
@@ -1191,14 +1280,14 @@ export function FullReportLayout({
             </div>
           </motion.div>
 
-          {isPlusUser && (
+          {showExpandedSections && (
             <ScaleSimulationSection
               aiCostPerRequestEstimate={viewModel.aiCostPerRequestEstimate}
               rows={viewModel.scaleSimulationRows}
             />
           )}
 
-          {isPlusUser && (
+          {showExpandedSections && (
             <FixRecommendationsSection
               cards={viewModel.fixRecommendationCards}
               totalSavingsLabel={viewModel.totalSavingsLabel}

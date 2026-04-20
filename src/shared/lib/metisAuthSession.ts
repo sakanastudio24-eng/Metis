@@ -7,15 +7,6 @@ import type {
 } from "../types/audit";
 import { METIS_WEB_SESSION_KEY } from "./metisStorageKeys";
 
-// Exact-match allowlist only. No wildcard hosts, no sibling subdomains.
-const ALLOWED_METIS_AUTH_ORIGINS = new Set([
-  "https://metis.zward.studio",
-  "http://localhost:3000"
-]);
-
-// The auth bridge is only valid on the dedicated account settings completion route.
-const AUTH_SUCCESS_PATHNAME = "/account/settings";
-
 function getChromeLocalStorage() {
   const chromeLike = globalThis as typeof globalThis & {
     chrome?: {
@@ -136,30 +127,6 @@ function normalizeStoredSession(value: unknown): StoredMetisWebSession | null {
     connectedAt:
       typeof value.connectedAt === "number" ? value.connectedAt : Date.now()
   };
-}
-
-export function isAllowedMetisAuthOrigin(origin: string) {
-  return ALLOWED_METIS_AUTH_ORIGINS.has(origin);
-}
-
-export function isAllowedMetisAuthPathname(pathname: string) {
-  return pathname === AUTH_SUCCESS_PATHNAME;
-}
-
-export function isMetisAuthSuccessBridgeMessage(
-  value: unknown
-): value is MetisAuthSuccessBridgeMessage {
-  if (!isRecord(value) || !isRecord(value.session) || !isRecord(value.session.user)) {
-    return false;
-  }
-
-  return (
-    value.type === "METIS_AUTH_SUCCESS" &&
-    value.source === "metis-web" &&
-    value.version === 1 &&
-    typeof value.session.accessToken === "string" &&
-    typeof value.session.user.id === "string"
-  );
 }
 
 export async function getStoredMetisWebSession(): Promise<StoredMetisWebSession | null> {

@@ -9,10 +9,10 @@ export const DEFAULT_METIS_SETTINGS: MetisLocalSettings = {
   refreshMode: "smart",
   motionPreference: "full",
   autoRescanWhilePanelOpen: true,
-  webPageScanningEnabled: true,
+  basicScanEnabled: true,
   localHistoryEnabled: true,
   bridgeRepairEnabled: true,
-  sidePanelWorkspaceEnabled: true,
+  attachedWorkspaceEnabled: true,
   scanDelayProfile: "balanced",
   attachedReport: true,
   showSampleProgress: true,
@@ -111,10 +111,12 @@ function normalizeSettings(value: unknown): MetisLocalSettings {
       typeof value.autoRescanWhilePanelOpen === "boolean"
         ? value.autoRescanWhilePanelOpen
         : DEFAULT_METIS_SETTINGS.autoRescanWhilePanelOpen,
-    webPageScanningEnabled:
-      typeof value.webPageScanningEnabled === "boolean"
-        ? value.webPageScanningEnabled
-        : DEFAULT_METIS_SETTINGS.webPageScanningEnabled,
+    basicScanEnabled:
+      typeof value.basicScanEnabled === "boolean"
+        ? value.basicScanEnabled
+        : typeof value.webPageScanningEnabled === "boolean"
+          ? value.webPageScanningEnabled
+          : DEFAULT_METIS_SETTINGS.basicScanEnabled,
     localHistoryEnabled:
       typeof value.localHistoryEnabled === "boolean"
         ? value.localHistoryEnabled
@@ -123,10 +125,12 @@ function normalizeSettings(value: unknown): MetisLocalSettings {
       typeof value.bridgeRepairEnabled === "boolean"
         ? value.bridgeRepairEnabled
         : DEFAULT_METIS_SETTINGS.bridgeRepairEnabled,
-    sidePanelWorkspaceEnabled:
-      typeof value.sidePanelWorkspaceEnabled === "boolean"
-        ? value.sidePanelWorkspaceEnabled
-        : DEFAULT_METIS_SETTINGS.sidePanelWorkspaceEnabled,
+    attachedWorkspaceEnabled:
+      typeof value.attachedWorkspaceEnabled === "boolean"
+        ? value.attachedWorkspaceEnabled
+        : typeof value.sidePanelWorkspaceEnabled === "boolean"
+          ? value.sidePanelWorkspaceEnabled
+          : DEFAULT_METIS_SETTINGS.attachedWorkspaceEnabled,
     scanDelayProfile: isScanDelayProfile(value.scanDelayProfile)
       ? value.scanDelayProfile
       : DEFAULT_METIS_SETTINGS.scanDelayProfile,

@@ -22,6 +22,7 @@ import {
   buildPermissionControls,
   type PermissionControlId
 } from "../shared/lib/metisPermissionControls";
+import { getDefaultMetisSiteAccessState } from "../shared/lib/siteAccess";
 import {
   clearAllSiteHistory,
   clearSiteHistoryForOrigin,
@@ -42,8 +43,12 @@ import {
   LEGACY_METIS_USER_SETTINGS_KEY,
   METIS_USER_SETTINGS_KEY,
 } from "../shared/lib/metisStorageKeys";
-import type { MetisAccessState, MetisLocalSettings } from "../shared/types/audit";
-import type { MetisRuntimeMessage } from "../shared/types/runtime";
+import type {
+  MetisAccessState,
+  MetisLocalSettings,
+  MetisSiteAccessState
+} from "../shared/types/audit";
+import type { MetisRuntimeMessage, MetisTabSessionState } from "../shared/types/runtime";
 
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
   try {
@@ -187,16 +192,20 @@ function ToggleRow({
 
 function PermissionAbilityRow({
   settings,
+  siteAccess,
   selectedId,
   onSelect,
   onToggle
 }: {
   settings: MetisLocalSettings;
+  siteAccess: MetisSiteAccessState;
   selectedId: PermissionControlId;
   onSelect: (id: PermissionControlId) => void;
-  onToggle: (id: PermissionControlId) => void;
+  onToggle: (id: PermissionControlId) => Promise<void> | void;
 }) {
-  const controls = buildPermissionControls(settings);
+  const controls = buildPermissionControls(settings, {
+    expandedSiteAccessActive: siteAccess.isGranted
+  });
   const selected =
     controls.find((control) => control.id === selectedId) ?? controls[0];
   const enabledCount = controls.filter((control) => control.active).length;
@@ -237,7 +246,9 @@ function PermissionAbilityRow({
               type="button"
               onMouseEnter={() => onSelect(control.id)}
               onFocus={() => onSelect(control.id)}
-              onClick={() => onToggle(control.id)}
+              onClick={() => {
+                void onToggle(control.id);
+              }}
               className="inline-flex min-w-fit items-center gap-2 rounded-full border px-3 py-2"
               style={{
                 background:
@@ -364,7 +375,8 @@ function LinkCard({
 
 function PopupApp() {
   const [settings, setSettings] = useState<MetisLocalSettings>(DEFAULT_METIS_SETTINGS);
-  const [selectedPermissionId, setSelectedPermissionId] = useState<PermissionControlId>("webPages");
+  const [siteAccess, setSiteAccess] = useState<MetisSiteAccessState>(getDefaultMetisSiteAccessState());
+  const [selectedPermissionId, setSelectedPermissionId] = useState<PermissionControlId>("basicScan");
   const [ready, setReady] = useState(false);
   const [savedPageCount, setSavedPageCount] = useState(0);
   const [siteHistory, setSiteHistory] = useState<SiteHistorySummary>({
@@ -391,11 +403,14 @@ function PopupApp() {
   );
 
   const refreshStorageState = async () => {
-    const [pageSummary, siteSummary, bridgeState, bridgeSnapshot] = await Promise.all([
+    const [pageSummary, siteSummary, bridgeState, bridgeSnapshot, siteAccessResponse] = await Promise.all([
       getPageScanStoreSummary(),
       getSiteHistorySummary(),
       getStoredBridgeState(),
       getBridgeStorageDebugSnapshot(),
+      sendRuntimeMessage<{ ok?: boolean; siteAccess?: MetisSiteAccessState }>({
+        type: "METIS_GET_SITE_ACCESS_STATE"
+      })
     ]);
 
     setSavedPageCount(pageSummary.savedPageCount);
@@ -412,6 +427,7 @@ function PopupApp() {
         : null
     );
     setBridgeDebug(bridgeSnapshot);
+    setSiteAccess(siteAccessResponse?.siteAccess ?? getDefaultMetisSiteAccessState());
   };
 
   useEffect(() => {
@@ -423,8 +439,11 @@ function PopupApp() {
       getSiteHistorySummary(),
       getStoredBridgeState(),
       getBridgeStorageDebugSnapshot(),
+      sendRuntimeMessage<{ ok?: boolean; siteAccess?: MetisSiteAccessState }>({
+        type: "METIS_GET_SITE_ACCESS_STATE"
+      }),
     ]).then(
-      ([storedSettings, pageSummary, siteSummary, bridgeState, bridgeSnapshot]) => {
+      ([storedSettings, pageSummary, siteSummary, bridgeState, bridgeSnapshot, siteAccessResponse]) => {
         if (cancelled) {
           return;
         }
@@ -444,6 +463,7 @@ function PopupApp() {
             : null
         );
         setBridgeDebug(bridgeSnapshot);
+        setSiteAccess(siteAccessResponse?.siteAccess ?? getDefaultMetisSiteAccessState());
         setReady(true);
       }
     );
@@ -491,7 +511,10 @@ function PopupApp() {
 
   useEffect(() => {
     const handleRuntimeMessage = (message: MetisRuntimeMessage) => {
-      if (message.type === "METIS_AUTH_STATE_CHANGED") {
+      if (
+        message.type === "METIS_AUTH_STATE_CHANGED" ||
+        message.type === "METIS_SESSION_CHANGED"
+      ) {
         void refreshStorageState();
       }
     };
@@ -561,30 +584,62 @@ function PopupApp() {
     toast.success("All local history cleared");
   };
 
-  const handleTogglePermission = (permissionId: PermissionControlId) => {
+  const handleTogglePermission = async (permissionId: PermissionControlId) => {
     switch (permissionId) {
-      case "webPages":
+      case "basicScan":
         setSettings((current) => ({
           ...current,
-          webPageScanningEnabled: !current.webPageScanningEnabled
+          basicScanEnabled: !current.basicScanEnabled
         }));
         return;
-      case "storage":
+      case "expandedSiteAccess": {
+        if (siteAccess.isGranted) {
+          const response = await sendRuntimeMessage<{
+            ok?: boolean;
+            siteAccess?: MetisTabSessionState["siteAccess"];
+          }>({
+            type: "METIS_REMOVE_SITE_ACCESS"
+          });
+
+          setSiteAccess(response?.siteAccess ?? getDefaultMetisSiteAccessState());
+          await refreshStorageState();
+          return;
+        }
+
+        if (!siteAccess.canRequest) {
+          toast.message("Site access is unavailable here", {
+            description: "Chrome blocks expanded access on restricted pages."
+          });
+          return;
+        }
+
+        const response = await sendRuntimeMessage<{
+          ok?: boolean;
+          siteAccess?: MetisTabSessionState["siteAccess"];
+        }>({
+          type: "METIS_REQUEST_SITE_ACCESS"
+        });
+
+        setSiteAccess(response?.siteAccess ?? getDefaultMetisSiteAccessState());
+        await refreshStorageState();
+        return;
+      }
+      case "localHistory":
         setSettings((current) => ({
           ...current,
           localHistoryEnabled: !current.localHistoryEnabled
         }));
         return;
-      case "scripting":
+      case "bridgeRepair":
         setSettings((current) => ({
           ...current,
           bridgeRepairEnabled: !current.bridgeRepairEnabled
         }));
         return;
-      case "sidePanel":
+      case "sidePanelWorkspace":
         setSettings((current) => ({
           ...current,
-          sidePanelWorkspaceEnabled: !current.sidePanelWorkspaceEnabled
+          attachedWorkspaceEnabled: !current.attachedWorkspaceEnabled
         }));
         return;
     }
@@ -969,10 +1024,47 @@ function PopupApp() {
         >
           <PermissionAbilityRow
             settings={settings}
+            siteAccess={siteAccess}
             selectedId={selectedPermissionId}
             onSelect={setSelectedPermissionId}
             onToggle={handleTogglePermission}
           />
+          <div
+            className="rounded-[16px] border px-3 py-3"
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+          >
+            <div style={{ color: "white", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700 }}>
+              Expanded site access
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.52)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                lineHeight: "16px",
+                marginTop: 6
+              }}
+            >
+              {siteAccess.isGranted && siteAccess.origin
+                ? `Enabled for ${siteAccess.origin}`
+                : siteAccess.isRestricted
+                  ? "Chrome blocks site access on this page."
+                  : "Basic scan stays available until you allow deeper scan for this site."}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {siteAccess.isGranted ? (
+                <ActionButton destructive onClick={() => void handleTogglePermission("expandedSiteAccess")}>
+                  <Trash2 size={11} />
+                  Remove access for this site
+                </ActionButton>
+              ) : (
+                <ActionButton onClick={() => void handleTogglePermission("expandedSiteAccess")}>
+                  <Shield size={12} />
+                  Allow on this site
+                </ActionButton>
+              )}
+            </div>
+          </div>
         </Section>
 
         <Section

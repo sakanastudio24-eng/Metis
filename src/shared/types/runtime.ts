@@ -1,6 +1,7 @@
 import type {
   MetisAccessState,
   MetisConnectedAccount,
+  MetisSiteAccessState,
   MetisUploadQueueItem,
   PageScopedFairnessAnswers,
   PlusRefinementAnswers,
@@ -24,6 +25,7 @@ export interface MetisTabSessionState {
   isSidePanelOpen: boolean;
   bridgeStatus: MetisBridgeStatus;
   accessState: MetisAccessState;
+  siteAccess: MetisSiteAccessState;
   connectedAccount: MetisConnectedAccount | null;
   lastUpdatedAt: number | null;
   rawSnapshot: RawScanSnapshot | null;
@@ -47,6 +49,9 @@ export type MetisRuntimeMessage =
   | { type: "METIS_OPEN_TOOLBAR_SETTINGS" }
   | { type: "METIS_OPEN_SIGN_IN"; source: "popup" | "panel" | "report" | "content" }
   | { type: "METIS_DISCONNECT_ACCOUNT" }
+  | { type: "METIS_REQUEST_SITE_ACCESS"; tabId?: number | null }
+  | { type: "METIS_REMOVE_SITE_ACCESS"; tabId?: number | null }
+  | { type: "METIS_GET_SITE_ACCESS_STATE"; tabId?: number | null }
   | { type: "METIS_OPEN_PAGE_REPORT"; tabId: number; openPlusPreview?: boolean }
   | { type: "METIS_START_TAB_SESSION" }
   | { type: "METIS_ACTIVATE_FROM_TOOLBAR" }
