@@ -8,6 +8,27 @@ import styles from "../styles/tailwind.css?inline";
 
 const HOST_ID = "metis-extension-host";
 
+function hasExtensionRuntime() {
+  try {
+    const runtime = (globalThis as typeof globalThis & {
+      chrome?: {
+        runtime?: {
+          id?: string;
+          onMessage?: { addListener?: unknown };
+        };
+      };
+    }).chrome?.runtime;
+
+    return Boolean(
+      runtime?.id &&
+      runtime.onMessage &&
+      typeof runtime.onMessage.addListener === "function"
+    );
+  } catch {
+    return false;
+  }
+}
+
 function createHost() {
   const existingHost = document.getElementById(HOST_ID);
 
@@ -52,6 +73,10 @@ function createHost() {
 }
 
 function mount() {
+  if (!hasExtensionRuntime()) {
+    return;
+  }
+
   const existingHost = document.getElementById(HOST_ID) as HTMLDivElement | null;
 
   if (existingHost?.dataset.metisMounted === "true") {

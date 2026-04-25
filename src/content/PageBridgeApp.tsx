@@ -135,6 +135,42 @@ function getContentChrome() {
   }
 }
 
+function getRuntimeOnMessageEvent() {
+  try {
+    const runtimeOnMessage = getContentChrome()?.runtime?.onMessage;
+
+    if (
+      runtimeOnMessage &&
+      typeof runtimeOnMessage.addListener === "function" &&
+      typeof runtimeOnMessage.removeListener === "function"
+    ) {
+      return runtimeOnMessage;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getStorageOnChangedEvent() {
+  try {
+    const storageOnChanged = getContentChrome()?.storage?.onChanged;
+
+    if (
+      storageOnChanged &&
+      typeof storageOnChanged.addListener === "function" &&
+      typeof storageOnChanged.removeListener === "function"
+    ) {
+      return storageOnChanged;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
   try {
     const runtime = getContentChrome()?.runtime;
@@ -420,7 +456,7 @@ export function PageBridgeApp() {
 
   useEffect(() => {
     let isMounted = true;
-    const runtimeOnMessage = getContentChrome()?.runtime?.onMessage;
+    const runtimeOnMessage = getRuntimeOnMessageEvent();
 
     void getMetisLocalSettings().then((storedSettings) => {
       if (!isMounted) {
@@ -517,7 +553,7 @@ export function PageBridgeApp() {
   }, []);
 
   useEffect(() => {
-    const storageOnChanged = getContentChrome()?.storage?.onChanged;
+    const storageOnChanged = getStorageOnChangedEvent();
 
     if (!storageOnChanged) {
       return;
