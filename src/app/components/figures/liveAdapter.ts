@@ -232,8 +232,8 @@ function scoreToRiskTone(score: ScoreBreakdown) {
     case "watch":
       return {
         label: "Moderate Risk",
-        color: "#f97316",
-        bg: "rgba(249,115,22,0.2)"
+        color: "#dc5e5e",
+        bg: "rgba(220,94,94,0.2)"
       };
     case "healthy":
       return {
@@ -261,8 +261,8 @@ function controlToTone(control: ControlAssessment) {
     case "Mixed":
       return {
         label: "Mixed",
-        color: "#f97316",
-        bg: "rgba(249,115,22,0.16)"
+        color: "#dc5e5e",
+        bg: "rgba(220,94,94,0.16)"
       };
     case "Uncontrolled":
     default:
@@ -341,8 +341,8 @@ function issueToDesignIssue(issue: DetectedIssue): DesignIssue {
       issue.severity === "high"
         ? "#dc5e5e"
         : issue.severity === "medium"
-          ? "#f97316"
-          : "#f97316"
+          ? "#dc5e5e"
+          : "#dc5e5e"
   };
 }
 
@@ -414,7 +414,7 @@ function buildCostRows(score: ScoreBreakdown, snapshot: RawScanSnapshot, answers
     {
       label: "Requests / Compute",
       amount: `~${formatMonthly(requestsValue)}/mo`,
-      accent: "#f97316"
+      accent: "#dc5e5e"
     },
     {
       label:
@@ -844,8 +844,8 @@ function buildFixRecommendationCards(
         severityLabel === "critical"
           ? "#dc5e5e"
           : severityLabel === "moderate"
-            ? "#f97316"
-            : "#f97316";
+            ? "#dc5e5e"
+            : "#dc5e5e";
       const library = FIX_LIBRARY[issue.category] ?? {};
       const savingsValue = Math.max(1, Math.round((recoveryBudget * weight) / totalWeight));
 

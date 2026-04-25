@@ -114,8 +114,8 @@ export function computeMetrics(inputs: AccuracyInputs): MetisMetrics {
     riskBg    = "rgba(239,68,68,0.2)";
   } else if (score >= 60) {
     riskLabel = "Moderate Risk";
-    riskColor = "#f97316";
-    riskBg    = "rgba(249,115,22,0.2)";
+    riskColor = "#dc5e5e";
+    riskBg    = "rgba(220,94,94,0.2)";
   } else if (score >= 40) {
     riskLabel = "Low Risk";
     riskColor = "#eab308";

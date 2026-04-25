@@ -41,7 +41,7 @@ function AcronymToken({ token }: { token: string }) {
       <span
         className="pointer-events-none absolute bottom-full left-1/2 z-[80] mb-2 min-w-max -translate-x-1/2 rounded-full px-3 py-1.5 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100"
         style={{
-          background: "#ff8b22",
+          background: "#dc5e5e",
           border: "1px solid rgba(255,196,132,0.45)",
           color: "#1f1206",
           fontFamily: "Inter, sans-serif",

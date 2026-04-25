@@ -41,7 +41,7 @@ function FairnessQuestionCard({
     >
       <div
         style={{
-          color: "#dc8d72",
+          color: "#dc5e5e",
           fontFamily: "Inter, sans-serif",
           fontSize: 11,
           fontWeight: 700,
@@ -263,11 +263,11 @@ export function PanelLayout({
         <div
           className="flex items-center gap-3 px-5 py-4"
           style={{
-            background: "rgba(249,115,22,0.09)",
-            borderTop: "1px solid rgba(249,115,22,0.18)"
+            background: "rgba(220,94,94,0.09)",
+            borderTop: "1px solid rgba(220,94,94,0.18)"
           }}
         >
-          <Zap size={15} style={{ color: "#f97316" }} />
+          <Zap size={15} style={{ color: "#dc5e5e" }} />
           <div
             style={{
               color: "rgba(255,255,255,0.55)",
@@ -279,7 +279,7 @@ export function PanelLayout({
           </div>
           <div
             style={{
-              color: "#ff9c48",
+              color: "#dc5e5e",
               fontFamily: "Jua, sans-serif",
               fontSize: compact ? 18 : 20
             }}

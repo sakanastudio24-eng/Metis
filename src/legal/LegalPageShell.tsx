@@ -62,7 +62,7 @@ export function LegalPageShell({
       <div className="mx-auto max-w-[820px]">
         <div
           style={{
-            color: "#dc8d72",
+            color: "#dc5e5e",
             fontFamily: "Inter, sans-serif",
             fontSize: 11,
             fontWeight: 700,

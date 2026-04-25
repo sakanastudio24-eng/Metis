@@ -85,7 +85,7 @@ function Section({
             border: "1px solid rgba(220,94,94,0.2)"
           }}
         >
-          <Icon size={14} style={{ color: "#dc8d72" }} />
+          <Icon size={14} style={{ color: "#dc5e5e" }} />
         </div>
         <div className="min-w-0 flex-1">
           <div style={{ color: "white", fontFamily: "Jua, sans-serif", fontSize: 18 }}>
@@ -321,7 +321,7 @@ function ActionButton({
         border: destructive
           ? "1px solid rgba(220,94,94,0.22)"
           : "1px solid rgba(255,255,255,0.08)",
-        color: destructive ? "#dc8d72" : "rgba(255,255,255,0.76)",
+        color: destructive ? "#dc5e5e" : "rgba(255,255,255,0.76)",
         fontFamily: "Inter, sans-serif",
         fontSize: 11,
         fontWeight: 700
@@ -719,7 +719,7 @@ function PopupApp() {
 
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <div style={{ color: "#dc8d72", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <div style={{ color: "#dc5e5e", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             Metis
           </div>
           <div style={{ color: "white", fontFamily: "Jua, sans-serif", fontSize: 28, marginTop: 6 }}>

@@ -116,9 +116,34 @@ function getInjectionCooldownMs(scanDelayProfile: MetisLocalSettings["scanDelayP
   return 1800;
 }
 
+type ContentChromeLike = {
+  runtime?: {
+    id?: string;
+    sendMessage?: typeof chrome.runtime.sendMessage;
+    onMessage?: typeof chrome.runtime.onMessage;
+  };
+  storage?: {
+    onChanged?: typeof chrome.storage.onChanged;
+  };
+};
+
+function getContentChrome() {
+  try {
+    return (globalThis as typeof globalThis & { chrome?: ContentChromeLike }).chrome ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function sendRuntimeMessage<T>(message: MetisRuntimeMessage): Promise<T | null> {
   try {
-    return (await chrome.runtime.sendMessage(message)) as T;
+    const runtime = getContentChrome()?.runtime;
+
+    if (!runtime?.id || !runtime.sendMessage) {
+      return null;
+    }
+
+    return (await runtime.sendMessage(message)) as T;
   } catch {
     return null;
   }
@@ -395,6 +420,7 @@ export function PageBridgeApp() {
 
   useEffect(() => {
     let isMounted = true;
+    const runtimeOnMessage = getContentChrome()?.runtime?.onMessage;
 
     void getMetisLocalSettings().then((storedSettings) => {
       if (!isMounted) {
@@ -476,15 +502,27 @@ export function PageBridgeApp() {
       return false;
     };
 
-    chrome.runtime.onMessage.addListener(listener);
+    if (!runtimeOnMessage) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    runtimeOnMessage.addListener(listener);
 
     return () => {
       isMounted = false;
-      chrome.runtime.onMessage.removeListener(listener);
+      runtimeOnMessage.removeListener(listener);
     };
   }, []);
 
   useEffect(() => {
+    const storageOnChanged = getContentChrome()?.storage?.onChanged;
+
+    if (!storageOnChanged) {
+      return;
+    }
+
     const handleStorageChange = (
       changes: Record<string, chrome.storage.StorageChange>,
       areaName: string
@@ -499,10 +537,10 @@ export function PageBridgeApp() {
       void getMetisLocalSettings().then(setSettings);
     };
 
-    chrome.storage.onChanged.addListener(handleStorageChange);
+    storageOnChanged.addListener(handleStorageChange);
 
     return () => {
-      chrome.storage.onChanged.removeListener(handleStorageChange);
+      storageOnChanged.removeListener(handleStorageChange);
     };
   }, []);
 

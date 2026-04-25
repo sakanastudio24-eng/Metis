@@ -16,15 +16,15 @@ function chipStyle(tone: DesignStackChip["tone"]) {
       };
     case "ai":
       return {
-        background: "rgba(249,115,22,0.12)",
-        border: "1px solid rgba(249,115,22,0.25)",
-        color: "#f97316"
+        background: "rgba(220,94,94,0.12)",
+        border: "1px solid rgba(220,94,94,0.25)",
+        color: "#dc5e5e"
       };
     case "warning":
       return {
-        background: "rgba(249,115,22,0.12)",
-        border: "1px solid rgba(249,115,22,0.25)",
-        color: "#ff9c48"
+        background: "rgba(220,94,94,0.12)",
+        border: "1px solid rgba(220,94,94,0.25)",
+        color: "#dc5e5e"
       };
     case "tech":
       return {

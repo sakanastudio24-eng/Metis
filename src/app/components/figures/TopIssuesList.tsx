@@ -16,14 +16,14 @@ function summaryToneStyle(tone: DesignSummaryPill["tone"]) {
 
   if (tone === "moderate") {
     return {
-      background: "rgba(249,115,22,0.16)",
-      color: "#ff8b22"
+      background: "rgba(220,94,94,0.16)",
+      color: "#dc5e5e"
     };
   }
 
   return {
-    background: "rgba(249,115,22,0.1)",
-    color: "#f97316"
+    background: "rgba(220,94,94,0.1)",
+    color: "#dc5e5e"
   };
 }
 
@@ -37,14 +37,14 @@ function severityPillStyle(severity: DesignIssue["severityLabel"]) {
 
   if (severity === "moderate") {
     return {
-      background: "rgba(249,115,22,0.14)",
-      color: "#ff8b22"
+      background: "rgba(220,94,94,0.14)",
+      color: "#dc5e5e"
     };
   }
 
   return {
-    background: "rgba(249,115,22,0.1)",
-    color: "#f97316"
+    background: "rgba(220,94,94,0.1)",
+    color: "#dc5e5e"
   };
 }
 

@@ -248,7 +248,7 @@ export function WhatJustHappened({ hostname }: { hostname: string }) {
   const [open, setOpen] = useState(false);
   const events = [
     { icon: Activity, color: "#ef4444", label: "Route profile refreshed", value: "live" },
-    { icon: Wrench, color: "#f97316", label: "Issue checks re-ranked", value: "updated" },
+    { icon: Wrench, color: "#dc5e5e", label: "Issue checks re-ranked", value: "updated" },
     { icon: CheckCheck, color: "#22c55e", label: "Saved scan kept locally", value: "ready" },
     { icon: Activity, color: "#6366f1", label: "Control read re-evaluated", value: "scored" }
   ];

@@ -192,7 +192,7 @@ function SidePanelHeader({
             style={{
               background: "rgba(220,94,94,0.14)",
               border: "1px solid rgba(220,94,94,0.28)",
-              color: "#dc8d72",
+              color: "#dc5e5e",
               fontFamily: "Inter, sans-serif",
               fontSize: 10,
               fontWeight: 700,
@@ -233,11 +233,11 @@ function ReconnectState({
       <div
         className="flex h-14 w-14 items-center justify-center rounded-full"
         style={{
-          background: "rgba(249,115,22,0.12)",
-          border: "1px solid rgba(249,115,22,0.24)"
+          background: "rgba(220,94,94,0.12)",
+          border: "1px solid rgba(220,94,94,0.24)"
         }}
       >
-        <AlertTriangle size={20} style={{ color: "#f97316" }} />
+        <AlertTriangle size={20} style={{ color: "#dc5e5e" }} />
       </div>
       <div
         className="mt-5 text-center text-white"

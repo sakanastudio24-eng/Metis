@@ -32,7 +32,7 @@ const BRAND = {
   mixpanel: "#8b5cf6",
   sentry: "#8b5cf6",
   algolia: "#5468ff",
-  prism: "#f97316",
+  prism: "#dc5e5e",
   three: "#38bdf8",
   webpack: "#60a5fa",
   openGraph: "#f472b6",

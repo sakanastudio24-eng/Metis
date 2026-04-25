@@ -499,7 +499,7 @@ export function LocalSettingsModal({
                     style={{
                       background: "rgba(220,94,94,0.12)",
                       border: "1px solid rgba(220,94,94,0.2)",
-                      color: "#dc8d72",
+                      color: "#dc5e5e",
                       fontFamily: "Inter, sans-serif",
                       fontSize: 12,
                       fontWeight: 700

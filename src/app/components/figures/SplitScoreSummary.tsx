@@ -49,7 +49,7 @@ function SummaryCard({
     label === "Healthy" || label === "Controlled"
       ? { icon: Minus, color: "#22c55e", background: "rgba(34,197,94,0.12)" }
       : label === "Moderate Risk" || label === "Mixed"
-        ? { icon: ArrowUp, color: "#f97316", background: "rgba(249,115,22,0.12)" }
+        ? { icon: ArrowUp, color: "#dc5e5e", background: "rgba(220,94,94,0.12)" }
       : label === "High Risk" || label === "Uncontrolled"
           ? { icon: ChevronUp, color: "#dc5e5e", background: "rgba(220,94,94,0.12)" }
           : { icon: Minus, color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.08)" };
@@ -172,7 +172,7 @@ function ConfidenceStrip({
       : label === "Limited"
         ? { color: "#facc15", background: "rgba(250,204,21,0.14)" }
       : label === "Moderate"
-        ? { color: "#f97316", background: "rgba(249,115,22,0.12)" }
+        ? { color: "#dc5e5e", background: "rgba(220,94,94,0.12)" }
         : { color: "#dc5e5e", background: "rgba(220,94,94,0.12)" };
 
   return (
@@ -250,7 +250,7 @@ export function SplitScoreSummary({
     activeContextSnapshot.combinedScore >= 65
       ? "#22c55e"
       : activeContextSnapshot.combinedScore >= 40
-        ? "#f97316"
+        ? "#dc5e5e"
         : "#dc5e5e";
 
   return (

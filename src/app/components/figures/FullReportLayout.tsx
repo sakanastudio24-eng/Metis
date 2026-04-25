@@ -109,7 +109,7 @@ function ScaleSimulationSection({
           }}
         >
           <div className="flex items-center gap-2">
-            <Bot size={14} style={{ color: "#f97316" }} />
+            <Bot size={14} style={{ color: "#dc5e5e" }} />
             <div
               style={{
                 color: "rgba(255,255,255,0.72)",
@@ -231,7 +231,7 @@ function FixRecommendationsSection({
         <div>
           <div
             style={{
-              color: "#dc8d72",
+              color: "#dc5e5e",
               fontFamily: "Inter, sans-serif",
               fontSize: 12,
               fontWeight: 700,
@@ -623,7 +623,7 @@ export function FullReportLayout({
             className="rounded-full px-4 py-2"
             style={{
               border: "1px solid rgba(220,94,94,0.35)",
-              color: "#dc8d72",
+              color: "#dc5e5e",
               fontFamily: "Inter, sans-serif",
               fontSize: 12,
               fontWeight: 700,
@@ -639,7 +639,7 @@ export function FullReportLayout({
               style={{
                 background: "rgba(220,94,94,0.14)",
                 border: "1px solid rgba(220,94,94,0.32)",
-                color: "#dc8d72",
+                color: "#dc5e5e",
                 fontFamily: "Inter, sans-serif",
                 fontSize: 12,
                 fontWeight: 700,
@@ -764,7 +764,7 @@ export function FullReportLayout({
                       style={{
                         background: "rgba(220,94,94,0.14)",
                         border: "1px solid rgba(220,94,94,0.28)",
-                        color: "#dc8d72",
+                        color: "#dc5e5e",
                         fontFamily: "Inter, sans-serif",
                         fontSize: 11,
                         fontWeight: 700
@@ -878,11 +878,11 @@ export function FullReportLayout({
                 <div
                   className="flex flex-wrap items-center gap-3 px-5 py-4"
                   style={{
-                    background: "rgba(249,115,22,0.10)",
-                    borderTop: "1px solid rgba(249,115,22,0.18)"
+                    background: "rgba(220,94,94,0.10)",
+                    borderTop: "1px solid rgba(220,94,94,0.18)"
                   }}
                 >
-                  <Zap size={15} style={{ color: "#f97316" }} />
+                  <Zap size={15} style={{ color: "#dc5e5e" }} />
                   <div
                     style={{
                       color: "rgba(255,255,255,0.55)",
@@ -895,7 +895,7 @@ export function FullReportLayout({
                   <div
                     className="metis-display"
                     style={{
-                      color: "#ff9c48",
+                      color: "#dc5e5e",
                       fontSize: 22
                     }}
                   >
@@ -916,13 +916,13 @@ export function FullReportLayout({
                         pill.tone === "critical"
                           ? "rgba(239,68,68,0.16)"
                           : pill.tone === "moderate"
-                            ? "rgba(249,115,22,0.16)"
+                            ? "rgba(220,94,94,0.16)"
                             : "rgba(234,179,8,0.16)",
                       color:
                         pill.tone === "critical"
                           ? "#ff5d55"
                           : pill.tone === "moderate"
-                            ? "#ff8b22"
+                            ? "#dc5e5e"
                             : "#facc15",
                       fontFamily: "Inter, sans-serif",
                       fontSize: 12,
@@ -1033,7 +1033,7 @@ export function FullReportLayout({
               <div>
                 <div
                   style={{
-                    color: "#dc8d72",
+                    color: "#dc5e5e",
                     fontFamily: "Inter, sans-serif",
                     fontSize: 12,
                     fontWeight: 700,

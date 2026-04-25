@@ -311,7 +311,7 @@ export const MOCK_ISSUES: IssueDefinition[] = [
     title: "Unoptimized Images",
     desc: "3 images exceed 2MB — no WebP conversion or lazy loading detected",
     icon: AlertTriangle,
-    color: "#f97316",
+    color: "#dc5e5e",
     baseImpact: 4,
     rootCause:
       "Raw PNG/JPG assets are served directly from Vercel's origin with no image CDN or Next.js <Image> component optimization.",
@@ -324,7 +324,7 @@ export const MOCK_ISSUES: IssueDefinition[] = [
     title: "AI API Call Frequency",
     desc: "OpenAI called on every keystroke — no debounce or response caching",
     icon: AlertTriangle,
-    color: "#f97316",
+    color: "#dc5e5e",
     baseImpact: 11,
     rootCause:
       "The AI completion handler fires on `onChange` with no debounce. Each keystroke = 1 API call at ~$0.002 each.",
@@ -389,10 +389,10 @@ export const SORTED_ISSUES = [...MOCK_ISSUES].sort(
 export const DETECTION_STEPS = [
   { delay: 0,    text: "Scanning network requests…",        color: "rgba(255,255,255,0.3)", dot: null      },
   { delay: 280,  text: "DOM analysis running…",             color: "rgba(255,255,255,0.3)", dot: null      },
-  { delay: 520,  text: "AI usage detected ⚠",              color: "#f97316",               dot: "#f97316" },
+  { delay: 520,  text: "AI usage detected ⚠",              color: "#dc5e5e",               dot: "#dc5e5e" },
   { delay: 700,  text: "Duplicate API calls found",         color: "#ef4444",               dot: "#ef4444" },
   { delay: 860,  text: "Memory leak pattern detected",      color: "#ef4444",               dot: "#ef4444" },
-  { delay: 1010, text: "3 unoptimized images identified",   color: "#f97316",               dot: "#f97316" },
+  { delay: 1010, text: "3 unoptimized images identified",   color: "#dc5e5e",               dot: "#dc5e5e" },
   { delay: 1160, text: "Missing cache headers found",       color: "#eab308",               dot: "#eab308" },
   { delay: 1320, text: "Calculating cost risk score…",      color: "rgba(255,255,255,0.3)", dot: null      },
 ] as const;
