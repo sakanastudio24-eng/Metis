@@ -83,9 +83,8 @@ Do not send:
 - billing details
 - raw scan history
 
-The website may also attach a minimal session handoff for local extension
-entitlement continuity, but the account snapshot remains the product source of
-truth.
+The website sends only the account snapshot. The extension mirrors that cached
+state locally, but the website remains the product source of truth.
 
 ## Extension replies
 

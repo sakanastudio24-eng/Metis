@@ -34,7 +34,7 @@ If a communication change affects more than one lane, update all touched contrac
 
 ## Implementation Status
 
-Current extension status at `0.14.6`:
+Current extension status at `0.14.9`:
 
 - [x] extension-internal runtime messaging is active
 - [x] auth entry and callback contract is wired into the extension flow

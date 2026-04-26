@@ -21,6 +21,7 @@ function buildExtensionAwareUrl(pathname: "/sign-in" | "/sign-up", extensionId?:
 export const METIS_SIGN_IN_URL = buildExtensionAwareUrl("/sign-in");
 export const METIS_SIGN_UP_URL = buildExtensionAwareUrl("/sign-up");
 export const METIS_ACCOUNT_URL = `${METIS_WEB_ORIGIN}/account`;
+export const METIS_ACCOUNT_PRICING_URL = `${METIS_WEB_ORIGIN}/account?section=pricing`;
 export const METIS_PRIVACY_URL = `${METIS_WEB_ORIGIN}/privacy`;
 export const METIS_TERMS_URL = `${METIS_WEB_ORIGIN}/terms`;
 export const METIS_EXTENSION_VALIDATE_URL = `${METIS_API_ORIGIN}/v1/extension/validate`;
@@ -37,4 +38,10 @@ export function buildMetisSignInUrl(extensionId?: string) {
 
 export function buildMetisSignUpUrl(extensionId?: string) {
   return buildExtensionAwareUrl("/sign-up", extensionId);
+}
+
+export function buildMetisPlusBetaSignUpUrl(extensionId?: string) {
+  const url = new URL(buildExtensionAwareUrl("/sign-up", extensionId));
+  url.searchParams.set("intent", "plus_beta");
+  return url.toString();
 }

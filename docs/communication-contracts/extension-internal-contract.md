@@ -82,7 +82,7 @@ If local scan, summary rendering, and panel coordination are unstable, do not pa
 
 ## Implementation Status
 
-Status at `0.14.6`:
+Status at `0.14.9`:
 
 - [x] `MetisRuntimeMessage` remains the single internal message family
 - [x] open panel, open sign-in, auth state changed, and upload queued messages now exist

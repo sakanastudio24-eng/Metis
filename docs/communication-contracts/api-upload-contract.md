@@ -97,7 +97,7 @@ If that answer is weak, do not send it.
 
 ## Implementation Status
 
-Status at `0.14.6`:
+Status at `0.14.9`:
 
 - [x] local upload queue exists under `metis_upload_queue`
 - [x] analytics events, scan summaries, and premium report requests are modeled separately

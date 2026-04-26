@@ -38,7 +38,11 @@ import {
 } from "../shared/lib/metisLocalSettings";
 import { getDefaultMetisAccessState } from "../shared/lib/metisAuthSession";
 import { getDefaultMetisSiteAccessState } from "../shared/lib/siteAccess";
-import { METIS_ACCOUNT_URL } from "../shared/lib/metisLinks";
+import {
+  METIS_ACCOUNT_PRICING_URL,
+  METIS_ACCOUNT_URL,
+  buildMetisPlusBetaSignUpUrl
+} from "../shared/lib/metisLinks";
 import {
   LEGACY_METIS_USER_SETTINGS_KEY,
   METIS_USER_SETTINGS_KEY
@@ -782,30 +786,15 @@ export default function App() {
 
   const handleUpgradeToPlus = async () => {
     if (!accessState.isAuthenticated) {
-      await handleContinueConnect();
+      window.open(
+        buildMetisPlusBetaSignUpUrl(chrome.runtime.id),
+        "_blank",
+        "noopener,noreferrer"
+      );
       return;
     }
 
-    if (!accessState.allowPlusUi) {
-      handleOpenAccountPortal();
-      toast.message("Connected account required", {
-        description: "Your website account controls Plus access for the extension."
-      });
-      return;
-    }
-
-    if (!activeTabId) {
-      return;
-    }
-
-    setIsPlusUser(true);
-    await patchSessionUi({
-      isPlusUser: true,
-      isPlusRefinementOpen: false
-    });
-    await handleOpenPageReport({
-      openPlusPreview: true
-    });
+    window.open(METIS_ACCOUNT_PRICING_URL, "_blank", "noopener,noreferrer");
   };
 
   const handleOpenExport = () => {

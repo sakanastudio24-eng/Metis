@@ -243,7 +243,7 @@ Use it before changing UI wording, fallback copy, or product labels.
 
 - Tag: `Plus suggestion`
 - Body:
-  `Upgrade opens the fullscreen Metis+ report preview.`
+  `Upgrade opens website pricing and Metis+ Beta access on metis.zward.studio.`
 - Body:
   `Metis+ keeps the same score and estimate, then adds more detail.`
 - CTA:
